@@ -78,7 +78,8 @@ export default function PrintMenuPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const url = API_BASE ? `${API_BASE}/api/restaurants/public` : '/api/restaurants/public';
+        const serverHost = (API_BASE || '').replace(/\/api\/?$/, '');
+        const url = `${serverHost}/api/restaurants/public`;
         const res = await axios.get(url);
         const { restaurant, categories } = res.data.data;
         const items = categories.flatMap((c: Category & { items: MenuItem[] }) => c.items || []);
@@ -125,9 +126,8 @@ export default function PrintMenuPage() {
     setExporting('pdf');
     const toastId = toast.loading('Generating PDF...');
     try {
-      const url = API_BASE
-        ? `${API_BASE}/api/export/menu`
-        : '/api/export/menu';
+      const serverHost = (API_BASE || '').replace(/\/api\/?$/, '');
+      const url = `${serverHost}/api/export/menu`;
 
       const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
 

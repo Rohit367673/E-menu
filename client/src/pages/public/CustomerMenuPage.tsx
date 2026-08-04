@@ -746,8 +746,9 @@ export default function CustomerMenuPage() {
   useEffect(() => {
     (async () => {
       try {
+        const serverHost = (API_BASE || '').replace(/\/api\/?$/, '');
         const path = slug ? `/api/restaurants/${slug}/public` : '/api/restaurants/public';
-        const url = API_BASE ? `${API_BASE}${path}` : path;
+        const url = `${serverHost}${path}`;
         const res = await axios.get<{
           success: boolean;
           data: { restaurant: Restaurant; categories: (Category & { items: MenuItem[] })[] };
