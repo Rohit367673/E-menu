@@ -214,6 +214,9 @@ const seedDatabase = async () => {
 
       console.log('Demo menu items seeded successfully!');
     }
+  } catch (error) {
+    console.error('Database seeding failed:', error);
+  }
 };
 
 // Start server
