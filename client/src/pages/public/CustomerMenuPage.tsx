@@ -394,14 +394,14 @@ function ErrorState({ message }: { message: string }) {
 /* ── Glowing Hanging Bulbs Decoration (hidden on mobile) ── */
 function HangingBulbs() {
   const bulbs = [
-    { left: '10%', height: 45, delay: '0s' },
-    { left: '24%', height: 70, delay: '0.6s' },
-    { left: '76%', height: 68, delay: '1.5s' },
-    { left: '90%', height: 43, delay: '0.4s' },
+    { left: '8%', height: 38, delay: '0s' },
+    { left: '25%', height: 60, delay: '0.6s' },
+    { left: '75%', height: 58, delay: '1.5s' },
+    { left: '92%', height: 36, delay: '0.4s' },
   ];
 
   return (
-    <div className="absolute top-0 left-0 right-0 h-32 pointer-events-none z-20 overflow-hidden no-print hidden md:block">
+    <div className="absolute top-0 left-0 right-0 h-32 pointer-events-none z-20 overflow-hidden no-print block">
       {/* Wire string */}
       <svg className="absolute top-0 left-0 w-full h-12 text-gray-800/10" preserveAspectRatio="none" viewBox="0 0 100 10">
         <path d="M 0 0 C 15 3, 35 3, 50 0 C 65 3, 85 3, 100 0" fill="none" stroke="currentColor" strokeWidth="0.2" />
@@ -1240,7 +1240,7 @@ export default function CustomerMenuPage() {
         {/* ═══ CENTER — Main Footer Content ═══ */}
         <div className="relative z-10 flex flex-col items-center justify-center text-center py-12 md:py-14 px-4">
           {/* Download CTA Button */}
-          <div className="flex flex-col items-center text-center max-w-sm mx-auto mb-4">
+          <div className="flex flex-col items-center text-center max-w-sm mx-auto mt-8 md:mt-10 mb-4">
             <motion.button
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
