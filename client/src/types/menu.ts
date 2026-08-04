@@ -1,0 +1,88 @@
+export interface MenuItem {
+  _id: string;
+  name: string;
+  description: string;
+  price: number;
+  discountPrice?: number;
+  image?: string;
+  category: string; // references Category ID
+  vegType: 'veg' | 'nonveg';
+  featured: boolean;
+  available: boolean;
+  order: number;
+
+  // Backward compatibility fields
+  isAvailable: boolean;
+  tags?: string[];
+  badges?: {
+    popular: boolean;
+    new: boolean;
+    spicy: boolean;
+    vegetarian: boolean;
+  };
+}
+
+export type Badge = 'popular' | 'new' | 'spicy' | 'vegetarian';
+
+export interface Category {
+  _id: string;
+  name: string;
+  sortOrder: number;
+  order: number;
+  printSketch?: string;
+  
+  // Backward compatibility
+  description?: string;
+  icon?: string;
+  isActive?: boolean;
+}
+
+export interface TemplateConfig {
+  templateId: string;
+  colors: {
+    primary: string;
+    secondary: string;
+    background: string;
+    surface: string;
+    text: string;
+    textSecondary?: string;
+    accent: string;
+  };
+  fonts: {
+    heading: string;
+    body: string;
+  };
+  borderRadius: string | number;
+  cardStyle: 'elevated' | 'outlined' | 'flat' | 'glass';
+  categoryStyle: 'tabs' | 'pills' | 'underline' | 'cards';
+  backgroundPattern?: string;
+  shadows: boolean;
+}
+
+export interface Restaurant {
+  _id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  logo?: string;
+  coverImage?: string;
+  phone?: string;
+  address?: string;
+  owner: string;
+  templateConfig: TemplateConfig;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface User {
+  _id: string;
+  email: string;
+  name?: string;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+  count?: number;
+}
