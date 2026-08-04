@@ -394,10 +394,10 @@ function ErrorState({ message }: { message: string }) {
 /* ── Glowing Hanging Bulbs Decoration (hidden on mobile) ── */
 function HangingBulbs() {
   const bulbs = [
-    { left: '8%', height: 45, delay: '0s' },
-    { left: '22%', height: 70, delay: '0.6s' },
-    { left: '78%', height: 68, delay: '1.5s' },
-    { left: '92%', height: 43, delay: '0.4s' },
+    { left: '10%', height: 45, delay: '0s' },
+    { left: '24%', height: 70, delay: '0.6s' },
+    { left: '76%', height: 68, delay: '1.5s' },
+    { left: '90%', height: 43, delay: '0.4s' },
   ];
 
   return (
@@ -435,6 +435,167 @@ function HangingBulbs() {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+/* ── Proper SVG Café Bistro Scene ── */
+function CafeBistroGraphicScene({ primary }: { primary: string }) {
+  return (
+    <div className="relative flex flex-col items-center justify-center mb-10 select-none w-full max-w-md mx-auto">
+      <svg viewBox="0 0 400 220" className="w-full max-w-[380px] h-auto" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          {/* Wood grain gradient for table */}
+          <linearGradient id="tableTopGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#7c2d12" />
+            <stop offset="30%" stopColor="#a16207" />
+            <stop offset="50%" stopColor="#b45309" />
+            <stop offset="70%" stopColor="#a16207" />
+            <stop offset="100%" stopColor="#7c2d12" />
+          </linearGradient>
+          <linearGradient id="tableLegGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#78350f" />
+            <stop offset="100%" stopColor="#451a03" />
+          </linearGradient>
+          <linearGradient id="chairGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#92400e" />
+            <stop offset="100%" stopColor="#6b3410" />
+          </linearGradient>
+          <linearGradient id="cupGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ffffff" />
+            <stop offset="100%" stopColor="#f3f4f6" />
+          </linearGradient>
+          <radialGradient id="flameGlow" cx="50%" cy="70%" r="50%">
+            <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.7" />
+            <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
+          </radialGradient>
+          <linearGradient id="plateGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#fafafa" />
+            <stop offset="100%" stopColor="#e5e7eb" />
+          </linearGradient>
+        </defs>
+
+        {/* ═══ LEFT CHAIR ═══ */}
+        <g transform="translate(52, 72)">
+          {/* Chair back — curved panel */}
+          <rect x="0" y="0" width="6" height="52" rx="3" fill="url(#chairGrad)" />
+          <rect x="30" y="0" width="6" height="52" rx="3" fill="url(#chairGrad)" />
+          {/* Back rest horizontal slats */}
+          <rect x="0" y="6" width="36" height="5" rx="2" fill="#92400e" />
+          <rect x="0" y="16" width="36" height="5" rx="2" fill="#92400e" />
+          <rect x="0" y="26" width="36" height="5" rx="2" fill="#92400e" />
+          {/* Seat */}
+          <rect x="-2" y="38" width="40" height="7" rx="3" fill="url(#chairGrad)" stroke="#6b3410" strokeWidth="0.5" />
+          {/* Front legs */}
+          <rect x="2" y="45" width="5" height="28" rx="2" fill="url(#chairGrad)" />
+          <rect x="29" y="45" width="5" height="28" rx="2" fill="url(#chairGrad)" />
+        </g>
+
+        {/* ═══ RIGHT CHAIR ═══ */}
+        <g transform="translate(312, 72)">
+          <rect x="0" y="0" width="6" height="52" rx="3" fill="url(#chairGrad)" />
+          <rect x="30" y="0" width="6" height="52" rx="3" fill="url(#chairGrad)" />
+          <rect x="0" y="6" width="36" height="5" rx="2" fill="#92400e" />
+          <rect x="0" y="16" width="36" height="5" rx="2" fill="#92400e" />
+          <rect x="0" y="26" width="36" height="5" rx="2" fill="#92400e" />
+          <rect x="-2" y="38" width="40" height="7" rx="3" fill="url(#chairGrad)" stroke="#6b3410" strokeWidth="0.5" />
+          <rect x="2" y="45" width="5" height="28" rx="2" fill="url(#chairGrad)" />
+          <rect x="29" y="45" width="5" height="28" rx="2" fill="url(#chairGrad)" />
+        </g>
+
+        {/* ═══ TABLE ═══ */}
+        {/* Table top — ellipse with wood texture */}
+        <ellipse cx="200" cy="118" rx="100" ry="12" fill="url(#tableTopGrad)" stroke="#6b3410" strokeWidth="1.5" />
+        {/* Table top highlight */}
+        <ellipse cx="200" cy="116" rx="80" ry="6" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+        {/* Center pedestal */}
+        <rect x="193" y="128" width="14" height="45" rx="2" fill="url(#tableLegGrad)" />
+        {/* Pedestal base */}
+        <ellipse cx="200" cy="175" rx="38" ry="8" fill="#451a03" stroke="#3b2506" strokeWidth="1" />
+        <ellipse cx="200" cy="173" rx="36" ry="6" fill="#5c3310" />
+
+        {/* ═══ TABLETOP ITEMS ═══ */}
+
+        {/* ── Coffee Cup (center-left) ── */}
+        <g transform="translate(155, 85)">
+          {/* Saucer */}
+          <ellipse cx="20" cy="30" rx="18" ry="5" fill="#e5e7eb" stroke="#d1d5db" strokeWidth="0.5" />
+          {/* Cup body */}
+          <path d="M8,10 L12,28 C12,30 28,30 28,28 L32,10 Z" fill="url(#cupGrad)" stroke="#d1d5db" strokeWidth="0.8" />
+          {/* Cup rim */}
+          <ellipse cx="20" cy="10" rx="12" ry="4" fill="#fefefe" stroke="#d1d5db" strokeWidth="0.5" />
+          {/* Coffee liquid */}
+          <ellipse cx="20" cy="11" rx="10" ry="3" fill="#78350f" />
+          {/* Handle */}
+          <path d="M32,14 C38,14 38,24 32,24" fill="none" stroke="#d1d5db" strokeWidth="2" strokeLinecap="round" />
+        </g>
+
+        {/* ── Animated Steam (above coffee) ── */}
+        <g transform="translate(175, 50)">
+          <motion.path
+            d="M0,35 C2,28 -2,22 0,15 C2,8 -1,2 0,-5"
+            fill="none"
+            stroke={primary}
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeOpacity="0.5"
+            animate={{ y: [0, -8], opacity: [0.5, 0] }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: 'easeOut' }}
+          />
+          <motion.path
+            d="M8,35 C6,26 10,20 8,12 C6,5 9,0 8,-8"
+            fill="none"
+            stroke={primary}
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeOpacity="0.6"
+            animate={{ y: [0, -10], opacity: [0.6, 0] }}
+            transition={{ duration: 2.8, repeat: Infinity, ease: 'easeOut', delay: 0.5 }}
+          />
+        </g>
+
+        {/* ── Candle (center) ── */}
+        <g transform="translate(195, 78)">
+          {/* Candle holder base */}
+          <ellipse cx="8" cy="34" rx="10" ry="3" fill="#b8860b" stroke="#8b6914" strokeWidth="0.5" />
+          {/* Candle body */}
+          <rect x="4" y="14" width="8" height="20" rx="1" fill="#fef3c7" stroke="#fcd34d" strokeWidth="0.5" />
+          {/* Wick */}
+          <line x1="8" y1="14" x2="8" y2="9" stroke="#333" strokeWidth="0.8" />
+          {/* Animated flame */}
+          <motion.g
+            animate={{ scaleY: [0.9, 1.15, 0.95, 1.1, 1], scaleX: [1, 0.9, 1.05, 0.92, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+            style={{ transformOrigin: '8px 9px' }}
+          >
+            {/* Outer flame */}
+            <path d="M8,9 C5,4 4,1 8,-4 C12,1 11,4 8,9" fill="#f59e0b" opacity="0.9" />
+            {/* Inner flame */}
+            <path d="M8,8 C6.5,5 6,3 8,-1 C10,3 9.5,5 8,8" fill="#fbbf24" />
+            {/* Core */}
+            <path d="M8,7 C7.2,5.5 7,4.5 8,2 C9,4.5 8.8,5.5 8,7" fill="#fef3c7" />
+          </motion.g>
+          {/* Ambient glow around flame */}
+          <motion.circle
+            cx="8" cy="4" r="14"
+            fill="url(#flameGlow)"
+            animate={{ r: [12, 16, 13, 15, 14], opacity: [0.4, 0.7, 0.5, 0.65, 0.5] }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+          />
+        </g>
+
+        {/* ── Pastry Plate (center-right) ── */}
+        <g transform="translate(225, 92)">
+          {/* Plate */}
+          <ellipse cx="18" cy="22" rx="18" ry="5" fill="url(#plateGrad)" stroke="#d1d5db" strokeWidth="0.5" />
+          {/* Croissant shape */}
+          <path d="M6,18 C8,12 14,10 18,12 C22,10 28,12 30,18 C28,16 22,15 18,17 C14,15 8,16 6,18Z" fill="#d97706" stroke="#b45309" strokeWidth="0.4" />
+          <path d="M10,17 C12,14 16,13 18,15 C20,13 24,14 26,17" fill="none" stroke="#92400e" strokeWidth="0.3" opacity="0.4" />
+        </g>
+
+        {/* ── Floor shadow under table ── */}
+        <ellipse cx="200" cy="185" rx="110" ry="6" fill="rgba(0,0,0,0.04)" />
+      </svg>
     </div>
   );
 }
@@ -779,7 +940,7 @@ export default function CustomerMenuPage() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="relative w-full safe-top"
+        className="relative w-full safe-top flex flex-col items-center justify-center text-center"
         style={{
           background: `radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.14) 0%, rgba(255, 255, 255, 0) 70%), linear-gradient(160deg, ${primary}06 0%, #ffffff 50%, ${tc.colors.secondary || primary}04 100%)`,
         }}
@@ -794,22 +955,22 @@ export default function CustomerMenuPage() {
         />
 
         {/* Mobile header: compact centered stack */}
-        <div className="md:hidden flex flex-col items-center text-center px-5 pt-6 pb-3">
+        <div className="md:hidden flex flex-col items-center justify-center text-center px-5 pt-6 pb-3 w-full mx-auto">
           {/* Logo */}
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-            className="mb-3"
+            className="mb-3 flex items-center justify-center w-full mx-auto text-center"
           >
             {rest.logo ? (
-              <div className="w-14 h-14 rounded-full overflow-hidden shadow-md"
+              <div className="w-14 h-14 rounded-full overflow-hidden shadow-md mx-auto"
                 style={{ border: `2px solid ${primary}18` }}
               >
                 <img src={getImageUrl(rest.logo)} alt={rest.name} className="w-full h-full object-cover" />
               </div>
             ) : (
-              <div className="w-14 h-14 rounded-full flex items-center justify-center shadow-md"
+              <div className="w-14 h-14 rounded-full flex items-center justify-center shadow-md mx-auto"
                 style={{ background: `linear-gradient(135deg, ${primary}18, ${primary}08)`, border: `2px solid ${primary}10` }}
               >
                 <UtensilsCrossed className="w-7 h-7" style={{ color: primary }} />
@@ -821,7 +982,7 @@ export default function CustomerMenuPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15, duration: 0.4 }}
-            className="text-[26px] font-bold leading-tight"
+            className="text-[26px] font-bold leading-tight text-center w-full"
             style={{ fontFamily: headingFont, color: tc.colors.text }}
           >
             {rest.name}
@@ -831,7 +992,7 @@ export default function CustomerMenuPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="text-[13px] mt-1.5 italic font-light leading-relaxed max-w-xs"
+            className="text-[13px] mt-1.5 italic font-light leading-relaxed max-w-xs text-center mx-auto"
             style={{ color: tc.colors.textSecondary, fontFamily: headingFont }}
           >
             {rest.description || 'Welcome to our menu'}
@@ -839,22 +1000,22 @@ export default function CustomerMenuPage() {
         </div>
 
         {/* Desktop header: centered brand identity */}
-        <div className="hidden md:flex flex-col max-w-5xl w-full mx-auto px-4 md:px-6 pt-16 pb-10 items-center justify-center text-center">
+        <div className="hidden md:flex flex-col w-full mx-auto px-4 md:px-6 pt-16 pb-10 items-center justify-center text-center">
           {/* Logo */}
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-            className="mb-4"
+            className="mb-4 flex items-center justify-center w-full mx-auto text-center"
           >
             {rest.logo ? (
-              <div className="w-20 h-20 rounded-full overflow-hidden shadow-lg"
+              <div className="w-20 h-20 rounded-full overflow-hidden shadow-lg mx-auto"
                 style={{ border: `3px solid ${primary}18` }}
               >
                 <img src={getImageUrl(rest.logo)} alt={rest.name} className="w-full h-full object-cover" />
               </div>
             ) : (
-              <div className="w-20 h-20 rounded-full flex items-center justify-center shadow-lg"
+              <div className="w-20 h-20 rounded-full flex items-center justify-center shadow-lg mx-auto"
                 style={{ background: `linear-gradient(135deg, ${primary}18, ${primary}08)`, border: `2px solid ${primary}10` }}
               >
                 <UtensilsCrossed className="w-9 h-9" style={{ color: primary }} />
@@ -863,12 +1024,12 @@ export default function CustomerMenuPage() {
           </motion.div>
 
           {/* Restaurant Name + Tagline */}
-          <div className="flex flex-col items-center text-center">
+          <div className="flex flex-col items-center justify-center text-center w-full mx-auto">
             <motion.h1
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15, duration: 0.5 }}
-              className="text-[40px] font-bold leading-tight"
+              className="text-[40px] font-bold leading-tight text-center w-full"
               style={{ fontFamily: headingFont, color: tc.colors.text }}
             >
               {rest.name}
@@ -877,7 +1038,7 @@ export default function CustomerMenuPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className="text-[16px] mt-2 italic max-w-xl font-light leading-relaxed text-center"
+              className="text-[16px] mt-2 italic max-w-xl font-light leading-relaxed text-center mx-auto"
               style={{ color: tc.colors.textSecondary, fontFamily: headingFont }}
             >
               {rest.description || 'Welcome to our menu'}
@@ -887,7 +1048,7 @@ export default function CustomerMenuPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4 }}
-                className="flex flex-wrap items-center justify-center gap-4 mt-3"
+                className="flex flex-wrap items-center justify-center gap-4 mt-3 w-full mx-auto"
               >
                 {rest.address && (
                   <span className="flex items-center gap-1.5 text-[12px] text-gray-400">
@@ -1058,48 +1219,81 @@ export default function CustomerMenuPage() {
       </div>
 
       {/* ═══════════ FOOTER ═══════════ */}
-      <footer className="w-full bg-white border-t border-gray-100 pt-8 pb-16 md:pt-10 md:pb-16">
-        <div className="max-w-5xl w-full mx-auto px-4 md:px-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-4">
-            
-            {/* Social Handle */}
+      <footer className="w-full bg-[#faf8f4] border-t border-[#e8dfd1] mt-16 relative overflow-hidden" style={{ minHeight: '220px' }}>
+        {/* Subtle Warm Background Glow */}
+        <div
+          className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full blur-3xl pointer-events-none"
+          style={{ background: primary, opacity: 0.05 }}
+        />
+
+        {/* ═══ LEFT SIDE — Café Scene (pinned to left edge) ═══ */}
+        <div className="hidden lg:block absolute left-6 bottom-6 w-[240px] pointer-events-none z-0 opacity-85">
+          <CafeBistroGraphicScene primary={primary} />
+        </div>
+
+        {/* ═══ RIGHT SIDE — Café Scene (pinned to right edge, mirrored) ═══ */}
+        <div className="hidden lg:block absolute right-6 bottom-6 w-[240px] pointer-events-none z-0 opacity-85" style={{ transform: 'scaleX(-1)' }}>
+          <CafeBistroGraphicScene primary={primary} />
+        </div>
+
+        {/* ═══ CENTER — Main Footer Content ═══ */}
+        <div className="relative z-10 flex flex-col items-center justify-center text-center py-12 md:py-14 px-4">
+          {/* Download CTA Button */}
+          <div className="flex flex-col items-center text-center max-w-sm mx-auto mb-4">
+            <motion.button
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => window.print()}
+              className="download-menu-btn"
+              style={{
+                background: `linear-gradient(135deg, ${primary}, ${tc.colors.secondary || primary})`,
+                boxShadow: `0 10px 28px -4px ${primary}45`,
+              }}
+            >
+              <Download className="w-4 h-4 flex-shrink-0" />
+              <span className="leading-none">Download Menu PDF</span>
+            </motion.button>
+            <p className="text-[11px] md:text-[12px] text-gray-500 font-medium mt-1.5">
+              Print or download a high-resolution copy for your table
+            </p>
+          </div>
+
+          {/* Delicate Divider */}
+          <div className="w-full max-w-[200px] mx-auto flex items-center justify-center gap-3 my-5 opacity-60">
+            <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-gray-300 flex-1" />
+            <span className="text-xs text-amber-700/60 select-none">🫘</span>
+            <div className="h-px bg-gradient-to-l from-transparent via-gray-300 to-gray-300 flex-1" />
+          </div>
+
+          {/* Footer Bottom Bar */}
+          <div className="flex flex-col md:flex-row items-center justify-center gap-3 text-center">
+            {/* Social Badge */}
             <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              className="flex items-center gap-2 text-gray-500 text-xs md:text-sm font-medium order-2 md:order-1"
+              className="inline-flex items-center gap-2 bg-amber-500/10 hover:bg-amber-500/15 px-4 py-2 rounded-full text-xs font-semibold text-gray-700 border border-amber-500/20 transition-colors"
             >
-              <AtSign className="w-4 h-4 text-gray-400" />
+              <AtSign className="w-3.5 h-3.5" style={{ color: primary }} />
               <span>Follow us <strong style={{ color: primary }}>@{socialHandle}</strong></span>
             </motion.div>
 
-            {/* Brand / Copyright */}
-            <div className="text-center order-3 md:order-2">
-              <span className="text-[12px] md:text-xs text-gray-400 font-medium tracking-wide">
-                Digital Menu · <span className="font-semibold text-gray-600">{rest.name}</span>
-              </span>
-            </div>
+            <span className="hidden md:inline text-gray-300">·</span>
 
-            {/* Download Menu Button */}
-            <div className="order-1 md:order-3 w-full md:w-auto flex justify-center">
-              <motion.button
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                whileHover={{ scale: 1.04, translateY: -1 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => window.print()}
-                className="inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-full font-bold text-white text-xs md:text-sm tracking-wide shadow-md hover:shadow-lg transition-all cursor-pointer uppercase"
-                style={{
-                  background: `linear-gradient(135deg, ${primary}, ${tc.colors.secondary || primary})`,
-                  boxShadow: `0 4px 14px ${primary}40`,
-                }}
-              >
-                <Download className="w-4 h-4" />
-                <span>Download Menu</span>
-              </motion.button>
+            {/* Subtitle */}
+            <div className="text-[11px] text-gray-400 font-medium tracking-wide">
+              Digital Menu · Handcrafted for Café Lovers
             </div>
+          </div>
+        </div>
 
+        {/* Mobile: Show single centered scene */}
+        <div className="lg:hidden flex justify-center pb-8 pointer-events-none opacity-60">
+          <div className="w-[220px]">
+            <CafeBistroGraphicScene primary={primary} />
           </div>
         </div>
       </footer>

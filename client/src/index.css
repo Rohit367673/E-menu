@@ -557,6 +557,32 @@ select:focus-visible {
   outline: none;
 }
 
+/* ─── Footer Download Button ─────────────────────────────── */
+.download-menu-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  padding: 14px 28px !important;
+  border-radius: 9999px !important;
+  font-family: 'Outfit', 'Inter', system-ui, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  color: #ffffff !important;
+  cursor: pointer !important;
+  border: none !important;
+  outline: none !important;
+  margin-bottom: 10px !important;
+  transition: all 0.25s ease !important;
+}
+
+.download-menu-btn:hover {
+  transform: translateY(-2px) scale(1.03) !important;
+}
+
 
 
 /* ─── Safe Area Insets (for notched phones like iPhone X+) ── */
