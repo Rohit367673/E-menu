@@ -105,10 +105,10 @@ export default function ItemModal({ item, templateConfig, onClose }: ItemModalPr
             )}
 
             {/* Content */}
-            <div className="p-6">
+            <div className="p-6 md:p-8 pb-8 md:pb-10 flex flex-col gap-4">
               {/* Badges */}
               {activeBadges.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-4">
+                <div className="flex flex-wrap gap-2">
                   {activeBadges.map((badge) => (
                     <span
                       key={badge.label}
@@ -122,7 +122,7 @@ export default function ItemModal({ item, templateConfig, onClose }: ItemModalPr
               )}
 
               {/* Name */}
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2">
                 <VegBadge type={item.vegType} />
                 <h2
                   className="text-2xl font-bold"
@@ -138,7 +138,7 @@ export default function ItemModal({ item, templateConfig, onClose }: ItemModalPr
               {/* Description */}
               {item.description && (
                 <p
-                  className="text-base leading-relaxed mb-4"
+                  className="text-base leading-relaxed"
                   style={{
                     fontFamily: templateConfig.fonts.body,
                     color: templateConfig.colors.textSecondary,
@@ -150,7 +150,7 @@ export default function ItemModal({ item, templateConfig, onClose }: ItemModalPr
 
               {/* Tags */}
               {item.tags && item.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-6">
+                <div className="flex flex-wrap gap-2">
                   {item.tags.map((tag) => (
                     <span
                       key={tag}
@@ -167,7 +167,7 @@ export default function ItemModal({ item, templateConfig, onClose }: ItemModalPr
               )}
 
               {/* Price */}
-              <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: `${templateConfig.colors.text}10` }}>
+              <div className="flex items-center justify-between pt-5 pb-2 border-t mt-2" style={{ borderColor: `${templateConfig.colors.text}10` }}>
                 <div className="flex items-baseline gap-3">
                   {item.discountPrice && item.discountPrice < item.price ? (
                     <>
