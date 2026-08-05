@@ -393,20 +393,22 @@ function ErrorState({ message }: { message: string }) {
 
 /* ── Glowing Hanging Bulbs Decoration (Visible on mobile & desktop) ── */
 function HangingBulbs() {
+  // Positioned on left flank (4%, 16%, 28%) and right flank (72%, 84%, 96%)
+  // Leaving a wide 44% clear center window (28% -> 72%) for logo & brand title!
   const bulbs = [
-    { left: '4%', height: 32, delay: '0s', size: 'w-5 h-7' },
-    { left: '22%', height: 48, delay: '0.6s', size: 'w-6 h-8' },
-    { left: '40%', height: 28, delay: '1.2s', size: 'w-5 h-7' },
-    { left: '60%', height: 30, delay: '0.3s', size: 'w-5 h-7' },
-    { left: '78%', height: 50, delay: '1.5s', size: 'w-6 h-8' },
-    { left: '96%', height: 34, delay: '0.8s', size: 'w-5 h-7' },
+    { left: '4%', height: 30, delay: '0s', size: 'w-4.5 h-6.5' },
+    { left: '16%', height: 46, delay: '0.6s', size: 'w-5.5 h-7.5' },
+    { left: '28%', height: 32, delay: '1.2s', size: 'w-4.5 h-6.5' },
+    { left: '72%', height: 32, delay: '0.3s', size: 'w-4.5 h-6.5' },
+    { left: '84%', height: 46, delay: '1.5s', size: 'w-5.5 h-7.5' },
+    { left: '96%', height: 30, delay: '0.8s', size: 'w-4.5 h-6.5' },
   ];
 
   return (
-    <div className="absolute top-0 left-0 right-0 h-36 pointer-events-none z-20 overflow-hidden no-print">
-      {/* Wire string curve */}
+    <div className="absolute top-0 left-0 right-0 h-36 pointer-events-none z-0 overflow-hidden no-print">
+      {/* Wire string curve arched over center logo */}
       <svg className="absolute top-0 left-0 w-full h-10 text-gray-900/20" preserveAspectRatio="none" viewBox="0 0 100 10">
-        <path d="M 0 0 C 15 4, 35 4, 50 0 C 65 4, 85 4, 100 0" fill="none" stroke="currentColor" strokeWidth="0.3" />
+        <path d="M 0 0 C 12 5, 24 5, 34 2 C 45 0, 55 0, 66 2 C 76 5, 88 5, 100 0" fill="none" stroke="currentColor" strokeWidth="0.3" />
       </svg>
 
       {bulbs.map((b, idx) => (
@@ -420,7 +422,7 @@ function HangingBulbs() {
           }}
         >
           {/* Cord */}
-          <div className="w-[1.5px] bg-gray-700/80" style={{ height: b.height }} />
+          <div className="w-[1.5px] bg-gray-700/70" style={{ height: b.height }} />
           {/* Cap */}
           <div className="w-3.5 h-2 bg-gray-800 rounded-t-xs" style={{ borderBottom: '1px solid #111827' }} />
           {/* Bulb Body */}
@@ -974,7 +976,7 @@ export default function CustomerMenuPage() {
         />
 
         {/* Mobile header: compact centered stack */}
-        <div className="md:hidden flex flex-col items-center justify-center text-center px-5 pt-6 pb-3 w-full mx-auto">
+        <div className="md:hidden relative z-20 flex flex-col items-center justify-center text-center px-5 pt-8 pb-3 w-full mx-auto">
           {/* Logo */}
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
