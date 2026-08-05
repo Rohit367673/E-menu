@@ -38,7 +38,7 @@ export default function TopBar({ title, onMenuClick }: TopBarProps) {
               target="_blank"
               rel="noopener noreferrer"
               id="topbar-view-menu"
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-text-secondary hover:text-primary border border-border/60 rounded-lg hover:border-primary/30 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-text-secondary hover:text-primary border border-border/80 bg-white rounded-xl hover:border-primary/40 hover:bg-primary/5 transition-all shadow-2xs cursor-pointer"
             >
               <ExternalLink className="w-3.5 h-3.5" />
               View Menu

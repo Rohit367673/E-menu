@@ -207,46 +207,27 @@ export default function PrintMenuPage() {
 
         {/* Export buttons */}
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleExportPNG}
+            isLoading={exporting === 'png'}
+            icon={exported === 'png' ? <Check className="w-4 h-4 text-emerald-600" /> : <FileImage className="w-4 h-4" />}
             disabled={!!exporting}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl border-2 transition-all duration-200 cursor-pointer disabled:opacity-50"
-            style={{
-              borderColor: '#6366f1',
-              color: '#6366f1',
-              backgroundColor: exported === 'png' ? '#6366f110' : 'white',
-            }}
           >
-            {exporting === 'png' ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : exported === 'png' ? (
-              <Check className="w-4 h-4" />
-            ) : (
-              <FileImage className="w-4 h-4" />
-            )}
             {exporting === 'png' ? 'Exporting...' : 'Export PNG'}
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="primary"
+            size="sm"
             onClick={handleExportPDF}
+            isLoading={exporting === 'pdf'}
+            icon={exported === 'pdf' ? <Check className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
             disabled={!!exporting}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl text-white transition-all duration-200 cursor-pointer disabled:opacity-50"
-            style={{
-              background: exported === 'pdf'
-                ? '#16a34a'
-                : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              boxShadow: '0 4px 14px rgba(99,102,241,0.3)',
-            }}
           >
-            {exporting === 'pdf' ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : exported === 'pdf' ? (
-              <Check className="w-4 h-4" />
-            ) : (
-              <FileText className="w-4 h-4" />
-            )}
             {exporting === 'pdf' ? 'Exporting...' : 'Export PDF'}
-          </button>
+          </Button>
         </div>
       </div>
 

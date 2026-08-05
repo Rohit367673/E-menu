@@ -112,12 +112,8 @@ export default function DashboardHome() {
             {restaurant ? `Managing ${restaurant.name}` : 'Welcome to your E-Menu dashboard'}
           </p>
         </div>
-        <Link
-          to="/admin/add-item"
-          id="dashboard-add-item-header"
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors shadow-lg shadow-primary/25 text-sm"
-        >
-          <Plus className="w-4 h-4" /> Add Menu Item
+        <Link to="/admin/add-item" id="dashboard-add-item-header">
+          <Button icon={<Plus className="w-4 h-4" />}>Add Menu Item</Button>
         </Link>
       </motion.div>
 
@@ -134,15 +130,15 @@ export default function DashboardHome() {
             <div className={`absolute inset-0 bg-gradient-to-br ${stat.bg} opacity-60`} />
             <div className="relative flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-text-secondary mb-1">{stat.label}</p>
-                <p className="text-4xl font-black text-text">{stat.value}</p>
-                <div className="flex items-center gap-1 mt-2">
+                <p className="text-xs font-bold uppercase tracking-wider text-text-secondary/80 mb-1">{stat.label}</p>
+                <p className="text-3xl font-black text-text">{stat.value}</p>
+                <div className="flex items-center gap-1.5 mt-2">
                   <TrendingUp className="w-3.5 h-3.5 text-text-secondary/60" />
-                  <span className="text-xs text-text-secondary/70">{stat.trend}</span>
+                  <span className="text-xs font-medium text-text-secondary/70">{stat.trend}</span>
                 </div>
               </div>
-              <div className={`w-14 h-14 ${stat.iconBg} rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0`}>
-                <stat.icon className="w-7 h-7 text-white" />
+              <div className={`w-13 h-13 ${stat.iconBg} rounded-2xl flex items-center justify-center shadow-md flex-shrink-0`}>
+                <stat.icon className="w-6 h-6 text-white" />
               </div>
             </div>
           </motion.div>
@@ -166,8 +162,8 @@ export default function DashboardHome() {
                 <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${action.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
 
                 <div className="flex items-start gap-4">
-                  <div className={`w-14 h-14 ${action.lightBg} rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}>
-                    <action.icon className={`w-7 h-7 ${action.iconColor}`} />
+                  <div className={`w-12 h-12 ${action.lightBg} rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}>
+                    <action.icon className={`w-6 h-6 ${action.iconColor}`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-text text-base">{action.label}</h3>
@@ -183,10 +179,10 @@ export default function DashboardHome() {
 
       {/* Public Menu URL */}
       <motion.div variants={itemVariants}>
-        <div className="bg-gradient-to-r from-primary/5 via-primary/3 to-purple-500/5 rounded-2xl border border-primary/15 p-5">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="bg-gradient-to-r from-primary/8 via-indigo-500/5 to-purple-500/8 rounded-2xl border border-primary/20 p-5 shadow-sm">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h3 className="font-semibold text-text">Your Public Menu</h3>
+              <h3 className="font-bold text-text text-base">Your Public Menu</h3>
               <p className="text-sm text-text-secondary mt-0.5">Share this link with customers — or scan the QR code</p>
             </div>
             <a
@@ -194,7 +190,7 @@ export default function DashboardHome() {
               target="_blank"
               rel="noopener noreferrer"
               id="public-menu-link"
-              className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-border text-sm text-primary font-medium hover:border-primary/40 transition-colors"
+              className="inline-flex items-center gap-2 bg-white px-4 py-2.5 rounded-xl border border-border/80 text-sm text-primary font-semibold hover:border-primary/40 hover:shadow-md transition-all cursor-pointer"
             >
               <span className="truncate max-w-[240px]">
                 {window.location.origin}/menu/{restaurant?.slug || 'menu'}

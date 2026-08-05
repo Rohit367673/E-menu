@@ -157,21 +157,22 @@ export default function QRCodePage() {
         </div>
         {/* Quick action buttons */}
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => window.open(`/menu/${restaurant.slug || 'menu'}`, '_blank')}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl border-2 border-border bg-white hover:border-gray-300 hover:bg-gray-50 text-text transition-all cursor-pointer"
+            icon={<ExternalLink className="w-4 h-4" />}
           >
-            <ExternalLink className="w-4 h-4" />
             Preview Menu
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
             onClick={() => navigate('/admin/print-menu')}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl text-white transition-all cursor-pointer"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 4px 14px rgba(99,102,241,0.3)' }}
+            icon={<FileOutput className="w-4 h-4" />}
           >
-            <FileOutput className="w-4 h-4" />
             Print Menu
-          </button>
+          </Button>
         </div>
       </motion.div>
 
@@ -255,42 +256,39 @@ export default function QRCodePage() {
               <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl border border-border/50">
                 <LinkIcon className="w-4 h-4 text-text-secondary/50 flex-shrink-0" />
                 <span className="text-sm text-text-secondary truncate flex-1">{menuUrl}</span>
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={handleCopyLink}
-                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-white rounded-lg border border-border hover:border-gray-300 text-text transition-colors flex-shrink-0 cursor-pointer"
+                  icon={copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  className="h-8 px-3"
                 >
-                  {copied ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
-                      <span className="text-emerald-600">Copied</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      Copy
-                    </>
-                  )}
-                </button>
+                  <span className={copied ? 'text-emerald-600' : ''}>{copied ? 'Copied' : 'Copy'}</span>
+                </Button>
               </div>
             </div>
           </div>
 
           {/* Download Buttons */}
           <div className="flex gap-3 mt-6">
-            <button
+            <Button
+              variant="primary"
+              size="lg"
               onClick={handleDownloadPNG}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors shadow-lg shadow-primary/25 cursor-pointer text-sm"
+              icon={<ImageIcon className="w-5 h-5" />}
+              className="flex-1"
             >
-              <ImageIcon className="w-5 h-5" />
               Download PNG
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="lg"
               onClick={handleDownloadSVG}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white text-text font-semibold rounded-xl border-2 border-border hover:border-gray-300 hover:bg-gray-50 transition-colors cursor-pointer text-sm"
+              icon={<Download className="w-5 h-5" />}
+              className="flex-1 border border-border hover:border-gray-300"
             >
-              <Download className="w-5 h-5" />
               Download SVG
-            </button>
+            </Button>
           </div>
         </motion.div>
 

@@ -212,30 +212,40 @@ export default function MenuPage() {
       </div>
 
       {/* ── Tabs ───────────────────────────────────── */}
-      <div className="flex items-center gap-1 bg-gray-100/80 p-1 rounded-xl w-fit">
+      <div className="relative flex items-center gap-1 bg-gray-200/60 p-1 rounded-xl w-fit border border-gray-300/40">
         {([
-          { key: 'items', label: 'Menu Items', icon: UtensilsCrossed },
-          { key: 'categories', label: 'Categories', icon: FolderOpen },
-        ] as const).map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            id={`tab-${tab.key}`}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
-              activeTab === tab.key
-                ? 'bg-white text-text shadow-sm'
-                : 'text-text-secondary hover:text-text'
-            }`}
-          >
-            <tab.icon className="w-4 h-4" />
-            {tab.label}
-            <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${
-              activeTab === tab.key ? 'bg-primary/10 text-primary' : 'bg-gray-200 text-text-secondary'
-            }`}>
-              {tab.key === 'items' ? menuItems.length : categories.length}
-            </span>
-          </button>
-        ))}
+          { key: 'items', label: 'Menu Items', icon: UtensilsCrossed, count: menuItems.length },
+          { key: 'categories', label: 'Categories', icon: FolderOpen, count: categories.length },
+        ] as const).map((tab) => {
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              id={`tab-${tab.key}`}
+              className={`relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer z-10 select-none ${
+                isActive ? 'text-text' : 'text-text-secondary hover:text-text'
+              }`}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="admin-active-tab"
+                  className="absolute inset-0 bg-white rounded-lg shadow-sm"
+                  transition={{ type: 'spring', stiffness: 450, damping: 25 }}
+                />
+              )}
+              <tab.icon className={`w-4 h-4 relative z-10 ${isActive ? 'text-primary' : 'text-text-secondary'}`} />
+              <span className="relative z-10">{tab.label}</span>
+              <span
+                className={`relative z-10 text-xs px-2 py-0.5 rounded-full font-bold transition-colors ${
+                  isActive ? 'bg-primary/10 text-primary' : 'bg-gray-200/80 text-text-secondary'
+                }`}
+              >
+                {tab.count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       <AnimatePresence mode="wait">
@@ -265,14 +275,14 @@ export default function MenuPage() {
               </div>
 
               {/* Category filter */}
-              <div className="relative">
-                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary/50 pointer-events-none z-10" />
+              <div className="relative w-full sm:w-auto">
+                <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary/60 pointer-events-none z-10" />
                 <select
                   value={filterCategoryId}
                   onChange={(e) => setFilterCategoryId(e.target.value)}
                   id="menu-category-filter"
-                  className="admin-select min-w-[160px]"
-                  style={{ paddingLeft: '2.75rem' }}
+                  className="admin-select min-w-[170px]"
+                  style={{ paddingLeft: '2.5rem' }}
                 >
                   <option value="">All Categories</option>
                   {sortedCategories.map((cat) => (
@@ -282,12 +292,14 @@ export default function MenuPage() {
               </div>
 
               {/* View toggle */}
-              <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg sm:ml-auto">
+              <div className="flex items-center gap-1 bg-gray-100/80 p-1 rounded-xl border border-gray-200/60 sm:ml-auto h-10">
                 <button
                   onClick={() => setViewMode('table')}
                   id="view-table-btn"
                   title="Table view"
-                  className={`p-2 rounded-md transition-colors cursor-pointer ${viewMode === 'table' ? 'bg-white shadow-sm text-text' : 'text-text-secondary hover:text-text'}`}
+                  className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 cursor-pointer ${
+                    viewMode === 'table' ? 'bg-white shadow-sm text-primary font-bold' : 'text-text-secondary hover:text-text'
+                  }`}
                 >
                   <List className="w-4 h-4" />
                 </button>
@@ -295,7 +307,9 @@ export default function MenuPage() {
                   onClick={() => setViewMode('grid')}
                   id="view-grid-btn"
                   title="Grid view"
-                  className={`p-2 rounded-md transition-colors cursor-pointer ${viewMode === 'grid' ? 'bg-white shadow-sm text-text' : 'text-text-secondary hover:text-text'}`}
+                  className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 cursor-pointer ${
+                    viewMode === 'grid' ? 'bg-white shadow-sm text-primary font-bold' : 'text-text-secondary hover:text-text'
+                  }`}
                 >
                   <LayoutGrid className="w-4 h-4" />
                 </button>

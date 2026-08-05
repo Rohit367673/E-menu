@@ -47,9 +47,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               props.onBlur?.(e);
             }}
             className={`
-              w-full rounded-xl border bg-white py-2.5 text-sm text-text
+              w-full rounded-xl border bg-white text-sm text-text
               placeholder:text-text-secondary/50 outline-none
-              transition-colors duration-200 min-h-[44px]
+              transition-colors duration-200 h-10 min-h-[40px]
               px-4
               ${error ? 'border-danger' : isFocused ? 'border-primary' : 'border-border'}
               ${className}
