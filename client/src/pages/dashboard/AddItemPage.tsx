@@ -159,8 +159,8 @@ export default function AddItemPage() {
 
         {/* Right Column: Menu details */}
         <div className="lg:col-span-7 flex">
-          <div className="admin-card p-6 md:p-8 flex flex-col justify-between h-full gap-6 w-full">
-            <div className="space-y-6">
+          <div className="admin-card p-6 sm:p-8 flex flex-col justify-between h-full gap-6 w-full">
+            <div className="flex flex-col gap-6">
               <h3 className="admin-section-label">Dish Specifications</h3>
 
               {/* Item Name */}

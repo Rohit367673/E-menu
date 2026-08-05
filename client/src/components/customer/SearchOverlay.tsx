@@ -150,7 +150,7 @@ export default function SearchOverlay({ items, templateConfig, onSelectItem }: S
                 )}
 
                 {filteredItems.length > 0 && (
-                  <div className="space-y-2">
+                  <div className="flex flex-col gap-2.5">
                     <p className="text-white/40 text-sm mb-3">
                       {filteredItems.length} result{filteredItems.length !== 1 ? 's' : ''} found
                     </p>

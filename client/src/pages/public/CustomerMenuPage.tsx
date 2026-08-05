@@ -359,11 +359,11 @@ function SkeletonLoader() {
           ))}
         </div>
         {/* Items skeleton */}
-        <div className="space-y-3">
+        <div className="flex flex-col gap-3">
           {[1, 2, 3, 4, 5].map((j) => (
             <div key={j} className="flex items-center gap-3 p-3">
               <div className="w-[76px] h-[76px] bg-gray-100 rounded-2xl" />
-              <div className="flex-1 space-y-2">
+              <div className="flex-1 flex flex-col gap-2">
                 <div className="h-4 w-32 bg-gray-100 rounded" />
                 <div className="h-3 w-48 bg-gray-50 rounded" />
                 <div className="h-4 w-16 bg-gray-100 rounded" />
@@ -1153,7 +1153,7 @@ export default function CustomerMenuPage() {
                     </div>
 
                     {/* Items List */}
-                    <div className="flex-1 space-y-1">
+                    <div className="flex-1 flex flex-col gap-1.5">
                       {catItems.length === 0 ? (
                         <div className="text-center py-10 text-xs text-text-secondary/60 font-medium">
                           No items available in this category.
@@ -1200,7 +1200,7 @@ export default function CustomerMenuPage() {
         </div>
 
         {/* Desktop Layout — Keeps Alternate Spacious List Scroll */}
-        <div className="hidden md:block space-y-14 md:space-y-20">
+        <div className="hidden md:flex md:flex-col gap-14 md:gap-20">
           {sortedCats.map((cat, idx) => {
             const catItems = getItems(cat._id);
             if (catItems.length === 0) return null;

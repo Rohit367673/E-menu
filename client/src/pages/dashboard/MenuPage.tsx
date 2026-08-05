@@ -552,7 +552,7 @@ export default function MenuPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
-            className="space-y-4"
+            className="flex flex-col gap-4"
           >
             <div className="flex items-center justify-between">
               <p className="text-sm text-text-secondary">Drag to reorder. Categories appear in this order on the customer menu.</p>
@@ -569,7 +569,7 @@ export default function MenuPage() {
 
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCategoryDragEnd}>
               <SortableContext items={sortedCategories.map((c) => c._id)} strategy={verticalListSortingStrategy}>
-                <div className="space-y-2">
+                <div className="flex flex-col gap-2">
                   {sortedCategories.map((cat) => (
                     <CategoryCard
                       key={cat._id}
@@ -608,7 +608,7 @@ export default function MenuPage() {
         title={editingCategory ? 'Edit Category' : 'Add Category'}
         size="md"
       >
-        <div className="space-y-5">
+        <div className="flex flex-col gap-5">
           <Input
             label="Category Name"
             id="category-name"

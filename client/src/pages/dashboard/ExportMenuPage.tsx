@@ -71,7 +71,7 @@ export default function ExportMenuPage() {
   const selected = templateOptions.find((t) => t.id === selectedTemplate)!;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
+    <div className="max-w-5xl mx-auto flex flex-col gap-8">
       <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="text-2xl font-bold text-text">Export Menu</h1>
         <p className="text-sm text-text-secondary mt-1">
@@ -117,7 +117,7 @@ export default function ExportMenuPage() {
                   Menu
                 </span>
               </div>
-              <div className="space-y-1">
+              <div className="flex flex-col gap-1">
                 <div className="h-2 w-3/4 rounded" style={{ backgroundColor: template.preview.text, opacity: 0.3 }} />
                 <div className="h-2 w-1/2 rounded" style={{ backgroundColor: template.preview.text, opacity: 0.2 }} />
               </div>

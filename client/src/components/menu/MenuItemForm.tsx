@@ -175,7 +175,7 @@ export default function MenuItemForm({
 
             {/* Scrollable body */}
             <form id="menuitem-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
-              <div className="px-6 py-6 space-y-6">
+              <div className="px-6 py-6 flex flex-col gap-6">
 
                 {/* Image upload */}
                 <ImageUpload

@@ -87,7 +87,7 @@ export default function LoginPage() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.35, duration: 0.5 }}
             onSubmit={handleSubmit}
-            className="space-y-5"
+            className="flex flex-col gap-5"
           >
             <div>
               <label htmlFor="login-email" className="block text-sm font-medium text-white/60 mb-2">

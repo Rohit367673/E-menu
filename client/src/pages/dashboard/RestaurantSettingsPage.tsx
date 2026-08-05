@@ -132,7 +132,7 @@ export default function RestaurantSettingsPage() {
         {/* Template Gallery */}
         <div className="bg-white rounded-2xl border border-border/60 p-5 shadow-sm">
           <h3 className="font-semibold text-text text-sm mb-3">Menu Theme</h3>
-          <div className="space-y-2">
+          <div className="flex flex-col gap-2">
             {templates.map((template) => (
               <motion.button
                 key={template.id}
@@ -161,7 +161,7 @@ export default function RestaurantSettingsPage() {
             ))}
           </div>
 
-          <div className="mt-6 space-y-4">
+          <div className="mt-6 flex flex-col gap-4">
             <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Colors</p>
             <div className="grid grid-cols-2 gap-2">
               {Object.entries(config.colors).map(([key, value]) => (
@@ -177,7 +177,7 @@ export default function RestaurantSettingsPage() {
               ))}
             </div>
 
-            <div className="space-y-2">
+            <div className="flex flex-col gap-2">
               <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Fonts</p>
               <select
                 value={config.fonts.heading}

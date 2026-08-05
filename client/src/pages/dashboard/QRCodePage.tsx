@@ -301,7 +301,7 @@ export default function QRCodePage() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <div className="admin-card p-6 lg:sticky lg:top-20 space-y-6">
+          <div className="admin-card p-6 lg:sticky lg:top-20 flex flex-col gap-6">
             <h2 className="text-lg font-semibold text-text flex items-center gap-2">
               <Palette className="w-5 h-5 text-primary" />
               Customize
