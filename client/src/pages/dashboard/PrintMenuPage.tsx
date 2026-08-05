@@ -234,119 +234,126 @@ export default function PrintMenuPage() {
 
       <div className="flex flex-1 min-h-0">
         {/* ── Left Sidebar: Template Selector ── */}
-        <div className="w-72 flex-shrink-0 bg-white border-r border-gray-100 overflow-y-auto p-4">
-          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 px-1">
-            Choose Template
-          </h2>
+        <div className="w-80 flex-shrink-0 bg-white border-r border-gray-200 overflow-y-auto p-6 flex flex-col gap-6 shadow-sm">
+          <div>
+            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">
+              Choose Template
+            </h2>
 
-          <div className="space-y-3">
-            {TEMPLATES.map((tpl) => {
-              const Icon = tpl.icon;
-              const isActive = selectedTemplate === tpl.id;
-              return (
-                <motion.button
-                  key={tpl.id}
-                  onClick={() => setSelectedTemplate(tpl.id)}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
-                  className="w-full text-left p-3.5 rounded-xl border-2 transition-all duration-200 cursor-pointer"
-                  style={{
-                    borderColor: isActive ? '#6366f1' : '#f3f4f6',
-                    backgroundColor: isActive ? '#6366f108' : 'white',
-                    boxShadow: isActive ? '0 0 0 3px rgba(99,102,241,0.1)' : 'none',
-                  }}
-                >
-                  <div className="flex items-start gap-3">
-                    <div
-                      className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{
-                        backgroundColor: isActive ? '#6366f115' : '#f9fafb',
-                        border: isActive ? '1px solid #6366f130' : '1px solid #f3f4f6',
-                      }}
-                    >
-                      <Icon className="w-5 h-5" style={{ color: isActive ? '#6366f1' : '#9ca3af' }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="font-bold text-[13px]" style={{ color: isActive ? '#6366f1' : '#111827' }}>
-                          {tpl.name}
-                        </span>
-                        <span
-                          className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                          style={{
-                            backgroundColor: `${tpl.preview}15`,
-                            color: tpl.preview,
-                          }}
-                        >
-                          {tpl.tag}
-                        </span>
+            <div className="flex flex-col gap-3">
+              {TEMPLATES.map((tpl) => {
+                const Icon = tpl.icon;
+                const isActive = selectedTemplate === tpl.id;
+                return (
+                  <motion.button
+                    key={tpl.id}
+                    onClick={() => setSelectedTemplate(tpl.id)}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    className="w-full text-left p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer"
+                    style={{
+                      borderColor: isActive ? '#6366f1' : '#e5e7eb',
+                      backgroundColor: isActive ? '#6366f108' : 'white',
+                      boxShadow: isActive ? '0 4px 12px rgba(99,102,241,0.12)' : '0 1px 2px rgba(0,0,0,0.03)',
+                    }}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div
+                        className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{
+                          backgroundColor: isActive ? '#6366f115' : '#f3f4f6',
+                          border: isActive ? '1px solid #6366f130' : '1px solid #e5e7eb',
+                        }}
+                      >
+                        <Icon className="w-5 h-5" style={{ color: isActive ? '#6366f1' : '#6b7280' }} />
                       </div>
-                      <p className="text-[11px] text-gray-400 leading-relaxed">{tpl.description}</p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <span className="font-bold text-[13px]" style={{ color: isActive ? '#6366f1' : '#111827' }}>
+                            {tpl.name}
+                          </span>
+                          <span
+                            className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
+                            style={{
+                              backgroundColor: `${tpl.preview}18`,
+                              color: tpl.preview,
+                            }}
+                          >
+                            {tpl.tag}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-gray-500 leading-relaxed">{tpl.description}</p>
+                      </div>
                     </div>
-                  </div>
 
-                  {isActive && (
-                    <div
-                      className="mt-3 h-0.5 rounded-full"
-                      style={{ background: 'linear-gradient(90deg, #6366f1, #8b5cf6)' }}
-                    />
-                  )}
-                </motion.button>
-              );
-            })}
+                    {isActive && (
+                      <div
+                        className="mt-3 h-0.5 rounded-full"
+                        style={{ background: 'linear-gradient(90deg, #6366f1, #8b5cf6)' }}
+                      />
+                    )}
+                  </motion.button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Export info */}
-          <div className="mt-6 p-4 rounded-xl bg-gray-50 border border-gray-100">
+          <div className="p-4 rounded-xl bg-gray-50/80 border border-gray-200/70">
             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Export Options</h3>
-            <div className="space-y-2.5">
-              <div className="flex items-start gap-2">
-                <FileImage className="w-4 h-4 text-indigo-400 flex-shrink-0 mt-0.5" />
+            <div className="flex flex-col gap-3">
+              <div className="flex items-start gap-2.5">
+                <FileImage className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs font-semibold text-gray-700">PNG Export</p>
-                  <p className="text-[11px] text-gray-400">High-resolution image · 2× scale</p>
+                  <p className="text-xs font-semibold text-gray-800">PNG Export</p>
+                  <p className="text-[11px] text-gray-500">High-resolution image · 2× scale</p>
                 </div>
               </div>
-              <div className="flex items-start gap-2">
-                <FileText className="w-4 h-4 text-purple-400 flex-shrink-0 mt-0.5" />
+              <div className="flex items-start gap-2.5">
+                <FileText className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs font-semibold text-gray-700">PDF Export</p>
-                  <p className="text-[11px] text-gray-400">Print-ready A4 · Server-rendered</p>
+                  <p className="text-xs font-semibold text-gray-800">PDF Export</p>
+                  <p className="text-[11px] text-gray-500">Print-ready A4 · Server-rendered</p>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Tip */}
-          <div className="mt-4 p-3 rounded-xl bg-amber-50 border border-amber-100">
-            <p className="text-[11px] text-amber-700 leading-relaxed">
+          <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
+            <p className="text-[11px] text-amber-800 leading-relaxed">
               💡 <strong>Tip:</strong> PNG works instantly in the browser. PDF requires the server to be running with Puppeteer installed.
             </p>
           </div>
         </div>
 
         {/* ── Right: Template Preview ── */}
-        <div className="flex-1 overflow-auto bg-gray-100">
+        <div className="flex-1 overflow-auto bg-slate-900/95 flex flex-col">
           {/* Preview header */}
-          <div className="sticky top-0 z-10 bg-gray-100 border-b border-gray-200 px-6 py-2.5 flex items-center gap-2">
-            <Eye className="w-3.5 h-3.5 text-gray-400" />
-            <span className="text-xs text-gray-500 font-medium">
+          <div className="sticky top-0 z-10 bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center gap-2 flex-shrink-0 shadow-sm">
+            <Eye className="w-4 h-4 text-indigo-400" />
+            <span className="text-xs font-semibold text-slate-200">
               Preview — {TEMPLATES[selectedTemplate - 1].name}
             </span>
-            <span className="text-[10px] text-gray-400 ml-auto">A4 · 794px wide</span>
+            <span className="text-[11px] font-medium text-slate-400 ml-auto bg-slate-800 px-2.5 py-1 rounded-full border border-slate-700">A4 · 794px wide</span>
           </div>
 
           {/* Template preview container */}
-          <div className="flex justify-center p-8">
+          <div className="flex justify-center items-start p-8 md:p-12 flex-1">
             <AnimatePresence mode="wait">
               <motion.div
                 key={selectedTemplate}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
                 transition={{ duration: 0.3 }}
-                className="shadow-2xl"
-                style={{ transform: 'scale(0.85)', transformOrigin: 'top center', marginBottom: '-160px' }}
+                className="rounded-lg overflow-hidden"
+                style={{
+                  boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+                  transform: 'scale(0.85)',
+                  transformOrigin: 'top center',
+                  marginBottom: '-160px',
+                }}
               >
                 {/* Hidden full-size template for capture */}
                 <div

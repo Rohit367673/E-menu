@@ -98,18 +98,18 @@ export default function DashboardHome() {
   ];
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="admin-page space-y-8">
-      {/* Header */}
-      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="admin-page flex flex-col gap-8 py-2">
+      {/* Header Banner */}
+      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 sm:p-8 bg-white rounded-2xl border border-border/60 shadow-sm">
         <div>
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1.5">
             <Sparkles className="w-5 h-5 text-amber-500" />
             <span className="admin-breadcrumb">Dashboard</span>
           </div>
-          <h1 className="text-3xl font-bold text-text">
+          <h1 className="text-2xl sm:text-3xl font-bold text-text">
             {greeting()}, <span className="text-gradient">{user?.email?.split('@')[0] || 'Admin'}</span>! 👋
           </h1>
-          <p className="text-text-secondary mt-1 text-sm">
+          <p className="text-text-secondary mt-1.5 text-sm">
             {restaurant ? `Managing ${restaurant.name}` : 'Welcome to your E-Menu dashboard'}
           </p>
         </div>
@@ -119,7 +119,7 @@ export default function DashboardHome() {
       </motion.div>
 
       {/* Stats */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         {stats.map((stat, i) => (
           <motion.div
             key={stat.label}
@@ -133,7 +133,7 @@ export default function DashboardHome() {
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-text-secondary/80 mb-1">{stat.label}</p>
                 <p className="text-3xl font-black text-text">{stat.value}</p>
-                <div className="flex items-center gap-1.5 mt-2">
+                <div className="flex items-center gap-1.5 mt-2.5">
                   <TrendingUp className="w-3.5 h-3.5 text-text-secondary/60" />
                   <span className="text-xs font-medium text-text-secondary/70">{stat.trend}</span>
                 </div>
@@ -147,17 +147,17 @@ export default function DashboardHome() {
       </motion.div>
 
       {/* Quick Actions */}
-      <motion.div variants={itemVariants}>
-        <div className="flex items-center gap-2 mb-4">
+      <motion.div variants={itemVariants} className="flex flex-col gap-4">
+        <div className="flex items-center gap-2">
           <h2 className="text-lg font-bold text-text">Quick Actions</h2>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {quickActions.map((action) => (
             <Link key={action.id} to={action.to} id={action.id}>
               <motion.div
                 whileHover={{ y: -4, scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="group relative overflow-hidden admin-card p-6 hover:shadow-xl hover:border-primary/20 transition-all duration-300 cursor-pointer"
+                className="group relative overflow-hidden admin-card p-6 hover:shadow-xl hover:border-primary/20 transition-all duration-300 cursor-pointer h-full"
               >
                 {/* Gradient accent bar */}
                 <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${action.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
@@ -168,7 +168,7 @@ export default function DashboardHome() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-text text-base">{action.label}</h3>
-                    <p className="text-sm text-text-secondary mt-0.5 leading-relaxed">{action.description}</p>
+                    <p className="text-sm text-text-secondary mt-1 leading-relaxed">{action.description}</p>
                   </div>
                   <ArrowRight className="w-5 h-5 text-text-secondary/30 group-hover:text-primary group-hover:translate-x-1 transition-all duration-300 flex-shrink-0 mt-0.5" />
                 </div>
@@ -180,18 +180,18 @@ export default function DashboardHome() {
 
       {/* Public Menu URL */}
       <motion.div variants={itemVariants}>
-        <div className="bg-gradient-to-r from-primary/8 via-indigo-500/5 to-purple-500/8 rounded-2xl border border-primary/20 p-5 shadow-sm">
+        <div className="bg-gradient-to-r from-primary/8 via-indigo-500/5 to-purple-500/8 rounded-2xl border border-primary/20 p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <h3 className="font-bold text-text text-base">Your Public Menu</h3>
-              <p className="text-sm text-text-secondary mt-0.5">Share this link with customers — or scan the QR code</p>
+              <p className="text-sm text-text-secondary mt-1">Share this link with customers — or scan the QR code</p>
             </div>
             <a
               href={`${window.location.origin}/menu/${restaurant?.slug || 'menu'}`}
               target="_blank"
               rel="noopener noreferrer"
               id="public-menu-link"
-              className="inline-flex items-center gap-2 bg-white px-4 py-2.5 rounded-xl border border-border/80 text-sm text-primary font-semibold hover:border-primary/40 hover:shadow-md transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 bg-white px-5 py-2.5 rounded-xl border border-border/80 text-sm text-primary font-semibold hover:border-primary/40 hover:shadow-md transition-all cursor-pointer flex-shrink-0"
             >
               <span className="truncate max-w-[240px]">
                 {window.location.origin}/menu/{restaurant?.slug || 'menu'}

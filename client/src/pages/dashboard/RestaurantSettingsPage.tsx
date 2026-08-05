@@ -77,22 +77,23 @@ export default function RestaurantSettingsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-border/60 shadow-sm">
+    <div className="admin-page admin-page-enter flex flex-col gap-6 py-2">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-border/60 shadow-sm">
         <div>
-          <h1 className="text-xl font-bold text-text">Restaurant Settings</h1>
-          <p className="text-xs text-text-secondary mt-0.5">
+          <span className="admin-breadcrumb">Configuration</span>
+          <h1 className="text-2xl font-bold text-text mt-0.5">Restaurant Settings</h1>
+          <p className="text-sm text-text-secondary mt-1">
             Manage your restaurant details and customize the customer QR menu appearance.
           </p>
         </div>
-        <Button size="sm" onClick={handleSave} isLoading={isSaving} icon={<Save className="w-3.5 h-3.5" />}>
+        <Button size="md" onClick={handleSave} isLoading={isSaving} icon={<Save className="w-4 h-4" />}>
           Save Changes
         </Button>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Restaurant Details */}
-        <div className="bg-white rounded-2xl border border-border/60 p-5 shadow-sm space-y-4">
+        <div className="bg-white rounded-2xl border border-border/60 p-6 shadow-sm flex flex-col gap-4">
           <h3 className="font-semibold text-text text-sm">Restaurant Details</h3>
           <Input label="Restaurant Name" value={name} onChange={(e) => setName(e.target.value)} />
           <Input

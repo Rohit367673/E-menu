@@ -193,12 +193,13 @@ export default function MenuPage() {
 
   /* ── Renders ───────────────────────────────────── */
   return (
-    <div className="admin-page admin-page-enter space-y-6">
+    <div className="admin-page admin-page-enter flex flex-col gap-6 py-2">
       {/* ── Page header ────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 bg-white rounded-2xl border border-border/60 shadow-sm">
         <div>
           <span className="admin-breadcrumb">Catalog</span>
-          <p className="text-sm text-text-secondary mt-0.5">
+          <h1 className="text-2xl font-bold text-text mt-0.5">Menu Management</h1>
+          <p className="text-sm text-text-secondary mt-1">
             {menuItems.length} active menu items across {categories.length} categories
           </p>
         </div>
@@ -259,7 +260,7 @@ export default function MenuPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
-            className="space-y-4"
+            className="flex flex-col gap-4"
           >
             {/* Toolbar */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">

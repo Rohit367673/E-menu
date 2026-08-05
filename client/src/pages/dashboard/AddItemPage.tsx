@@ -65,18 +65,20 @@ export default function AddItemPage() {
   };
 
   return (
-    <div className="admin-page admin-page-enter space-y-6">
+    <div className="admin-page admin-page-enter flex flex-col gap-6 py-2">
       {/* Header & Back Action */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4 p-6 bg-white rounded-2xl border border-border/60 shadow-sm">
         <button
+          type="button"
           onClick={() => navigate('/admin/menu')}
-          className="p-2.5 rounded-xl border border-border/70 bg-white hover:bg-gray-50 text-text-secondary hover:text-text hover:shadow-md transition-all duration-200 cursor-pointer"
+          className="p-2.5 rounded-xl border border-border/70 bg-white hover:bg-gray-50 text-text-secondary hover:text-text hover:shadow-md transition-all duration-200 cursor-pointer flex-shrink-0"
+          title="Back to Menu"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
           <span className="admin-breadcrumb">Dashboard</span>
-          <h2 className="text-xl font-bold text-text leading-tight">New Menu Item</h2>
+          <h1 className="text-2xl font-bold text-text mt-0.5">New Menu Item</h1>
         </div>
       </div>
 
@@ -85,7 +87,7 @@ export default function AddItemPage() {
         {/* Left Column: Image, Veg-Type & Status */}
         <div className="lg:col-span-5 flex">
           <div className="admin-card p-6 flex flex-col justify-between h-full gap-6 w-full">
-            <div className="space-y-6">
+            <div className="flex flex-col gap-6">
               <h3 className="admin-section-label">Media & Type</h3>
               
               {/* Photo Upload */}
