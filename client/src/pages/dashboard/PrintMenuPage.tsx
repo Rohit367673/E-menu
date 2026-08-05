@@ -26,6 +26,7 @@ import toast from 'react-hot-toast';
 import Template1Modern from '../../components/print/Template1Modern';
 import Template2Luxury from '../../components/print/Template2Luxury';
 import Template3Dark from '../../components/print/Template3Dark';
+import Button from '../../components/ui/Button';
 import type { Restaurant, Category, MenuItem } from '../../types/menu';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import apiClient from '../../api/client';
 import { downloadQR } from '../../api/qr';
+import Button from '../../components/ui/Button';
 import type { Restaurant } from '../../types/menu';
 
 const APP_URL = import.meta.env.VITE_APP_URL || window.location.origin;

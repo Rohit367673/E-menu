@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRestaurant } from '../../contexts/RestaurantContext';
+import Button from '../../components/ui/Button';
 
 const containerVariants = {
   hidden: { opacity: 0 },
