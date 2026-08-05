@@ -195,11 +195,11 @@ export default function MenuPage() {
   return (
     <div className="admin-page admin-page-enter flex flex-col gap-6 py-2">
       {/* ── Page header ────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 bg-white rounded-2xl border border-border/60 shadow-sm">
+      <div className="admin-header-card">
         <div>
           <span className="admin-breadcrumb">Catalog</span>
-          <h1 className="text-2xl font-bold text-text mt-0.5">Menu Management</h1>
-          <p className="text-sm text-text-secondary mt-1">
+          <h1 className="text-2xl font-bold text-text mt-0.5 leading-tight">Menu Management</h1>
+          <p className="text-sm text-text-secondary mt-1 leading-relaxed">
             {menuItems.length} active menu items across {categories.length} categories
           </p>
         </div>
@@ -207,6 +207,7 @@ export default function MenuPage() {
           onClick={() => { setEditingItem(null); setShowItemForm(true); }}
           icon={<Plus className="w-4 h-4" />}
           id="add-menu-item-btn"
+          className="flex-shrink-0"
         >
           Add Menu Item
         </Button>

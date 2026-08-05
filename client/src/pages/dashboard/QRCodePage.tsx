@@ -148,14 +148,14 @@ export default function QRCodePage() {
     <div className="admin-page admin-page-enter flex flex-col gap-6 py-2">
       {/* Page Header + Quick Actions */}
       <motion.div
-        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-white rounded-2xl border border-border/60 shadow-sm"
+        className="admin-header-card"
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
       >
         <div>
           <span className="admin-breadcrumb">QR Menu</span>
-          <h1 className="text-2xl font-bold text-text mt-0.5">QR Code Generator</h1>
-          <p className="text-sm text-text-secondary mt-1">Generate and customize your restaurant tableside QR code</p>
+          <h1 className="text-2xl font-bold text-text mt-0.5 leading-tight">QR Code Generator</h1>
+          <p className="text-sm text-text-secondary mt-1 leading-relaxed">Generate and customize your restaurant tableside QR code</p>
         </div>
         {/* Quick action buttons */}
         <div className="flex items-center gap-2 flex-shrink-0">

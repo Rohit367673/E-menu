@@ -100,20 +100,20 @@ export default function DashboardHome() {
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="admin-page flex flex-col gap-8 py-2">
       {/* Header Banner */}
-      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 sm:p-8 bg-white rounded-2xl border border-border/60 shadow-sm">
+      <motion.div variants={itemVariants} className="admin-header-card">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
-            <Sparkles className="w-5 h-5 text-amber-500" />
+            <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" />
             <span className="admin-breadcrumb">Dashboard</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-text">
+          <h1 className="text-2xl sm:text-3xl font-bold text-text leading-tight">
             {greeting()}, <span className="text-gradient">{user?.email?.split('@')[0] || 'Admin'}</span>! 👋
           </h1>
-          <p className="text-text-secondary mt-1.5 text-sm">
+          <p className="text-text-secondary mt-1.5 text-sm leading-relaxed">
             {restaurant ? `Managing ${restaurant.name}` : 'Welcome to your E-Menu dashboard'}
           </p>
         </div>
-        <Link to="/admin/add-item" id="dashboard-add-item-header">
+        <Link to="/admin/add-item" id="dashboard-add-item-header" className="flex-shrink-0">
           <Button icon={<Plus className="w-4 h-4" />}>Add Menu Item</Button>
         </Link>
       </motion.div>

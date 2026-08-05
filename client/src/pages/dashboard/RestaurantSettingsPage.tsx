@@ -78,15 +78,15 @@ export default function RestaurantSettingsPage() {
 
   return (
     <div className="admin-page admin-page-enter flex flex-col gap-6 py-2">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-border/60 shadow-sm">
+      <div className="admin-header-card">
         <div>
           <span className="admin-breadcrumb">Configuration</span>
-          <h1 className="text-2xl font-bold text-text mt-0.5">Restaurant Settings</h1>
-          <p className="text-sm text-text-secondary mt-1">
+          <h1 className="text-2xl font-bold text-text mt-0.5 leading-tight">Restaurant Settings</h1>
+          <p className="text-sm text-text-secondary mt-1 leading-relaxed">
             Manage your restaurant details and customize the customer QR menu appearance.
           </p>
         </div>
-        <Button size="md" onClick={handleSave} isLoading={isSaving} icon={<Save className="w-4 h-4" />}>
+        <Button size="md" onClick={handleSave} isLoading={isSaving} icon={<Save className="w-4 h-4" />} className="flex-shrink-0">
           Save Changes
         </Button>
       </div>

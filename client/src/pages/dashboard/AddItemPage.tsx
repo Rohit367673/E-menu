@@ -67,18 +67,20 @@ export default function AddItemPage() {
   return (
     <div className="admin-page admin-page-enter flex flex-col gap-6 py-2">
       {/* Header & Back Action */}
-      <div className="flex items-center gap-4 p-6 bg-white rounded-2xl border border-border/60 shadow-sm">
-        <button
-          type="button"
-          onClick={() => navigate('/admin/menu')}
-          className="p-2.5 rounded-xl border border-border/70 bg-white hover:bg-gray-50 text-text-secondary hover:text-text hover:shadow-md transition-all duration-200 cursor-pointer flex-shrink-0"
-          title="Back to Menu"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div>
-          <span className="admin-breadcrumb">Dashboard</span>
-          <h1 className="text-2xl font-bold text-text mt-0.5">New Menu Item</h1>
+      <div className="admin-header-card">
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => navigate('/admin/menu')}
+            className="p-2.5 rounded-xl border border-border/70 bg-white hover:bg-gray-50 text-text-secondary hover:text-text hover:shadow-md transition-all duration-200 cursor-pointer flex-shrink-0"
+            title="Back to Menu"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <span className="admin-breadcrumb">Dashboard</span>
+            <h1 className="text-2xl font-bold text-text mt-0.5 leading-tight">New Menu Item</h1>
+          </div>
         </div>
       </div>
 
