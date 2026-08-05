@@ -277,13 +277,13 @@ export default function MenuPage() {
 
               {/* Category filter */}
               <div className="relative w-full sm:w-auto">
-                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary/60 pointer-events-none z-10" />
+                <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary/70 pointer-events-none z-10" />
                 <select
                   value={filterCategoryId}
                   onChange={(e) => setFilterCategoryId(e.target.value)}
                   id="menu-category-filter"
                   className="admin-select min-w-[170px]"
-                  style={{ paddingLeft: '2.25rem' }}
+                  style={{ paddingLeft: '2.125rem' }}
                 >
                   <option value="">All Categories</option>
                   {sortedCategories.map((cat) => (

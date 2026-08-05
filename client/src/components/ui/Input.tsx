@@ -25,7 +25,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
         <div className="relative">
           {icon && (
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none z-10 flex items-center justify-center">
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-secondary/70 pointer-events-none z-10 flex items-center justify-center">
               {icon}
             </span>
           )}
@@ -54,8 +54,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               ${className}
             `}
             style={{
-              paddingLeft: icon ? '2.25rem' : '0.875rem',
-              paddingRight: rightIcon ? '2.25rem' : '0.875rem',
+              paddingLeft: icon ? '2.125rem' : '0.75rem',
+              paddingRight: rightIcon ? '2.125rem' : '0.75rem',
               ...props.style
             }}
             {...(props as any)}
