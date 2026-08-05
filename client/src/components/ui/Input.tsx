@@ -25,7 +25,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
         <div className="relative">
           {icon && (
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-secondary/70 pointer-events-none z-10 flex items-center justify-center">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary/70 pointer-events-none z-10 flex items-center justify-center">
               {icon}
             </span>
           )}
@@ -47,15 +47,16 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               props.onBlur?.(e);
             }}
             className={`
-              w-full rounded-xl border bg-white text-sm text-text
+              w-full rounded-xl border bg-white text-sm font-medium text-text
               placeholder:text-text-secondary/50 outline-none
-              transition-colors duration-200 h-10 min-h-[40px]
+              transition-colors duration-200 h-11 min-h-[44px] py-2.5
+              leading-normal
               ${error ? 'border-danger' : isFocused ? 'border-primary' : 'border-border'}
               ${className}
             `}
             style={{
-              paddingLeft: icon ? '2.125rem' : '0.75rem',
-              paddingRight: rightIcon ? '2.125rem' : '0.75rem',
+              paddingLeft: icon ? '2.375rem' : '0.875rem',
+              paddingRight: rightIcon ? '2.375rem' : '0.875rem',
               ...props.style
             }}
             {...(props as any)}
