@@ -25,7 +25,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
         <div className="relative">
           {icon && (
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none z-10 flex items-center justify-center">
               {icon}
             </span>
           )}
@@ -50,19 +50,18 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               w-full rounded-xl border bg-white text-sm text-text
               placeholder:text-text-secondary/50 outline-none
               transition-colors duration-200 h-10 min-h-[40px]
-              px-4
               ${error ? 'border-danger' : isFocused ? 'border-primary' : 'border-border'}
               ${className}
             `}
             style={{
-              paddingLeft: icon ? '2.75rem' : undefined,
-              paddingRight: rightIcon ? '2.75rem' : undefined,
+              paddingLeft: icon ? '2.25rem' : '0.875rem',
+              paddingRight: rightIcon ? '2.25rem' : '0.875rem',
               ...props.style
             }}
             {...(props as any)}
           />
           {rightIcon && (
-            <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-secondary">
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary z-10 flex items-center justify-center">
               {rightIcon}
             </span>
           )}

@@ -180,7 +180,7 @@ export default function AddItemPage() {
                   Menu Category *
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-secondary/60 pointer-events-none z-10">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary/60 pointer-events-none z-10 flex items-center justify-center">
                     <Tag className="w-4 h-4" />
                   </span>
                   <select
@@ -188,7 +188,7 @@ export default function AddItemPage() {
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
                     className={`admin-select ${errors.category ? 'border-danger' : ''}`}
-                    style={{ paddingLeft: '2.75rem' }}
+                    style={{ paddingLeft: '2.25rem' }}
                   >
                     <option value="">Select Category</option>
                     {categories.map((cat) => (
@@ -214,7 +214,7 @@ export default function AddItemPage() {
                   Description (Optional)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-3.5 text-text-secondary/60 pointer-events-none">
+                  <span className="absolute left-3 top-3 text-text-secondary/60 pointer-events-none z-10 flex items-center justify-center">
                     <FileText className="w-4 h-4" />
                   </span>
                   <textarea
@@ -223,8 +223,8 @@ export default function AddItemPage() {
                     placeholder="Describe preparation, ingredients, portion sizes..."
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="w-full rounded-xl border border-border bg-white pr-4 py-2.5 text-sm text-text placeholder:text-text-secondary/50 outline-none resize-none focus:border-primary transition-colors duration-200"
-                    style={{ paddingLeft: '2.75rem' }}
+                    className="w-full rounded-xl border border-border bg-white pr-4 py-2 text-sm text-text placeholder:text-text-secondary/50 outline-none resize-none focus:border-primary transition-colors duration-200"
+                    style={{ paddingLeft: '2.25rem' }}
                   />
                 </div>
               </div>
