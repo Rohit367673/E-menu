@@ -264,6 +264,46 @@ select:focus-visible {
   }
 }
 
+@keyframes steamRise {
+  0% {
+    transform: translateY(0) scaleX(1);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.65;
+  }
+  80% {
+    opacity: 0.25;
+  }
+  100% {
+    transform: translateY(-14px) scaleX(1.4);
+    opacity: 0;
+  }
+}
+
+@keyframes ambientFloat {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translateY(-22px) translateX(8px);
+    opacity: 0.75;
+  }
+  100% {
+    transform: translateY(-44px) translateX(-4px);
+    opacity: 0;
+  }
+}
+
+.animate-steam {
+  animation: steamRise 2.6s ease-out infinite;
+}
+
+.animate-ambient-float {
+  animation: ambientFloat 5.5s ease-in-out infinite;
+}
+
 /* ─── Utility Classes ─────────────────────────────────────── */
 .shimmer {
   background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.08) 50%, transparent 100%);

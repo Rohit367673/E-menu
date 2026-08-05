@@ -391,20 +391,22 @@ function ErrorState({ message }: { message: string }) {
   );
 }
 
-/* ── Glowing Hanging Bulbs Decoration (hidden on mobile) ── */
+/* ── Glowing Hanging Bulbs Decoration (Visible on mobile & desktop) ── */
 function HangingBulbs() {
   const bulbs = [
-    { left: '8%', height: 38, delay: '0s' },
-    { left: '25%', height: 60, delay: '0.6s' },
-    { left: '75%', height: 58, delay: '1.5s' },
-    { left: '92%', height: 36, delay: '0.4s' },
+    { left: '4%', height: 32, delay: '0s', size: 'w-5 h-7' },
+    { left: '22%', height: 48, delay: '0.6s', size: 'w-6 h-8' },
+    { left: '40%', height: 28, delay: '1.2s', size: 'w-5 h-7' },
+    { left: '60%', height: 30, delay: '0.3s', size: 'w-5 h-7' },
+    { left: '78%', height: 50, delay: '1.5s', size: 'w-6 h-8' },
+    { left: '96%', height: 34, delay: '0.8s', size: 'w-5 h-7' },
   ];
 
   return (
-    <div className="absolute top-0 left-0 right-0 h-32 pointer-events-none z-20 overflow-hidden no-print block">
-      {/* Wire string */}
-      <svg className="absolute top-0 left-0 w-full h-12 text-gray-800/10" preserveAspectRatio="none" viewBox="0 0 100 10">
-        <path d="M 0 0 C 15 3, 35 3, 50 0 C 65 3, 85 3, 100 0" fill="none" stroke="currentColor" strokeWidth="0.2" />
+    <div className="absolute top-0 left-0 right-0 h-36 pointer-events-none z-20 overflow-hidden no-print">
+      {/* Wire string curve */}
+      <svg className="absolute top-0 left-0 w-full h-10 text-gray-900/20" preserveAspectRatio="none" viewBox="0 0 100 10">
+        <path d="M 0 0 C 15 4, 35 4, 50 0 C 65 4, 85 4, 100 0" fill="none" stroke="currentColor" strokeWidth="0.3" />
       </svg>
 
       {bulbs.map((b, idx) => (
@@ -414,24 +416,24 @@ function HangingBulbs() {
           style={{
             left: b.left,
             animationDelay: b.delay,
-            animationDuration: '4.5s',
+            animationDuration: '4.2s',
           }}
         >
           {/* Cord */}
-          <div className="w-[1.5px] bg-[#4b5563]" style={{ height: b.height }} />
+          <div className="w-[1.5px] bg-gray-700/80" style={{ height: b.height }} />
           {/* Cap */}
-          <div className="w-3.5 h-2.5 bg-[#374151] rounded-t-xs" style={{ borderBottom: '1px solid #1f2937' }} />
+          <div className="w-3.5 h-2 bg-gray-800 rounded-t-xs" style={{ borderBottom: '1px solid #111827' }} />
           {/* Bulb Body */}
           <div
-            className="w-6 h-8 rounded-b-full rounded-t-sm relative flex items-center justify-center animate-bulb-glow"
+            className={`${b.size} rounded-b-full rounded-t-xs relative flex items-center justify-center animate-bulb-glow`}
             style={{
-              background: 'radial-gradient(circle at center, #ffffff 10%, #fef3c7 40%, #fbbf24 85%, #d97706 100%)',
+              background: 'radial-gradient(circle at 50% 40%, #ffffff 15%, #fef3c7 45%, #fbbf24 85%, #d97706 100%)',
               animationDelay: b.delay,
-              animationDuration: '2.5s',
+              animationDuration: '2.4s',
             }}
           >
-            {/* Filament */}
-            <div className="w-[1.5px] h-2.5 bg-amber-100/90 rounded-full shadow-[0_0_3px_#fff]" />
+            {/* Inner Filament */}
+            <div className="w-[1.5px] h-2.5 bg-amber-100 rounded-full shadow-[0_0_4px_#fff]" />
           </div>
         </div>
       ))}
@@ -946,8 +948,24 @@ export default function CustomerMenuPage() {
           background: `radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.14) 0%, rgba(255, 255, 255, 0) 70%), linear-gradient(160deg, ${primary}06 0%, #ffffff 50%, ${tc.colors.secondary || primary}04 100%)`,
         }}
       >
-        {/* Glowing Hanging Bulbs — hidden on mobile */}
+        {/* Glowing Hanging Bulbs — visible on mobile & desktop */}
         <HangingBulbs />
+
+        {/* Floating Ambient Glow Particles */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-10">
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1.5 h-1.5 rounded-full bg-amber-400/70 blur-[0.5px] animate-ambient-float"
+              style={{
+                left: `${10 + i * 16}%`,
+                bottom: `${15 + (i % 3) * 15}%`,
+                animationDelay: `${i * 0.8}s`,
+                animationDuration: `${5.2 + (i % 3)}s`,
+              }}
+            />
+          ))}
+        </div>
 
         {/* Decorative blob */}
         <div
