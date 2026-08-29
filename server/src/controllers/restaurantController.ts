@@ -109,7 +109,7 @@ export const getRestaurant = async (req: AuthRequest, res: Response): Promise<vo
 
 export const updateRestaurant = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { name, description, logo, coverImage, slug } = req.body;
+    const { name, description, logo, coverImage, slug, googleReviewUrl, googleRating } = req.body;
     const restaurant = await getOrCreateRestaurant();
 
     if (name !== undefined) restaurant.name = name;
@@ -117,6 +117,8 @@ export const updateRestaurant = async (req: AuthRequest, res: Response): Promise
     if (logo !== undefined) restaurant.logo = logo;
     if (coverImage !== undefined) restaurant.coverImage = coverImage;
     if (slug !== undefined) restaurant.slug = slug.toLowerCase().trim().replace(/\s+/g, '-');
+    if (googleReviewUrl !== undefined) restaurant.googleReviewUrl = googleReviewUrl;
+    if (googleRating !== undefined) restaurant.googleRating = Number(googleRating);
 
     await restaurant.save();
 

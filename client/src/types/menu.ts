@@ -68,6 +68,8 @@ export interface Restaurant {
   coverImage?: string;
   phone?: string;
   address?: string;
+  googleReviewUrl?: string;
+  googleRating?: number;
   owner: string;
   templateConfig: TemplateConfig;
   createdAt: string;

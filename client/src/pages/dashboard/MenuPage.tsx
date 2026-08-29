@@ -236,8 +236,10 @@ export default function MenuPage() {
                   transition={{ type: 'spring', stiffness: 450, damping: 25 }}
                 />
               )}
-              <tab.icon className={`w-4 h-4 relative z-10 ${isActive ? 'text-primary' : 'text-text-secondary'}`} />
-              <span className="relative z-10">{tab.label}</span>
+              <span className="relative z-10 flex items-center gap-2">
+                <tab.icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-primary' : 'text-text-secondary'}`} />
+                <span>{tab.label}</span>
+              </span>
               <span
                 className={`relative z-10 text-xs px-2 py-0.5 rounded-full font-bold transition-colors ${
                   isActive ? 'bg-primary/10 text-primary' : 'bg-gray-200/80 text-text-secondary'
@@ -300,20 +302,22 @@ export default function MenuPage() {
                   id="view-table-btn"
                   title="Table view"
                   className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 cursor-pointer ${
-                    viewMode === 'table' ? 'bg-white shadow-sm text-primary font-bold' : 'text-text-secondary hover:text-text'
+                    viewMode === 'table' ? 'bg-white shadow-sm text-primary' : 'text-text-secondary hover:text-text'
                   }`}
+                  aria-pressed={viewMode === 'table'}
                 >
-                  <List className="w-4 h-4" />
+                  <List className="w-4 h-4 flex-shrink-0" />
                 </button>
                 <button
                   onClick={() => setViewMode('grid')}
                   id="view-grid-btn"
                   title="Grid view"
                   className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 cursor-pointer ${
-                    viewMode === 'grid' ? 'bg-white shadow-sm text-primary font-bold' : 'text-text-secondary hover:text-text'
+                    viewMode === 'grid' ? 'bg-white shadow-sm text-primary' : 'text-text-secondary hover:text-text'
                   }`}
+                  aria-pressed={viewMode === 'grid'}
                 >
-                  <LayoutGrid className="w-4 h-4" />
+                  <LayoutGrid className="w-4 h-4 flex-shrink-0" />
                 </button>
               </div>
             </div>
@@ -400,35 +404,38 @@ export default function MenuPage() {
                                   <AvailabilityPill available={isAvail} />
                                 </td>
 
-                                {/* Actions */}
-                                <td className="px-4 py-3">
-                                  <div className="flex items-center justify-end gap-1">
-                                    <button
-                                      onClick={() => toggleItemAvailability(item._id)}
-                                      title={isAvail ? 'Mark unavailable' : 'Mark available'}
-                                      id={`toggle-${item._id}`}
-                                      className="p-1.5 rounded-lg hover:bg-gray-100 text-text-secondary hover:text-text transition-colors cursor-pointer"
-                                    >
-                                      {isAvail ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                    </button>
-                                    <button
-                                      onClick={() => { setEditingItem(item); setShowItemForm(true); }}
-                                      title="Edit item"
-                                      id={`edit-${item._id}`}
-                                      className="p-1.5 rounded-lg hover:bg-primary/10 text-text-secondary hover:text-primary transition-colors cursor-pointer"
-                                    >
-                                      <Edit2 className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                      onClick={() => handleDeleteItem(item._id)}
-                                      title="Delete item"
-                                      id={`delete-${item._id}`}
-                                      className="p-1.5 rounded-lg hover:bg-danger/10 text-text-secondary hover:text-danger transition-colors cursor-pointer"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  </div>
-                                </td>
+{/* Actions */}
+                                 <td className="px-4 py-3">
+                                   <div className="flex items-center justify-end gap-1.5">
+                                     <button
+                                       onClick={() => toggleItemAvailability(item._id)}
+                                       title={isAvail ? 'Mark unavailable' : 'Mark available'}
+                                       id={`toggle-${item._id}`}
+                                       className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-gray-100 text-text-secondary hover:text-text transition-colors cursor-pointer"
+                                       aria-label={isAvail ? 'Mark unavailable' : 'Mark available'}
+                                     >
+                                       {isAvail ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                     </button>
+                                     <button
+                                       onClick={() => { setEditingItem(item); setShowItemForm(true); }}
+                                       title="Edit item"
+                                       id={`edit-${item._id}`}
+                                       className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-primary/10 text-text-secondary hover:text-primary transition-colors cursor-pointer"
+                                       aria-label="Edit item"
+                                     >
+                                       <Edit2 className="w-4 h-4" />
+                                     </button>
+                                     <button
+                                       onClick={() => handleDeleteItem(item._id)}
+                                       title="Delete item"
+                                       id={`delete-${item._id}`}
+                                       className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-danger/10 text-text-secondary hover:text-danger transition-colors cursor-pointer"
+                                       aria-label="Delete item"
+                                     >
+                                       <Trash2 className="w-4 h-4" />
+                                     </button>
+                                   </div>
+                                 </td>
                               </motion.tr>
                             );
                           })}
@@ -506,29 +513,32 @@ export default function MenuPage() {
                                   <span className="text-xs text-text-secondary line-through">₹{item.discountPrice}</span>
                                 )}
                               </div>
-                              <div className="flex items-center gap-0.5">
-                                <button
-                                  onClick={() => toggleItemAvailability(item._id)}
-                                  className="p-1.5 rounded-lg hover:bg-gray-100 text-text-secondary hover:text-text transition-colors cursor-pointer"
-                                  id={`grid-toggle-${item._id}`}
-                                >
-                                  {isAvail ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                                </button>
-                                <button
-                                  onClick={() => { setEditingItem(item); setShowItemForm(true); }}
-                                  className="p-1.5 rounded-lg hover:bg-primary/10 text-text-secondary hover:text-primary transition-colors cursor-pointer"
-                                  id={`grid-edit-${item._id}`}
-                                >
-                                  <Edit2 className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteItem(item._id)}
-                                  className="p-1.5 rounded-lg hover:bg-danger/10 text-text-secondary hover:text-danger transition-colors cursor-pointer"
-                                  id={`grid-delete-${item._id}`}
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
+<div className="flex items-center gap-1">
+                                 <button
+                                   onClick={() => toggleItemAvailability(item._id)}
+                                   className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 text-text-secondary hover:text-text transition-colors cursor-pointer"
+                                   id={`grid-toggle-${item._id}`}
+                                   aria-label={isAvail ? 'Mark unavailable' : 'Mark available'}
+                                 >
+                                   {isAvail ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                 </button>
+                                 <button
+                                   onClick={() => { setEditingItem(item); setShowItemForm(true); }}
+                                   className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-primary/10 text-text-secondary hover:text-primary transition-colors cursor-pointer"
+                                   id={`grid-edit-${item._id}`}
+                                   aria-label="Edit item"
+                                 >
+                                   <Edit2 className="w-4 h-4" />
+                                 </button>
+                                 <button
+                                   onClick={() => handleDeleteItem(item._id)}
+                                   className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-danger/10 text-text-secondary hover:text-danger transition-colors cursor-pointer"
+                                   id={`grid-delete-${item._id}`}
+                                   aria-label="Delete item"
+                                 >
+                                   <Trash2 className="w-4 h-4" />
+                                 </button>
+                               </div>
                             </div>
                           </div>
                         </motion.div>
@@ -561,7 +571,7 @@ export default function MenuPage() {
                 variant="ghost"
                 size="sm"
                 onClick={openCategoryCreate}
-                icon={<Plus className="w-4 h-4" />}
+                icon={<Plus className="w-4 h-4 flex-shrink-0" />}
                 id="add-category-btn"
               >
                 Add Category
@@ -625,14 +635,14 @@ export default function MenuPage() {
             <p className="text-xs text-text-secondary mb-3">
               Choose a colorful hand-drawn watercolor illustration for the print layout, or upload a custom sketch.
             </p>
-            <div className="grid grid-cols-2 gap-3 mb-4">
+<div className="grid grid-cols-2 gap-3 mb-4">
               {[
-                { label: '☕ Coffee / Tea', value: '/menu-sketches/coffee.jpg' },
-                { label: '🍿 Snacks / Starters', value: '/menu-sketches/snacks.jpg' },
-                { label: '🍔 Burgers / Pizzas', value: '/menu-sketches/burgers.jpg' },
-                { label: '🥤 Smoothies / Shakes', value: '/menu-sketches/smoothies.jpg' },
-                { label: '🍰 Desserts / Cakes', value: '/menu-sketches/desserts.jpg' },
-                { label: '🍽️ Classic Table Setup', value: '/menu-sketches/generic.jpg' },
+                { label: '�� Coffee / Tea', value: '/menu-sketches/coffee.jpg' },
+                { label: '���� Snacks / Starters', value: '/menu-sketches/snacks.jpg' },
+                { label: '���� Burgers / Pizzas', value: '/menu-sketches/burgers.jpg' },
+                { label: '���� Smoothies / Shakes', value: '/menu-sketches/smoothies.jpg' },
+                { label: '���� Desserts / Cakes', value: '/menu-sketches/desserts.jpg' },
+                { label: '������� Classic Table Setup', value: '/menu-sketches/generic.jpg' },
               ].map((preset) => {
                 const isSelected = printSketch === preset.value;
                 return (
@@ -640,15 +650,15 @@ export default function MenuPage() {
                     key={preset.value}
                     type="button"
                     onClick={() => setPrintSketch(preset.value)}
-                    className={`flex items-center justify-between px-3 py-2.5 rounded-xl border text-left text-xs font-medium cursor-pointer transition-all duration-200 ${
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left text-sm font-medium cursor-pointer transition-all duration-200 ${
                       isSelected
                         ? 'border-primary bg-primary/5 text-primary shadow-sm'
                         : 'border-border text-text hover:border-gray-300'
                     }`}
                   >
-                    <span>{preset.label}</span>
+                    <span className="flex-1 text-start">{preset.label}</span>
                     {isSelected && (
-                      <span className="w-2 h-2 rounded-full bg-primary" />
+                      <span className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
                     )}
                   </button>
                 );

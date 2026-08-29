@@ -90,13 +90,12 @@ export default function ImageUpload({ value, onChange, onRemove, label, id }: Im
                   initial={{ opacity: 0, scale: 0.8 }}
                   whileHover={{ scale: 1.1 }}
                   className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-2 bg-white rounded-full shadow-lg cursor-pointer"
-                  onClick={() => {
-                    onRemove();
-                  }}
+                  onClick={onRemove}
                   id={`${uploadId}-remove`}
                   type="button"
+                  aria-label="Remove image"
                 >
-                  <X className="w-5 h-5 text-danger" />
+                  <X className="w-5 h-5 text-danger flex-shrink-0" />
                 </motion.button>
               )}
             </div>
@@ -137,9 +136,9 @@ export default function ImageUpload({ value, onChange, onRemove, label, id }: Im
               <>
                 <div className="p-3 rounded-full bg-primary/10 mb-3">
                   {isDragging ? (
-                    <ImageIcon className="w-6 h-6 text-primary" />
+                    <ImageIcon className="w-6 h-6 text-primary flex-shrink-0" />
                   ) : (
-                    <Upload className="w-6 h-6 text-primary" />
+                    <Upload className="w-6 h-6 text-primary flex-shrink-0" />
                   )}
                 </div>
                 <p className="text-sm font-medium text-text">

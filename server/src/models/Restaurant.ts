@@ -20,6 +20,8 @@ export interface IRestaurant extends Document {
     heading: string;
     body: string;
   };
+  googleReviewUrl?: string;
+  googleRating?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -61,6 +63,8 @@ const restaurantSchema = new Schema<IRestaurant>(
       heading: { type: String, default: 'Playfair Display' },
       body: { type: String, default: 'Inter' },
     },
+    googleReviewUrl: { type: String, default: '' },
+    googleRating: { type: Number, default: 4.9 },
   },
   { timestamps: true }
 );

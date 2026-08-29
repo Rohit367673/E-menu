@@ -13,6 +13,8 @@ export const formatAsRestaurant = (restaurant: {
   theme?: string;
   colors?: Record<string, string>;
   fonts?: Record<string, string>;
+  googleReviewUrl?: string;
+  googleRating?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }) => ({
@@ -22,6 +24,8 @@ export const formatAsRestaurant = (restaurant: {
   description: restaurant.description || 'Welcome to our menu!',
   logo: restaurant.logo || '',
   coverImage: restaurant.coverImage || '',
+  googleReviewUrl: restaurant.googleReviewUrl || '',
+  googleRating: restaurant.googleRating || 4.9,
   owner: 'admin',
   templateConfig: {
     templateId: restaurant.theme || 'modern-cafe',

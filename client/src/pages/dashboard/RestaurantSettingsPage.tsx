@@ -5,6 +5,7 @@ import { useRestaurant } from '../../contexts/RestaurantContext';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import ImageUpload from '../../components/ui/ImageUpload';
+import Select from '../../components/ui/Select';
 import type { TemplateConfig } from '../../types/menu';
 import type { TemplatePreset } from '../../templates/types';
 import { modernCafeTemplate } from '../../templates/modernCafe';
@@ -31,6 +32,7 @@ export default function RestaurantSettingsPage() {
   const [name, setName] = useState(restaurant?.name || '');
   const [slug, setSlug] = useState(restaurant?.slug || 'menu');
   const [description, setDescription] = useState(restaurant?.description || '');
+  const [googleReviewUrl, setGoogleReviewUrl] = useState(restaurant?.googleReviewUrl || '');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -38,6 +40,7 @@ export default function RestaurantSettingsPage() {
       setName(restaurant.name);
       setSlug(restaurant.slug);
       setDescription(restaurant.description || '');
+      setGoogleReviewUrl(restaurant.googleReviewUrl || '');
       if (restaurant.templateConfig) setConfig(restaurant.templateConfig);
     }
   }, [restaurant]);
@@ -67,7 +70,7 @@ export default function RestaurantSettingsPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await updateRestaurant({ name, slug, description });
+      await updateRestaurant({ name, slug, description, googleReviewUrl });
       await updateTemplate(config);
     } catch {
       // handled in context
@@ -102,13 +105,27 @@ export default function RestaurantSettingsPage() {
             onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
           />
           <p className="text-xs text-text-secondary -mt-2">Your menu URL: /menu/{slug || 'menu'}</p>
+
+          {/* Google Maps Review Link */}
+          <div>
+            <Input
+              label="Google Review / Maps Link"
+              placeholder="e.g. https://g.page/r/your-cafe-link or https://maps.google.com/?cid=..."
+              value={googleReviewUrl}
+              onChange={(e) => setGoogleReviewUrl(e.target.value)}
+            />
+            <p className="text-[11px] text-text-secondary mt-1 font-medium">
+              ⭐ Paste your Google Maps review link so customers can rate your cafe with 1-click on the menu!
+            </p>
+          </div>
+
           <div>
             <label className="text-xs text-text-secondary mb-1 block">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full rounded-lg border border-border px-3 py-2 text-sm resize-none focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+              className="w-full rounded-xl border border-border px-3 py-2.5 text-sm resize-none focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none min-h-[44px] leading-normal bg-white text-text placeholder:text-text-secondary/50 transition-colors duration-200"
             />
           </div>
           <div>
@@ -145,16 +162,16 @@ export default function RestaurantSettingsPage() {
                     : 'border-border/60 hover:border-primary/30'
                 }`}
               >
-                <div className="flex gap-1.5 mb-2">
-                  <div className="w-5 h-5 rounded-full border border-black/10" style={{ background: template.previewColors.primary }} />
-                  <div className="w-5 h-5 rounded-full border border-black/10" style={{ background: template.previewColors.secondary }} />
-                  <div className="w-5 h-5 rounded-full border border-black/10" style={{ background: template.previewColors.background }} />
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-5 h-5 rounded-full border border-black/10 flex-shrink-0" style={{ background: template.previewColors.primary }} />
+                  <div className="w-5 h-5 rounded-full border border-black/10 flex-shrink-0" style={{ background: template.previewColors.secondary }} />
+                  <div className="w-5 h-5 rounded-full border border-black/10 flex-shrink-0" style={{ background: template.previewColors.background }} />
                 </div>
                 <p className="text-xs font-semibold text-text">{template.name}</p>
                 <p className="text-[10px] text-text-secondary leading-tight mt-0.5">{template.description}</p>
                 {config.templateId === template.id && (
                   <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                    <Check className="w-3 h-3 text-white" />
+                    <Check className="w-3 h-3 text-white flex-shrink-0" />
                   </div>
                 )}
               </motion.button>
@@ -170,33 +187,31 @@ export default function RestaurantSettingsPage() {
                     type="color"
                     value={value}
                     onChange={(e) => updateColors(key, e.target.value)}
-                    className="w-7 h-7 rounded border border-border cursor-pointer"
+                    className="w-8 h-8 rounded-lg border border-border cursor-pointer hover:scale-105 transition-transform"
+                    style={{ appearance: 'none', WebkitAppearance: 'none' }}
+                    aria-label={`Pick ${key} color`}
                   />
-                  <span className="text-[10px] text-text-secondary capitalize">{key}</span>
+                  <span className="text-xs text-text-secondary capitalize">{key}</span>
                 </div>
               ))}
             </div>
 
             <div className="flex flex-col gap-2">
               <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Fonts</p>
-              <select
+              <Select
+                label="Heading Font"
+                options={fontOptions.map((f) => ({ value: f, label: f }))}
                 value={config.fonts.heading}
                 onChange={(e) => updateFonts('heading', e.target.value)}
-                className="w-full rounded-lg border border-border px-2 py-1.5 text-xs bg-white"
-              >
-                {fontOptions.map((f) => (
-                  <option key={f} value={f}>{f}</option>
-                ))}
-              </select>
-              <select
+                id="font-heading"
+              />
+              <Select
+                label="Body Font"
+                options={fontOptions.map((f) => ({ value: f, label: f }))}
                 value={config.fonts.body}
                 onChange={(e) => updateFonts('body', e.target.value)}
-                className="w-full rounded-lg border border-border px-2 py-1.5 text-xs bg-white"
-              >
-                {fontOptions.map((f) => (
-                  <option key={f} value={f}>{f}</option>
-                ))}
-              </select>
+                id="font-body"
+              />
             </div>
           </div>
         </div>

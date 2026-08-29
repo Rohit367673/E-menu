@@ -315,13 +315,14 @@ export default function QRCodePage() {
                   type="color"
                   value={fgColor}
                   onChange={(e) => setFgColor(e.target.value)}
-                  className="w-10 h-10 rounded-lg cursor-pointer border-2 border-border"
+                  className="w-10 h-10 rounded-lg cursor-pointer border border-border hover:scale-105 transition-transform"
+                  style={{ appearance: 'none', WebkitAppearance: 'none' }}
                 />
                 <input
                   type="text"
                   value={fgColor}
                   onChange={(e) => setFgColor(e.target.value)}
-                  className="flex-1 px-3 py-2 text-sm border border-border rounded-lg font-mono focus:border-primary focus:ring-0 outline-none transition-colors"
+                  className="flex-1 h-10 px-3 text-sm border border-border rounded-lg font-mono focus:border-primary focus:ring-2 focus:ring-primary/30 outline-none transition-colors"
                 />
               </div>
             </div>
@@ -334,13 +335,14 @@ export default function QRCodePage() {
                   type="color"
                   value={bgColor}
                   onChange={(e) => setBgColor(e.target.value)}
-                  className="w-10 h-10 rounded-lg cursor-pointer border-2 border-border"
+                  className="w-10 h-10 rounded-lg cursor-pointer border border-border hover:scale-105 transition-transform"
+                  style={{ appearance: 'none', WebkitAppearance: 'none' }}
                 />
                 <input
                   type="text"
                   value={bgColor}
                   onChange={(e) => setBgColor(e.target.value)}
-                  className="flex-1 px-3 py-2 text-sm border border-border rounded-lg font-mono focus:border-primary focus:ring-0 outline-none transition-colors"
+                  className="flex-1 h-10 px-3 text-sm border border-border rounded-lg font-mono focus:border-primary focus:ring-2 focus:ring-primary/30 outline-none transition-colors"
                 />
               </div>
             </div>

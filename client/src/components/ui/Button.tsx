@@ -55,7 +55,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {isLoading ? (
           <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
         ) : icon ? (
-          <span className="flex-shrink-0 inline-flex items-center justify-center">{icon}</span>
+          <span className="flex-shrink-0 inline-flex items-center justify-center" aria-hidden="true">{icon}</span>
         ) : null}
         <span className="flex-shrink-0 leading-none">{children}</span>
       </motion.button>

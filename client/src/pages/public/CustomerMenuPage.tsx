@@ -37,28 +37,41 @@ function VegDot({ type, size = 14 }: { type?: 'veg' | 'nonveg'; size?: number })
   const c = isVeg ? '#16a34a' : '#dc2626';
   const innerSize = Math.round(size / 2);
   return (
-    <span
+    <motion.span
+      initial={{ scale: 0.8 }}
+      animate={{ scale: 1 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
       className="inline-flex items-center justify-center flex-shrink-0"
       style={{ width: size, height: size, border: `1.5px solid ${c}`, borderRadius: 2 }}
       title={isVeg ? 'Vegetarian' : 'Non-Vegetarian'}
     >
-      <span style={{ width: innerSize, height: innerSize, borderRadius: '50%', backgroundColor: c }} />
-    </span>
+      <motion.span
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 25, delay: 0.1 }}
+        style={{ width: innerSize, height: innerSize, borderRadius: '50%', backgroundColor: c }}
+      />
+    </motion.span>
   );
 }
 
 /* ── Showcase Image — crossfades when user hovers an item (Desktop only) ── */
 function ShowcaseImage({ item, primary }: { item: MenuItem | undefined; primary: string }) {
   const [imgErr, setImgErr] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   useEffect(() => { setImgErr(false); }, [item?._id]);
 
   return (
     <div
       className="relative overflow-hidden w-full"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       style={{
         aspectRatio: '4/5',
         borderRadius: '1.25rem',
-        boxShadow: '0 20px 50px -12px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.04)',
+        boxShadow: isHovered
+          ? '0 25px 60px -12px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.06)'
+          : '0 20px 50px -12px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.04)',
       }}
     >
       <AnimatePresence mode="wait">
@@ -70,24 +83,34 @@ function ShowcaseImage({ item, primary }: { item: MenuItem | undefined; primary:
             loading="lazy"
             onError={() => setImgErr(true)}
             initial={{ opacity: 0, scale: 1.08 }}
-            animate={{ opacity: 1, scale: 1 }}
+            animate={{ opacity: 1, scale: isHovered ? 1.03 : 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
+            transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
             className="w-full h-full object-cover absolute inset-0"
+            style={{ transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)' }}
           />
         ) : (
           <motion.div
             key="ph"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
             className="w-full h-full flex flex-col items-center justify-center absolute inset-0"
             style={{ background: `linear-gradient(135deg, ${primary}15, ${primary}05)` }}
           >
-            <UtensilsCrossed className="w-14 h-14" style={{ color: primary, opacity: 0.15 }} />
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.4 }}
+            >
+              <UtensilsCrossed className="w-14 h-14" style={{ color: primary, opacity: 0.15 }} />
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+      
+      {/* Subtle gradient overlay for depth */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent pointer-events-none" />
     </div>
   );
 }
@@ -901,6 +924,7 @@ export default function CustomerMenuPage() {
   const headingFont = 'Cormorant Garamond, serif';
   const bodyFont = 'Outfit, sans-serif';
   const socialHandle = rest.slug || rest.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const googleLink = rest.googleReviewUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rest.name)}`;
 
   const getItems = (catId: string) =>
     allItems
@@ -1018,6 +1042,28 @@ export default function CustomerMenuPage() {
           >
             {rest.description || 'Welcome to our menu'}
           </motion.p>
+
+          {/* Rate us on Google Header Pill */}
+          <motion.a
+            href={googleLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.35 }}
+            className="mt-3 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 shadow-sm border border-amber-200/90 text-xs font-semibold text-gray-800 hover:shadow-md hover:border-amber-300 transition-all cursor-pointer select-none"
+          >
+            <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            <span className="text-amber-500 font-bold">★ {rest.googleRating || 4.9}</span>
+            <span className="text-gray-300">·</span>
+            <span>Rate on Google</span>
+            <span className="text-[10px] text-gray-400">↗</span>
+          </motion.a>
         </div>
 
         {/* Desktop header: centered brand identity */}
@@ -1064,6 +1110,28 @@ export default function CustomerMenuPage() {
             >
               {rest.description || 'Welcome to our menu'}
             </motion.p>
+
+            {/* Rate on Google Desktop Badge */}
+            <motion.a
+              href={googleLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.35 }}
+              className="mt-3.5 inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/95 shadow-sm border border-amber-200/90 text-xs font-semibold text-gray-800 hover:shadow-md hover:border-amber-300 transition-all cursor-pointer select-none"
+            >
+              <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+              </svg>
+              <span className="text-amber-500 font-bold">★ {rest.googleRating || 4.9}</span>
+              <span className="text-gray-300">·</span>
+              <span>Rate us on Google Maps</span>
+              <span className="text-xs text-gray-400">↗</span>
+            </motion.a>
             {(rest.address || rest.phone) && (
               <motion.div
                 initial={{ opacity: 0 }}
@@ -1259,16 +1327,16 @@ export default function CustomerMenuPage() {
 
         {/* ═══ CENTER — Main Footer Content ═══ */}
         <div className="relative z-10 flex flex-col items-center justify-center text-center py-12 md:py-14 px-4">
-          {/* Download CTA Button */}
-          <div className="flex flex-col items-center text-center max-w-sm mx-auto mt-8 md:mt-10 mb-4">
+          {/* Action CTAs: Download Menu PDF & Rate on Google */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 mt-8 md:mt-10 mb-4 max-w-lg mx-auto w-full px-2">
             <motion.button
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              whileHover={{ scale: 1.04 }}
+              whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => window.print()}
-              className="download-menu-btn"
+              className="download-menu-btn w-full sm:w-auto"
               style={{
                 background: `linear-gradient(135deg, ${primary}, ${tc.colors.secondary || primary})`,
                 boxShadow: `0 10px 28px -4px ${primary}45`,
@@ -1277,10 +1345,30 @@ export default function CustomerMenuPage() {
               <Download className="w-4 h-4 flex-shrink-0" />
               <span className="leading-none">Download Menu PDF</span>
             </motion.button>
-            <p className="text-[11px] md:text-[12px] text-gray-500 font-medium mt-1.5">
-              Print or download a high-resolution copy for your table
-            </p>
+
+            <motion.a
+              href={googleLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-full bg-white text-gray-800 border-2 border-gray-200/90 shadow-md hover:shadow-lg hover:border-amber-400 font-bold text-sm transition-all duration-200 cursor-pointer w-full sm:w-auto select-none"
+            >
+              <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+              </svg>
+              <span className="leading-none text-gray-800">⭐ Rate us on Google Maps</span>
+            </motion.a>
           </div>
+          <p className="text-[11px] md:text-[12px] text-gray-500 font-medium mb-1">
+            Download your menu or share your dining feedback on Google Maps!
+          </p>
 
           {/* Delicate Divider */}
           <div className="w-full max-w-[200px] mx-auto flex items-center justify-center gap-3 my-5 opacity-60">

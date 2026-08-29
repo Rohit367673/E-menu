@@ -9,14 +9,61 @@
   --color-danger: #ef4444;
   --color-surface: #ffffff;
   --color-surface-dark: #1e1e2e;
-  --color-background: #f8fafc;
+  --color-background: #fefefe;
   --color-background-dark: #0f0f1a;
-  --color-text: #1e293b;
-  --color-text-secondary: #64748b;
+  --color-text: #1f2937;
+  --color-text-secondary: #6b7280;
+  --color-text-tertiary: #9ca3af;
   --color-text-dark: #e2e8f0;
-  --color-border: #e2e8f0;
+  --color-border: #e5e7eb;
+  --color-border-light: #f3f4f6;
+  --color-border-focus: #6366f1;
+
+  --font-heading: 'Cormorant Garamond', 'Georgia', serif;
   --font-display: 'Outfit', 'Inter', system-ui, sans-serif;
-  --font-body: 'Inter', system-ui, sans-serif;
+  --font-body: 'Outfit', 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 8px -2px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 20px 40px -8px rgba(0, 0, 0, 0.1), 0 8px 16px -4px rgba(0, 0, 0, 0.05);
+  --shadow-2xl: 0 32px 64px -12px rgba(0, 0, 0, 0.12), 0 12px 24px -6px rgba(0, 0, 0, 0.06);
+  --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+  --shadow-glow: 0 0 0 1px rgba(99, 102, 241, 0.15), 0 4px 24px -4px rgba(99, 102, 241, 0.25);
+  --shadow-glow-warm: 0 0 0 1px rgba(245, 158, 11, 0.15), 0 4px 24px -4px rgba(245, 158, 11, 0.25);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.03);
+  --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.04);
+
+  --transition-fast: 120ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 450ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
   --animate-fade-in: fadeIn 0.4s ease-out forwards;
   --animate-slide-up: slideUp 0.4s ease-out forwards;
   --animate-slide-down: slideDown 0.4s ease-out forwards;
@@ -24,6 +71,8 @@
   --animate-float: float 3s ease-in-out infinite;
   --animate-sway: sway 4s ease-in-out infinite alternate;
   --animate-bulb-glow: bulbGlow 2.5s ease-in-out infinite alternate;
+  --animate-shimmer: shimmer 2s infinite;
+  --animate-pulse-ring: pulse-ring 2s ease-out infinite;
 }
 
 /* ─── Global Reset & Base ─────────────────────────────────── */
@@ -39,6 +88,7 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
@@ -47,6 +97,7 @@ body {
   background-color: var(--color-background);
   min-height: 100vh;
   line-height: 1.6;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
 /* ─── Custom Scrollbar ────────────────────────────────────── */
@@ -62,7 +113,7 @@ body {
 ::-webkit-scrollbar-thumb {
   background: var(--color-border);
   border-radius: 999px;
-  transition: background 0.2s;
+  transition: background var(--transition-fast);
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -113,13 +164,11 @@ select:focus-visible {
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.05),
-    0 2px 4px -2px rgba(0, 0, 0, 0.03);
+  box-shadow: var(--shadow-card);
 }
 
 /* ─── Gradient Backgrounds ────────────────────────────────── */
@@ -144,7 +193,7 @@ select:focus-visible {
 }
 
 .gradient-card {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.9) 100%);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%);
 }
 
 .gradient-accent {
@@ -176,12 +225,8 @@ select:focus-visible {
 
 /* ─── Keyframe Animations ─────────────────────────────────── */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes slideUp {
@@ -218,21 +263,13 @@ select:focus-visible {
 }
 
 @keyframes float {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
 }
 
 @keyframes sway {
-  0% {
-    transform: rotate(-3deg);
-  }
-  100% {
-    transform: rotate(3deg);
-  }
+  0% { transform: rotate(-3deg); }
+  100% { transform: rotate(3deg); }
 }
 
 @keyframes bulbGlow {
@@ -247,21 +284,13 @@ select:focus-visible {
 }
 
 @keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 @keyframes pulse-ring {
-  0% {
-    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
-  }
-  100% {
-    box-shadow: 0 0 0 12px rgba(99, 102, 241, 0);
-  }
+  0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+  100% { box-shadow: 0 0 0 12px rgba(99, 102, 241, 0); }
 }
 
 @keyframes steamRise {
@@ -269,12 +298,8 @@ select:focus-visible {
     transform: translateY(0) scaleX(1);
     opacity: 0;
   }
-  30% {
-    opacity: 0.65;
-  }
-  80% {
-    opacity: 0.25;
-  }
+  30% { opacity: 0.65; }
+  80% { opacity: 0.25; }
   100% {
     transform: translateY(-14px) scaleX(1.4);
     opacity: 0;
@@ -296,12 +321,116 @@ select:focus-visible {
   }
 }
 
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleInBounce {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.05); }
+  70% { transform: scale(0.98); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes borderGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+  50% { box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15); }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleInFromCenter {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .animate-steam {
   animation: steamRise 2.6s ease-out infinite;
 }
 
 .animate-ambient-float {
   animation: ambientFloat 5.5s ease-in-out infinite;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight var(--transition-smooth) forwards;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft var(--transition-smooth) forwards;
+}
+
+.animate-scale-in-bounce {
+  animation: scaleInBounce var(--transition-spring) forwards;
+}
+
+.animate-border-glow {
+  animation: borderGlow 2s ease-in-out infinite;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp var(--transition-smooth) forwards;
+}
+
+.animate-fade-in-down {
+  animation: fadeInDown var(--transition-smooth) forwards;
+}
+
+.animate-scale-in-center {
+  animation: scaleInFromCenter var(--transition-smooth) forwards;
+}
+
+.animate-spin-slow {
+  animation: spinSlow 20s linear infinite;
 }
 
 /* ─── Utility Classes ─────────────────────────────────────── */
@@ -319,12 +448,24 @@ select:focus-visible {
 }
 
 .hover-lift {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform var(--transition-smooth), box-shadow var(--transition-smooth);
 }
 
 .hover-lift:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-lg);
+}
+
+.hover-scale {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+
+.hover-scale:active {
+  transform: scale(0.98);
 }
 
 /* ─── Selection ───────────────────────────────────────────── */
@@ -334,20 +475,17 @@ select:focus-visible {
 }
 
 /* ─── Admin Dashboard — Utility Classes ───────────────────── */
-
-/* Consistent admin page container */
 .admin-page {
   max-width: 68rem;
   margin: 0 auto;
   width: 100%;
 }
 
-/* Admin Header Banner Card */
 .admin-header-card {
   background: #ffffff;
-  border-radius: 1.25rem;
+  border-radius: var(--radius-2xl);
   border: 1px solid var(--color-border);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.02);
+  box-shadow: var(--shadow-sm);
   padding: 1.75rem 2rem !important;
   display: flex;
   flex-direction: column;
@@ -364,17 +502,14 @@ select:focus-visible {
   }
 }
 
-/* Admin card */
 .admin-card {
   background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-radius: 1.25rem;
+  border-radius: var(--radius-2xl);
   border: 1px solid var(--color-border);
-  box-shadow:
-    0 4px 20px -2px rgba(0, 0, 0, 0.05),
-    0 2px 6px -1px rgba(0, 0, 0, 0.02);
-  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-smooth), border-color var(--transition-smooth);
   padding: 1.75rem;
 }
 
@@ -385,12 +520,10 @@ select:focus-visible {
 }
 
 .admin-card:hover {
-  box-shadow:
-    0 8px 30px -4px rgba(0, 0, 0, 0.08),
-    0 4px 12px -2px rgba(0, 0, 0, 0.03);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-border-light);
 }
 
-/* Admin section header (uppercase label) */
 .admin-section-label {
   font-size: 0.75rem;
   font-weight: 800;
@@ -403,7 +536,6 @@ select:focus-visible {
   display: block;
 }
 
-/* Admin page breadcrumb */
 .admin-breadcrumb {
   font-size: 0.6875rem;
   font-weight: 700;
@@ -413,11 +545,10 @@ select:focus-visible {
   opacity: 0.8;
 }
 
-/* Consistent select dropdown styling */
 .admin-select {
   width: 100%;
   height: 2.75rem;
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
   background-color: white;
   padding: 0 2.5rem 0 1rem;
@@ -427,7 +558,7 @@ select:focus-visible {
   outline: none;
   min-height: 44px;
   line-height: 1.5;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   appearance: none;
   cursor: pointer;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
@@ -441,13 +572,12 @@ select:focus-visible {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
 }
 
-/* Admin toggle switch */
 .admin-toggle {
   position: relative;
   width: 2.75rem;
   height: 1.5rem;
   border-radius: 9999px;
-  transition: background-color 0.3s;
+  transition: background-color var(--transition-smooth);
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -462,11 +592,11 @@ select:focus-visible {
   border-radius: 9999px;
   background: white;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-  transition: transform 0.3s;
+  transition: transform var(--transition-smooth);
 }
 
 .admin-toggle.active {
-  background-color: #10b981;
+  background-color: var(--color-accent);
 }
 
 .admin-toggle.active::after {
@@ -474,10 +604,9 @@ select:focus-visible {
 }
 
 .admin-toggle.inactive {
-  background-color: #d1d5db;
+  background-color: var(--color-border);
 }
 
-/* Page enter animation */
 @keyframes adminPageEnter {
   from {
     opacity: 0;
@@ -498,7 +627,7 @@ select:focus-visible {
   flex: 1;
   min-width: 16px;
   margin: 0 6px;
-  border-bottom: 1.5px dotted #d1d5db;
+  border-bottom: 1.5px dotted var(--color-border);
   align-self: flex-end;
   margin-bottom: 5px;
 }
@@ -506,24 +635,21 @@ select:focus-visible {
 /* ─── Customer Menu — Showcase Image ─────────────────────── */
 .showcase-img-wrap {
   position: relative;
-  border-radius: 1.5rem;
+  border-radius: var(--radius-2xl);
   overflow: hidden;
-  box-shadow:
-    0 20px 50px -12px rgba(0, 0, 0, 0.15),
-    0 0 0 1px rgba(0, 0, 0, 0.04);
-  transition: box-shadow 0.4s ease;
+  box-shadow: var(--shadow-xl);
+  transition: box-shadow var(--transition-smooth), transform var(--transition-smooth);
 }
 
 .showcase-img-wrap:hover {
-  box-shadow:
-    0 25px 60px -12px rgba(0, 0, 0, 0.22),
-    0 0 0 1px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-2xl);
+  transform: translateY(-2px);
 }
 
 /* ─── Customer Menu — Item Row Hover ─────────────────────── */
 .menu-line-item {
   position: relative;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-smooth);
   border-left: 3px solid transparent;
 }
 
@@ -534,7 +660,7 @@ select:focus-visible {
   left: 12px;
   right: 12px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, #e5e7eb 20%, #e5e7eb 80%, transparent);
+  background: linear-gradient(90deg, transparent, var(--color-border) 20%, var(--color-border) 80%, transparent);
 }
 
 .menu-line-item:last-child::after {
@@ -553,7 +679,7 @@ select:focus-visible {
   content: '';
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, transparent, #e5e7eb, transparent);
+  background: linear-gradient(90deg, transparent, var(--color-border), transparent);
 }
 
 /* ─── Customer Menu — Horizontal Scrollbar Hidden ────────── */
@@ -583,11 +709,11 @@ select:focus-visible {
   width: 100%;
   padding-top: 0.875rem;
   padding-bottom: 0.875rem;
-  background-color: rgba(254, 254, 254, 0.94);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background-color: rgba(254, 254, 254, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(243, 244, 246, 0.8);
-  transition: all 0.3s ease;
+  transition: all var(--transition-smooth);
 }
 
 .category-tabs-row {
@@ -613,7 +739,7 @@ select:focus-visible {
 .category-pill-btn {
   flex: 1 1 0%;
   min-width: 90px;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -621,13 +747,34 @@ select:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem 0.75rem;
-  border-radius: 9999px;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-full);
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.3s ease;
+  transition: all var(--transition-smooth);
   border: none;
   outline: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.category-pill-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--color-primary);
+  opacity: 0;
+  transition: opacity var(--transition-smooth);
+  border-radius: inherit;
+}
+
+.category-pill-btn:active {
+  transform: scale(0.97);
+}
+
+.category-pill-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 /* ─── Footer Download Button ─────────────────────────────── */
@@ -637,9 +784,9 @@ select:focus-visible {
   justify-content: center !important;
   gap: 10px !important;
   padding: 14px 28px !important;
-  border-radius: 9999px !important;
-  font-family: 'Outfit', 'Inter', system-ui, sans-serif !important;
-  font-size: 13px !important;
+  border-radius: var(--radius-full) !important;
+  font-family: var(--font-display) !important;
+  font-size: 0.8125rem !important;
   font-weight: 700 !important;
   line-height: 1.2 !important;
   text-transform: uppercase !important;
@@ -649,14 +796,32 @@ select:focus-visible {
   border: none !important;
   outline: none !important;
   margin-bottom: 10px !important;
-  transition: all 0.25s ease !important;
+  transition: all var(--transition-smooth) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.download-menu-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+  opacity: 0;
+  transition: opacity var(--transition-smooth);
 }
 
 .download-menu-btn:hover {
-  transform: translateY(-2px) scale(1.03) !important;
+  transform: translateY(-2px) scale(1.02) !important;
+  box-shadow: var(--shadow-glow) !important;
 }
 
+.download-menu-btn:hover::before {
+  opacity: 1;
+}
 
+.download-menu-btn:active {
+  transform: translateY(0) scale(0.98) !important;
+}
 
 /* ─── Safe Area Insets (for notched phones like iPhone X+) ── */
 .safe-bottom {
@@ -672,11 +837,13 @@ select:focus-visible {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 11px 4px;
-  border-bottom: 1px solid #f3f4f6;
-  transition: background-color 0.15s ease;
+  padding: 14px 4px;
+  border-bottom: 1px solid var(--color-border-light);
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
   -webkit-tap-highlight-color: transparent;
   cursor: pointer;
+  border-radius: var(--radius-lg);
+  margin: 0 4px;
 }
 
 .menu-card-item:last-child {
@@ -684,40 +851,52 @@ select:focus-visible {
 }
 
 .menu-card-item:active {
-  background-color: rgba(0, 0, 0, 0.02);
+  background-color: rgba(0, 0, 0, 0.03);
   transform: scale(0.99);
 }
 
+.menu-card-item:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .menu-card-thumb {
-  width: 76px;
-  height: 76px;
-  border-radius: 14px;
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-smooth), box-shadow var(--transition-smooth);
+}
+
+.menu-card-item:hover .menu-card-thumb,
+.menu-card-item:active .menu-card-thumb {
+  transform: scale(1.02);
+  box-shadow: var(--shadow-md);
 }
 
 .menu-card-thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform var(--transition-slow);
+}
+
+.menu-card-item:hover .menu-card-thumb img {
+  transform: scale(1.05);
 }
 
 /* ─── Print Styles — Classic Café Menu ───────────────────── */
-
-/* Hide the interactive UI during print, show the print-only menu */
 @media print {
-  /* Hide everything interactive */
   .screen-ui {
     display: none !important;
   }
 
-  /* Show the classic print menu */
   .print-menu {
     display: block !important;
   }
 
-  /* Reset page */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
@@ -736,15 +915,13 @@ select:focus-visible {
   }
 }
 
-/* ─── Print Menu Component Styles (hidden on screen) ─────── */
 .print-menu {
   display: none;
-  font-family: 'Cormorant Garamond', 'Georgia', 'Times New Roman', serif;
+  font-family: var(--font-heading);
   color: #1a1a1a;
   line-height: 1.5;
 }
 
-/* Page wrapper with decorative border */
 .print-menu-page {
   position: relative;
   padding: 32px 28px;
@@ -769,7 +946,6 @@ select:focus-visible {
   pointer-events: none;
 }
 
-/* Header block */
 .print-header {
   text-align: center;
   padding: 20px 0 16px;
@@ -789,7 +965,7 @@ select:focus-visible {
   object-fit: cover;
   margin: 0 auto 10px;
   display: block;
-  border: 2px solid #c8a97e;
+  border: 2px solid #c8a97e.
 }
 
 .print-header h1 {
@@ -806,7 +982,7 @@ select:focus-visible {
   font-style: italic;
   color: #666;
   margin-top: 6px;
-  font-weight: 300;
+  font-weight: 300.
 }
 
 .print-header-divider {
@@ -830,7 +1006,6 @@ select:focus-visible {
   font-style: normal;
 }
 
-/* Category section */
 .print-category {
   margin-bottom: 24px;
   page-break-inside: avoid;
@@ -1015,12 +1190,10 @@ select:focus-visible {
   text-transform: uppercase;
 }
 
-/* Page break utility */
 .print-page-break {
   page-break-before: always;
 }
 
-/* Two-column layout for categories with many items */
 .print-two-col {
   column-count: 2;
   column-gap: 32px;
@@ -1028,4 +1201,93 @@ select:focus-visible {
 
 .print-two-col .print-item {
   break-inside: avoid;
+}
+
+/* ─── Additional Premium Utilities ───────────────────────── */
+.text-balance {
+  text-wrap: balance;
+}
+
+.text-pretty {
+  text-wrap: pretty;
+}
+
+.container-narrow {
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+.container-wide {
+  max-width: 64rem;
+  margin: 0 auto;
+}
+
+.container-full {
+  max-width: 80rem;
+  margin: 0 auto;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ─── High Contrast Mode Support ─────────────────────────── */
+@media (prefers-contrast: high) {
+  .glass-card,
+  .glass-light {
+    background: white;
+    border: 2px solid black;
+  }
+  
+  .category-pill-btn[style*="background-color"] {
+    border: 2px solid currentColor;
+  }
+}
+
+/* ─── Reduced Motion Support ─────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .animate-steam,
+  .animate-ambient-float,
+  .animate-float,
+  .animate-sway,
+  .animate-bulb-glow,
+  .animate-shimmer,
+  .animate-pulse-ring {
+    animation: none !important;
+  }
+}
+
+/* ─── Touch Target Minimum Size ─────────────────────────── */
+@media (pointer: coarse) {
+  button,
+  [role="button"],
+  a,
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .category-pill-btn {
+    min-height: 44px;
+    padding: 0.625rem 1.25rem;
+  }
 }
