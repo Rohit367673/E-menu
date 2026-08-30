@@ -11,6 +11,7 @@ import menuRoutes from './routes/menu.js';
 import uploadRoutes from './routes/upload.js';
 import exportRoutes from './routes/export.js';
 import qrRoutes from './routes/qr.js';
+import reviewRoutes from './routes/reviews.js';
 import Admin from './models/Admin.js';
 import Restaurant from './models/Restaurant.js';
 import Category from './models/Category.js';
@@ -64,6 +65,7 @@ app.use('/api/menu-items', menuRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/export', exportRoutes);
 app.use('/api/qr', qrRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // 404 handler
 app.use((_req, res) => {

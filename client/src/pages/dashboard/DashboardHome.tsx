@@ -1,19 +1,24 @@
-import { useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import {
   UtensilsCrossed,
   FolderOpen,
-  CheckCircle2,
   Plus,
   QrCode,
   ArrowRight,
   TrendingUp,
   Sparkles,
+  Star,
+  MessageSquareHeart,
+  Trash2,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRestaurant } from '../../contexts/RestaurantContext';
 import Button from '../../components/ui/Button';
+import apiClient from '../../api/client';
+import type { Review } from '../../types/menu';
+import toast from 'react-hot-toast';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -27,8 +32,42 @@ const itemVariants = {
 export default function DashboardHome() {
   const { user } = useAuth();
   const { categories, menuItems, restaurant } = useRestaurant();
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [avgRating, setAvgRating] = useState<number>(4.9);
+  const [totalReviews, setTotalReviews] = useState<number>(0);
+  const [isLoadingReviews, setIsLoadingReviews] = useState<boolean>(true);
 
-  const activeItems = useMemo(() => menuItems.filter((i) => i.isAvailable || i.available).length, [menuItems]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await apiClient.get<{
+          success: boolean;
+          data: { reviews: Review[]; total: number; averageRating: number };
+        }>('/reviews/admin');
+        if (res.data.success) {
+          setReviews(res.data.data.reviews || []);
+          setAvgRating(res.data.data.averageRating || 4.9);
+          setTotalReviews(res.data.data.total || 0);
+        }
+      } catch (err) {
+        console.error('Failed to load reviews:', err);
+      } finally {
+        setIsLoadingReviews(false);
+      }
+    })();
+  }, []);
+
+  const handleDeleteReview = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this customer review?')) return;
+    try {
+      await apiClient.delete(`/reviews/${id}`);
+      setReviews((prev) => prev.filter((r) => r._id !== id));
+      setTotalReviews((prev) => Math.max(0, prev - 1));
+      toast.success('Review deleted');
+    } catch {
+      toast.error('Failed to delete review');
+    }
+  };
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -55,12 +94,12 @@ export default function DashboardHome() {
       trend: `${categories.length} sections`,
     },
     {
-      label: 'Active Items',
-      value: activeItems,
-      icon: CheckCircle2,
-      bg: 'from-emerald-500/10 to-teal-500/10',
-      iconBg: 'bg-emerald-500',
-      trend: `${menuItems.length - activeItems} unavailable`,
+      label: 'Customer Rating',
+      value: `${avgRating.toFixed(1)} ★`,
+      icon: Star,
+      bg: 'from-amber-500/10 to-yellow-500/10',
+      iconBg: 'bg-amber-500',
+      trend: `${totalReviews} customer feedback`,
     },
   ];
 
@@ -120,13 +159,11 @@ export default function DashboardHome() {
 
       {/* Stats */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        {stats.map((stat, i) => (
+        {stats.map((stat) => (
           <motion.div
             key={stat.label}
-            whileHover={{ y: -3, scale: 1.01 }}
-            transition={{ duration: 0.2 }}
-            className="relative overflow-hidden admin-card p-6"
-            id={`stat-card-${i}`}
+            whileHover={{ y: -3 }}
+            className="relative overflow-hidden admin-card p-6 border border-border/80 shadow-sm"
           >
             <div className={`absolute inset-0 bg-gradient-to-br ${stat.bg} opacity-60`} />
             <div className="relative flex items-center justify-between">
@@ -144,6 +181,92 @@ export default function DashboardHome() {
             </div>
           </motion.div>
         ))}
+      </motion.div>
+
+      {/* Customer Reviews & Feedback */}
+      <motion.div variants={itemVariants} className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MessageSquareHeart className="w-5 h-5 text-amber-500" />
+            <h2 className="text-lg font-bold text-text">Customer Reviews & Ratings</h2>
+          </div>
+          <span className="text-xs font-semibold text-text-secondary">
+            {totalReviews} Total Feedback · {avgRating.toFixed(1)} ★ Rating
+          </span>
+        </div>
+
+        {isLoadingReviews ? (
+          <div className="p-8 text-center text-sm text-text-secondary">Loading customer reviews...</div>
+        ) : reviews.length === 0 ? (
+          <div className="admin-card p-8 text-center flex flex-col items-center justify-center gap-2">
+            <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center mb-1">
+              <Star className="w-6 h-6 fill-amber-400" />
+            </div>
+            <h3 className="text-base font-bold text-text">No Customer Reviews Yet</h3>
+            <p className="text-xs text-text-secondary max-w-md">
+              When customers view your digital menu, they can tap "Rate & Review Us" at the bottom to submit their 5-star rating and feedback!
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {reviews.map((rev) => (
+              <div
+                key={rev._id}
+                className="admin-card p-5 flex flex-col justify-between gap-3 border border-border/80 relative group"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h4 className="font-bold text-sm text-text">{rev.name || 'Happy Guest'}</h4>
+                      <p className="text-[10px] text-text-secondary">
+                        {new Date(rev.createdAt).toLocaleDateString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-0.5 text-amber-400">
+                      {[...Array(rev.rating)].map((_, i) => (
+                        <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
+                      ))}
+                    </div>
+                  </div>
+
+                  {rev.comment && (
+                    <p className="text-xs text-text/90 mt-2.5 leading-relaxed italic">
+                      "{rev.comment}"
+                    </p>
+                  )}
+
+                  {rev.tags && rev.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      {rev.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-800 border border-amber-500/20"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-2 border-t border-border/40 flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteReview(rev._id)}
+                    className="text-text-secondary/50 hover:text-danger p-1 rounded-md transition-colors cursor-pointer"
+                    title="Delete Review"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </motion.div>
 
       {/* Quick Actions */}

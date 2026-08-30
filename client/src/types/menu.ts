@@ -82,6 +82,18 @@ export interface User {
   name?: string;
 }
 
+export interface Review {
+  _id: string;
+  restaurantId: string;
+  name: string;
+  rating: number;
+  comment?: string;
+  tags?: string[];
+  isApproved: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data: T;
