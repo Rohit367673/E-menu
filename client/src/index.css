@@ -1007,7 +1007,7 @@ select:focus-visible {
   object-fit: cover;
   margin: 0 auto 10px;
   display: block;
-  border: 2px solid #c8a97e.
+  border: 2px solid #c8a97e;
 }
 
 .print-header h1 {
@@ -1024,7 +1024,7 @@ select:focus-visible {
   font-style: italic;
   color: #666;
   margin-top: 6px;
-  font-weight: 300.
+  font-weight: 300;
 }
 
 .print-header-divider {

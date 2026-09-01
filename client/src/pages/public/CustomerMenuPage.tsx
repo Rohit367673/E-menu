@@ -1112,9 +1112,9 @@ export default function CustomerMenuPage() {
         />
 
         {/* ═══ Main Footer Content ═══ */}
-        <div className="relative z-10 w-full max-w-2xl mx-auto flex flex-col items-center justify-center text-center py-12 md:py-16 px-4">
+        <div className="relative z-10 w-full max-w-5xl mx-auto flex flex-col items-center justify-center text-center py-12 md:py-16 px-4">
           {/* Action CTAs: Download Menu PDF & Rate & Review Us */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 sm:gap-4 w-full mx-auto mb-3">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 sm:gap-4 w-full max-w-md mx-auto mb-3">
             <motion.button
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
