@@ -777,49 +777,71 @@ select:focus-visible {
   outline-offset: 2px;
 }
 
-/* ─── Footer Download Button ─────────────────────────────── */
+/* ─── Footer Action Buttons ─────────────────────────────── */
 .download-menu-btn {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 10px !important;
-  padding: 14px 28px !important;
-  border-radius: var(--radius-full) !important;
-  font-family: var(--font-display) !important;
+  gap: 8px !important;
+  min-height: 46px !important;
+  padding: 12px 24px !important;
+  border-radius: 9999px !important;
+  font-family: var(--font-body, 'Outfit', sans-serif) !important;
   font-size: 0.8125rem !important;
   font-weight: 700 !important;
-  line-height: 1.2 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.05em !important;
+  line-height: 1 !important;
+  letter-spacing: 0.02em !important;
   color: #ffffff !important;
   cursor: pointer !important;
   border: none !important;
   outline: none !important;
-  margin-bottom: 10px !important;
-  transition: all var(--transition-smooth) !important;
+  margin: 0 !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
   position: relative;
   overflow: hidden;
-}
-
-.download-menu-btn::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
-  opacity: 0;
-  transition: opacity var(--transition-smooth);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12) !important;
 }
 
 .download-menu-btn:hover {
   transform: translateY(-2px) scale(1.02) !important;
-  box-shadow: var(--shadow-glow) !important;
-}
-
-.download-menu-btn:hover::before {
-  opacity: 1;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18) !important;
 }
 
 .download-menu-btn:active {
+  transform: translateY(0) scale(0.98) !important;
+}
+
+.review-menu-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-height: 46px !important;
+  padding: 12px 24px !important;
+  border-radius: 9999px !important;
+  font-family: var(--font-body, 'Outfit', sans-serif) !important;
+  font-size: 0.8125rem !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.02em !important;
+  color: #2c1810 !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(217, 119, 6, 0.25) !important;
+  cursor: pointer !important;
+  outline: none !important;
+  margin: 0 !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05) !important;
+}
+
+.review-menu-btn:hover {
+  transform: translateY(-2px) scale(1.02) !important;
+  border-color: rgba(217, 119, 6, 0.6) !important;
+  background: #fffdfa !important;
+  box-shadow: 0 8px 22px rgba(217, 119, 6, 0.12) !important;
+}
+
+.review-menu-btn:active {
   transform: translateY(0) scale(0.98) !important;
 }
 

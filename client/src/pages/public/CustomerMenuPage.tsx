@@ -467,167 +467,6 @@ function HangingBulbs() {
   );
 }
 
-/* ── Proper SVG Café Bistro Scene ── */
-function CafeBistroGraphicScene({ primary }: { primary: string }) {
-  return (
-    <div className="relative flex flex-col items-center justify-center mb-10 select-none w-full max-w-md mx-auto">
-      <svg viewBox="0 0 400 220" className="w-full max-w-[380px] h-auto" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          {/* Wood grain gradient for table */}
-          <linearGradient id="tableTopGrad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#7c2d12" />
-            <stop offset="30%" stopColor="#a16207" />
-            <stop offset="50%" stopColor="#b45309" />
-            <stop offset="70%" stopColor="#a16207" />
-            <stop offset="100%" stopColor="#7c2d12" />
-          </linearGradient>
-          <linearGradient id="tableLegGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#78350f" />
-            <stop offset="100%" stopColor="#451a03" />
-          </linearGradient>
-          <linearGradient id="chairGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#92400e" />
-            <stop offset="100%" stopColor="#6b3410" />
-          </linearGradient>
-          <linearGradient id="cupGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ffffff" />
-            <stop offset="100%" stopColor="#f3f4f6" />
-          </linearGradient>
-          <radialGradient id="flameGlow" cx="50%" cy="70%" r="50%">
-            <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.7" />
-            <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
-          </radialGradient>
-          <linearGradient id="plateGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fafafa" />
-            <stop offset="100%" stopColor="#e5e7eb" />
-          </linearGradient>
-        </defs>
-
-        {/* ═══ LEFT CHAIR ═══ */}
-        <g transform="translate(52, 72)">
-          {/* Chair back — curved panel */}
-          <rect x="0" y="0" width="6" height="52" rx="3" fill="url(#chairGrad)" />
-          <rect x="30" y="0" width="6" height="52" rx="3" fill="url(#chairGrad)" />
-          {/* Back rest horizontal slats */}
-          <rect x="0" y="6" width="36" height="5" rx="2" fill="#92400e" />
-          <rect x="0" y="16" width="36" height="5" rx="2" fill="#92400e" />
-          <rect x="0" y="26" width="36" height="5" rx="2" fill="#92400e" />
-          {/* Seat */}
-          <rect x="-2" y="38" width="40" height="7" rx="3" fill="url(#chairGrad)" stroke="#6b3410" strokeWidth="0.5" />
-          {/* Front legs */}
-          <rect x="2" y="45" width="5" height="28" rx="2" fill="url(#chairGrad)" />
-          <rect x="29" y="45" width="5" height="28" rx="2" fill="url(#chairGrad)" />
-        </g>
-
-        {/* ═══ RIGHT CHAIR ═══ */}
-        <g transform="translate(312, 72)">
-          <rect x="0" y="0" width="6" height="52" rx="3" fill="url(#chairGrad)" />
-          <rect x="30" y="0" width="6" height="52" rx="3" fill="url(#chairGrad)" />
-          <rect x="0" y="6" width="36" height="5" rx="2" fill="#92400e" />
-          <rect x="0" y="16" width="36" height="5" rx="2" fill="#92400e" />
-          <rect x="0" y="26" width="36" height="5" rx="2" fill="#92400e" />
-          <rect x="-2" y="38" width="40" height="7" rx="3" fill="url(#chairGrad)" stroke="#6b3410" strokeWidth="0.5" />
-          <rect x="2" y="45" width="5" height="28" rx="2" fill="url(#chairGrad)" />
-          <rect x="29" y="45" width="5" height="28" rx="2" fill="url(#chairGrad)" />
-        </g>
-
-        {/* ═══ TABLE ═══ */}
-        {/* Table top — ellipse with wood texture */}
-        <ellipse cx="200" cy="118" rx="100" ry="12" fill="url(#tableTopGrad)" stroke="#6b3410" strokeWidth="1.5" />
-        {/* Table top highlight */}
-        <ellipse cx="200" cy="116" rx="80" ry="6" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-        {/* Center pedestal */}
-        <rect x="193" y="128" width="14" height="45" rx="2" fill="url(#tableLegGrad)" />
-        {/* Pedestal base */}
-        <ellipse cx="200" cy="175" rx="38" ry="8" fill="#451a03" stroke="#3b2506" strokeWidth="1" />
-        <ellipse cx="200" cy="173" rx="36" ry="6" fill="#5c3310" />
-
-        {/* ═══ TABLETOP ITEMS ═══ */}
-
-        {/* ── Coffee Cup (center-left) ── */}
-        <g transform="translate(155, 85)">
-          {/* Saucer */}
-          <ellipse cx="20" cy="30" rx="18" ry="5" fill="#e5e7eb" stroke="#d1d5db" strokeWidth="0.5" />
-          {/* Cup body */}
-          <path d="M8,10 L12,28 C12,30 28,30 28,28 L32,10 Z" fill="url(#cupGrad)" stroke="#d1d5db" strokeWidth="0.8" />
-          {/* Cup rim */}
-          <ellipse cx="20" cy="10" rx="12" ry="4" fill="#fefefe" stroke="#d1d5db" strokeWidth="0.5" />
-          {/* Coffee liquid */}
-          <ellipse cx="20" cy="11" rx="10" ry="3" fill="#78350f" />
-          {/* Handle */}
-          <path d="M32,14 C38,14 38,24 32,24" fill="none" stroke="#d1d5db" strokeWidth="2" strokeLinecap="round" />
-        </g>
-
-        {/* ── Animated Steam (above coffee) ── */}
-        <g transform="translate(175, 50)">
-          <motion.path
-            d="M0,35 C2,28 -2,22 0,15 C2,8 -1,2 0,-5"
-            fill="none"
-            stroke={primary}
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeOpacity="0.5"
-            animate={{ y: [0, -8], opacity: [0.5, 0] }}
-            transition={{ duration: 2.2, repeat: Infinity, ease: 'easeOut' }}
-          />
-          <motion.path
-            d="M8,35 C6,26 10,20 8,12 C6,5 9,0 8,-8"
-            fill="none"
-            stroke={primary}
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeOpacity="0.6"
-            animate={{ y: [0, -10], opacity: [0.6, 0] }}
-            transition={{ duration: 2.8, repeat: Infinity, ease: 'easeOut', delay: 0.5 }}
-          />
-        </g>
-
-        {/* ── Candle (center) ── */}
-        <g transform="translate(195, 78)">
-          {/* Candle holder base */}
-          <ellipse cx="8" cy="34" rx="10" ry="3" fill="#b8860b" stroke="#8b6914" strokeWidth="0.5" />
-          {/* Candle body */}
-          <rect x="4" y="14" width="8" height="20" rx="1" fill="#fef3c7" stroke="#fcd34d" strokeWidth="0.5" />
-          {/* Wick */}
-          <line x1="8" y1="14" x2="8" y2="9" stroke="#333" strokeWidth="0.8" />
-          {/* Animated flame */}
-          <motion.g
-            animate={{ scaleY: [0.9, 1.15, 0.95, 1.1, 1], scaleX: [1, 0.9, 1.05, 0.92, 1] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-            style={{ transformOrigin: '8px 9px' }}
-          >
-            {/* Outer flame */}
-            <path d="M8,9 C5,4 4,1 8,-4 C12,1 11,4 8,9" fill="#f59e0b" opacity="0.9" />
-            {/* Inner flame */}
-            <path d="M8,8 C6.5,5 6,3 8,-1 C10,3 9.5,5 8,8" fill="#fbbf24" />
-            {/* Core */}
-            <path d="M8,7 C7.2,5.5 7,4.5 8,2 C9,4.5 8.8,5.5 8,7" fill="#fef3c7" />
-          </motion.g>
-          {/* Ambient glow around flame */}
-          <motion.circle
-            cx="8" cy="4" r="14"
-            fill="url(#flameGlow)"
-            animate={{ r: [12, 16, 13, 15, 14], opacity: [0.4, 0.7, 0.5, 0.65, 0.5] }}
-            transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-          />
-        </g>
-
-        {/* ── Pastry Plate (center-right) ── */}
-        <g transform="translate(225, 92)">
-          {/* Plate */}
-          <ellipse cx="18" cy="22" rx="18" ry="5" fill="url(#plateGrad)" stroke="#d1d5db" strokeWidth="0.5" />
-          {/* Croissant shape */}
-          <path d="M6,18 C8,12 14,10 18,12 C22,10 28,12 30,18 C28,16 22,15 18,17 C14,15 8,16 6,18Z" fill="#d97706" stroke="#b45309" strokeWidth="0.4" />
-          <path d="M10,17 C12,14 16,13 18,15 C20,13 24,14 26,17" fill="none" stroke="#92400e" strokeWidth="0.3" opacity="0.4" />
-        </g>
-
-        {/* ── Floor shadow under table ── */}
-        <ellipse cx="200" cy="185" rx="110" ry="6" fill="rgba(0,0,0,0.04)" />
-      </svg>
-    </div>
-  );
-}
-
 /* ── Helper to map category names to generated watercolor sketches ── */
 const getCategorySketch = (name: string) => {
   const norm = name.toLowerCase();
@@ -1265,95 +1104,79 @@ export default function CustomerMenuPage() {
       </div>
 
       {/* ═══════════ FOOTER ═══════════ */}
-      <footer className="w-full bg-[#faf8f4] border-t border-[#e8dfd1] mt-16 relative overflow-hidden" style={{ minHeight: '220px' }}>
+      <footer className="w-full bg-gradient-to-b from-[#faf8f5] to-[#f4eee5] border-t border-[#e8dfd5] mt-24 md:mt-32 relative overflow-hidden">
         {/* Subtle Warm Background Glow */}
         <div
           className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full blur-3xl pointer-events-none"
-          style={{ background: primary, opacity: 0.05 }}
+          style={{ background: primary, opacity: 0.06 }}
         />
 
-        {/* ═══ LEFT SIDE — Café Scene (pinned to left edge) ═══ */}
-        <div className="hidden lg:block absolute left-6 bottom-6 w-[240px] pointer-events-none z-0 opacity-85">
-          <CafeBistroGraphicScene primary={primary} />
-        </div>
-
-        {/* ═══ RIGHT SIDE — Café Scene (pinned to right edge, mirrored) ═══ */}
-        <div className="hidden lg:block absolute right-6 bottom-6 w-[240px] pointer-events-none z-0 opacity-85" style={{ transform: 'scaleX(-1)' }}>
-          <CafeBistroGraphicScene primary={primary} />
-        </div>
-
-        {/* ═══ CENTER — Main Footer Content ═══ */}
-        <div className="relative z-10 flex flex-col items-center justify-center text-center py-12 md:py-14 px-4">
-          {/* Action CTAs: Download Menu PDF & Rate on Google */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 mt-8 md:mt-10 mb-4 max-w-lg mx-auto w-full px-2">
+        {/* ═══ Main Footer Content ═══ */}
+        <div className="relative z-10 flex flex-col items-center justify-center text-center py-14 sm:py-16 px-4 max-w-xl mx-auto">
+          {/* Action CTAs: Download Menu PDF & Rate & Review Us */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 sm:gap-4 w-full mb-3">
             <motion.button
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => window.print()}
               className="download-menu-btn w-full sm:w-auto"
               style={{
                 background: `linear-gradient(135deg, ${primary}, ${tc.colors.secondary || primary})`,
-                boxShadow: `0 10px 28px -4px ${primary}45`,
+                boxShadow: `0 6px 20px -4px ${primary}40`,
               }}
             >
               <Download className="w-4 h-4 flex-shrink-0" />
-              <span className="leading-none">Download Menu PDF</span>
+              <span>Download Menu PDF</span>
             </motion.button>
 
             <motion.button
               type="button"
               onClick={() => setShowReviewModal(true)}
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-full bg-white text-gray-800 border-2 border-amber-300 shadow-md hover:shadow-lg hover:border-amber-400 font-bold text-sm transition-all duration-200 cursor-pointer w-full sm:w-auto select-none"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="review-menu-btn w-full sm:w-auto"
             >
               <Star className="w-4 h-4 text-amber-500 fill-amber-400 flex-shrink-0" />
-              <span className="leading-none text-gray-800">⭐ Rate & Review Us</span>
+              <span>Rate & Review Us</span>
             </motion.button>
           </div>
-          <p className="text-[11px] md:text-[12px] text-gray-500 font-medium mb-1">
-            Download your menu or tap above to submit your dining rating & feedback!
+
+          <p className="text-xs text-amber-900/60 font-medium max-w-md mx-auto leading-relaxed mb-4">
+            Download a print-ready copy or tap above to share your dining rating & feedback
           </p>
 
           {/* Delicate Divider */}
           <div className="w-full max-w-[200px] mx-auto flex items-center justify-center gap-3 my-5 opacity-60">
-            <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-gray-300 flex-1" />
-            <span className="text-xs text-amber-700/60 select-none">🫘</span>
-            <div className="h-px bg-gradient-to-l from-transparent via-gray-300 to-gray-300 flex-1" />
+            <div className="h-px bg-gradient-to-r from-transparent via-amber-900/30 to-amber-900/30 flex-1" />
+            <span className="text-xs text-amber-800/60 select-none">🫘</span>
+            <div className="h-px bg-gradient-to-l from-transparent via-amber-900/30 to-amber-900/30 flex-1" />
           </div>
 
           {/* Footer Bottom Bar */}
-          <div className="flex flex-col md:flex-row items-center justify-center gap-3 text-center">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-center">
             {/* Social Badge */}
             <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              className="inline-flex items-center gap-2 bg-amber-500/10 hover:bg-amber-500/15 px-4 py-2 rounded-full text-xs font-semibold text-gray-700 border border-amber-500/20 transition-colors"
+              className="inline-flex items-center gap-1.5 bg-white/80 hover:bg-white px-3.5 py-1.5 rounded-full text-xs font-semibold text-gray-700 border border-amber-900/10 shadow-2xs transition-colors"
             >
               <AtSign className="w-3.5 h-3.5" style={{ color: primary }} />
               <span>Follow us <strong style={{ color: primary }}>@{socialHandle}</strong></span>
             </motion.div>
 
-            <span className="hidden md:inline text-gray-300">·</span>
+            <span className="hidden sm:inline text-amber-900/30">·</span>
 
             {/* Subtitle */}
-            <div className="text-[11px] text-gray-400 font-medium tracking-wide">
-              Digital Menu · Handcrafted for Café Lovers
+            <div className="text-xs text-amber-900/60 font-medium tracking-wide">
+              Digital Tableside Menu · Handcrafted for Café Lovers
             </div>
-          </div>
-        </div>
-
-        {/* Mobile: Show single centered scene */}
-        <div className="lg:hidden flex justify-center pb-8 pointer-events-none opacity-60">
-          <div className="w-[220px]">
-            <CafeBistroGraphicScene primary={primary} />
           </div>
         </div>
       </footer>
