@@ -1104,17 +1104,17 @@ export default function CustomerMenuPage() {
       </div>
 
       {/* ═══════════ FOOTER ═══════════ */}
-      <footer className="w-full bg-gradient-to-b from-[#faf8f5] to-[#f4eee5] border-t border-[#e8dfd5] mt-24 md:mt-32 relative overflow-hidden">
+      <footer className="w-full border-t border-[#e8dfd5] mt-16 md:mt-24 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #faf7f2 0%, #f4eee5 100%)' }}>
         {/* Subtle Warm Background Glow */}
         <div
           className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full blur-3xl pointer-events-none"
-          style={{ background: primary, opacity: 0.06 }}
+          style={{ background: primary, opacity: 0.05 }}
         />
 
         {/* ═══ Main Footer Content ═══ */}
-        <div className="relative z-10 flex flex-col items-center justify-center text-center py-14 sm:py-16 px-4 max-w-xl mx-auto">
+        <div className="relative z-10 w-full max-w-4xl mx-auto flex flex-col items-center justify-center text-center py-12 md:py-16 px-4">
           {/* Action CTAs: Download Menu PDF & Rate & Review Us */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 sm:gap-4 w-full mb-3">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 sm:gap-4 w-full max-w-md mx-auto mb-3">
             <motion.button
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
@@ -1147,14 +1147,14 @@ export default function CustomerMenuPage() {
             </motion.button>
           </div>
 
-          <p className="text-xs text-amber-900/60 font-medium max-w-md mx-auto leading-relaxed mb-4">
+          <p className="text-xs text-[#786b5f] font-medium max-w-md mx-auto leading-relaxed mb-4">
             Download a print-ready copy or tap above to share your dining rating & feedback
           </p>
 
           {/* Delicate Divider */}
-          <div className="w-full max-w-[200px] mx-auto flex items-center justify-center gap-3 my-5 opacity-60">
+          <div className="w-full max-w-[220px] mx-auto flex items-center justify-center gap-3 my-5 opacity-60">
             <div className="h-px bg-gradient-to-r from-transparent via-amber-900/30 to-amber-900/30 flex-1" />
-            <span className="text-xs text-amber-800/60 select-none">🫘</span>
+            <span className="text-xs text-amber-800/70 select-none">🫘</span>
             <div className="h-px bg-gradient-to-l from-transparent via-amber-900/30 to-amber-900/30 flex-1" />
           </div>
 
@@ -1165,7 +1165,7 @@ export default function CustomerMenuPage() {
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              className="inline-flex items-center gap-1.5 bg-white/80 hover:bg-white px-3.5 py-1.5 rounded-full text-xs font-semibold text-gray-700 border border-amber-900/10 shadow-2xs transition-colors"
+              className="inline-flex items-center gap-1.5 bg-white/90 hover:bg-white px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#4a3f35] border border-amber-900/15 shadow-2xs transition-colors cursor-default"
             >
               <AtSign className="w-3.5 h-3.5" style={{ color: primary }} />
               <span>Follow us <strong style={{ color: primary }}>@{socialHandle}</strong></span>
@@ -1174,7 +1174,7 @@ export default function CustomerMenuPage() {
             <span className="hidden sm:inline text-amber-900/30">·</span>
 
             {/* Subtitle */}
-            <div className="text-xs text-amber-900/60 font-medium tracking-wide">
+            <div className="text-xs text-[#8c7e72] font-medium tracking-wide">
               Digital Tableside Menu · Handcrafted for Café Lovers
             </div>
           </div>
