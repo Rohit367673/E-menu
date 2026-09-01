@@ -802,7 +802,7 @@ export default function CustomerMenuPage() {
     />
 
     {/* ═══════════ INTERACTIVE UI (hidden on print) ═══════════ */}
-    <div className="screen-ui min-h-screen flex flex-col items-center w-full overflow-x-hidden" style={{ backgroundColor: '#fefefe', fontFamily: bodyFont }}>
+    <div className="screen-ui min-h-screen flex flex-col w-full overflow-x-hidden" style={{ backgroundColor: '#fefefe', fontFamily: bodyFont }}>
 
       {/* ═══════════ HEADER ═══════════ */}
       <motion.header
@@ -1104,7 +1104,7 @@ export default function CustomerMenuPage() {
       </div>
 
       {/* ═══════════ FOOTER ═══════════ */}
-      <footer className="w-full border-t border-[#e8dfd5] mt-16 md:mt-24 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #faf7f2 0%, #f4eee5 100%)' }}>
+      <footer className="w-full border-t border-[#e8dfd5] mt-16 md:mt-24 relative overflow-hidden" style={{ width: '100%', background: 'linear-gradient(180deg, #faf7f2 0%, #f4eee5 100%)' }}>
         {/* Subtle Warm Background Glow */}
         <div
           className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full blur-3xl pointer-events-none"
@@ -1112,9 +1112,9 @@ export default function CustomerMenuPage() {
         />
 
         {/* ═══ Main Footer Content ═══ */}
-        <div className="relative z-10 w-full max-w-4xl mx-auto flex flex-col items-center justify-center text-center py-12 md:py-16 px-4">
+        <div className="relative z-10 w-full max-w-2xl mx-auto flex flex-col items-center justify-center text-center py-12 md:py-16 px-4">
           {/* Action CTAs: Download Menu PDF & Rate & Review Us */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 sm:gap-4 w-full max-w-md mx-auto mb-3">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 sm:gap-4 w-full mx-auto mb-3">
             <motion.button
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
@@ -1147,7 +1147,7 @@ export default function CustomerMenuPage() {
             </motion.button>
           </div>
 
-          <p className="text-xs text-[#786b5f] font-medium max-w-md mx-auto leading-relaxed mb-4">
+          <p className="text-xs text-[#786b5f] font-medium max-w-md mx-auto leading-relaxed mb-4 text-center">
             Download a print-ready copy or tap above to share your dining rating & feedback
           </p>
 
@@ -1159,7 +1159,7 @@ export default function CustomerMenuPage() {
           </div>
 
           {/* Footer Bottom Bar */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-center">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-center w-full">
             {/* Social Badge */}
             <motion.div
               initial={{ opacity: 0 }}
