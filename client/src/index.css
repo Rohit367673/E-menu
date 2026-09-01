@@ -919,6 +919,16 @@ select:focus-visible {
   transform: scale(1.05);
 }
 
+.screen-ui {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 100vh !important;
+  margin: 0 auto !important;
+  overflow-x: hidden !important;
+  position: relative !important;
+}
+
 /* ─── Print Styles — Classic Café Menu ───────────────────── */
 @media print {
   .screen-ui {

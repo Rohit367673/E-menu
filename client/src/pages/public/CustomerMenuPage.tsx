@@ -802,7 +802,7 @@ export default function CustomerMenuPage() {
     />
 
     {/* ═══════════ INTERACTIVE UI (hidden on print) ═══════════ */}
-    <div className="screen-ui min-h-screen flex flex-col w-full overflow-x-hidden" style={{ backgroundColor: '#fefefe', fontFamily: bodyFont }}>
+    <div className="screen-ui min-h-screen w-full relative" style={{ backgroundColor: '#fefefe', fontFamily: bodyFont }}>
 
       {/* ═══════════ HEADER ═══════════ */}
       <motion.header
@@ -984,7 +984,7 @@ export default function CustomerMenuPage() {
       <div id="menu-content-anchor" className="scroll-mt-16" />
 
       {/* ═══════════ MENU SECTIONS ═══════════ */}
-      <div className="max-w-5xl w-full mx-auto px-4 md:px-6 py-3.5 md:py-14 flex-1 flex flex-col">
+      <main className="max-w-5xl w-full mx-auto px-4 md:px-6 py-4 md:py-14">
         {/* Mobile Page-Based Menu Booklet */}
         <div
           className="md:hidden flex flex-col flex-1 mt-5"
@@ -1101,7 +1101,7 @@ export default function CustomerMenuPage() {
             );
           })}
         </div>
-      </div>
+      </main>
 
       {/* ═══════════ FOOTER ═══════════ */}
       <footer className="w-full border-t border-[#e8dfd5] mt-16 md:mt-24 relative overflow-hidden" style={{ width: '100%', background: 'linear-gradient(180deg, #faf7f2 0%, #f4eee5 100%)' }}>
