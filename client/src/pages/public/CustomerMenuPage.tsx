@@ -68,11 +68,11 @@ function ShowcaseImage({ item, primary }: { item: MenuItem | undefined; primary:
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
-        aspectRatio: '4/5',
-        borderRadius: '1.25rem',
+        aspectRatio: '4/3',
+        borderRadius: '1rem',
         boxShadow: isHovered
-          ? '0 25px 60px -12px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.06)'
-          : '0 20px 50px -12px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.04)',
+          ? '0 20px 45px -10px rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.06)'
+          : '0 12px 35px -10px rgba(0,0,0,0.14), 0 0 0 1px rgba(0,0,0,0.04)',
       }}
     >
       <AnimatePresence mode="wait">
@@ -209,7 +209,7 @@ function ItemRow({
       disabled={!isAvail}
       className="w-full text-left group cursor-pointer"
       style={{
-        padding: '12px 14px',
+        padding: '8px 12px',
         borderLeft: `3px solid ${isActive ? primary : 'transparent'}`,
         background: isActive ? `${primary}08` : 'transparent',
         borderRadius: 8,
@@ -221,7 +221,7 @@ function ItemRow({
       <div className="flex items-baseline gap-2">
         <VegDot type={item.vegType} />
         <span
-          className="font-bold text-[17px] md:text-[18px] whitespace-nowrap"
+          className="font-bold text-[16px] md:text-[17px] whitespace-nowrap"
           style={{ fontFamily: headingFont, color: isActive ? primary : '#1f2937', transition: 'color 0.2s' }}
         >
           {item.name}
@@ -234,23 +234,23 @@ function ItemRow({
             borderBottom: '1.5px dotted #d1d5db',
             alignSelf: 'flex-end',
             margin: '0 4px',
-            marginBottom: 5,
+            marginBottom: 4,
           }}
         />
-        <span className="font-bold text-[16px] md:text-[17px] flex-shrink-0" style={{ fontFamily: headingFont, color: primary }}>
+        <span className="font-bold text-[15px] md:text-[16px] flex-shrink-0" style={{ fontFamily: headingFont, color: primary }}>
           ₹{item.price}
         </span>
       </div>
 
       {/* Description */}
       {item.description && (
-        <p className="text-[12px] mt-1 line-clamp-1" style={{ color: '#9ca3af', paddingLeft: 22 }}>
+        <p className="text-[12px] mt-0.5 line-clamp-1" style={{ color: '#9ca3af', paddingLeft: 22 }}>
           {item.description}
         </p>
       )}
 
       {!isAvail && (
-        <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider mt-1" style={{ paddingLeft: 22 }}>
+        <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider mt-0.5" style={{ paddingLeft: 22 }}>
           Sold out
         </span>
       )}
@@ -272,16 +272,16 @@ function CategorySection({
     <motion.section
       id={`cat-${category._id}`}
       className="scroll-mt-16 md:scroll-mt-20"
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.08 }}
-      transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+      transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
     >
       {/* ── Category Label ── */}
-      <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
+      <div className="flex items-center gap-3 md:gap-4 mb-2 md:mb-3">
         <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg, transparent, ${primary}30, transparent)` }} />
         <h2
-          className="text-[14px] md:text-[18px] font-bold uppercase tracking-[0.2em] md:tracking-[0.25em] flex-shrink-0"
+          className="text-[13px] md:text-[16px] font-bold uppercase tracking-[0.18em] md:tracking-[0.22em] flex-shrink-0"
           style={{ fontFamily: headingFont, color: primary }}
         >
           {category.icon && <span className="mr-1.5">{category.icon}</span>}
@@ -309,13 +309,13 @@ function CategorySection({
         className="hidden md:block relative"
         style={{
           border: `1.5px solid ${primary}20`,
-          borderRadius: 20,
-          padding: '24px 20px',
+          borderRadius: 16,
+          padding: '16px 18px',
           background: '#ffffff',
         }}
       >
         <div
-          className="hidden lg:flex gap-8 items-start"
+          className="hidden lg:flex gap-6 items-center"
           style={{ flexDirection: isReversed ? 'row-reverse' : 'row' }}
         >
           {/* Items list */}
@@ -335,14 +335,14 @@ function CategorySection({
           </div>
 
           {/* Showcase image */}
-          <div className="flex-shrink-0" style={{ width: 280 }}>
+          <div className="flex-shrink-0" style={{ width: 240 }}>
             <ShowcaseImage item={displayItem} primary={primary} />
           </div>
         </div>
 
         {/* Tablet: stacked (image on top) — between md and lg */}
         <div className="lg:hidden">
-          <div className="mb-4 mx-auto" style={{ maxWidth: 260 }}>
+          <div className="mb-3 mx-auto" style={{ maxWidth: 220 }}>
             <ShowcaseImage item={displayItem} primary={primary} />
           </div>
           <div>
@@ -597,6 +597,168 @@ function PrintMenu({
   );
 }
 
+/* ── Animated Café Footer Component ── */
+function AnimatedCafeFooter({
+  primary,
+  secondary,
+  headingFont,
+  socialHandle,
+  onDownloadPdf,
+  onOpenReviewModal,
+}: {
+  primary: string;
+  secondary?: string;
+  headingFont: string;
+  socialHandle: string;
+  onDownloadPdf: () => void;
+  onOpenReviewModal: () => void;
+}) {
+  return (
+    <footer
+      className="w-full border-t border-[#e8dfd5] mt-6 md:mt-10 relative overflow-hidden"
+      style={{
+        width: '100%',
+        background: 'linear-gradient(180deg, #faf7f2 0%, #f4eee5 100%)',
+      }}
+    >
+      {/* Subtle Warm Background Glow */}
+      <div
+        className="absolute -top-20 left-1/2 -translate-x-1/2 w-[480px] h-[200px] rounded-full blur-3xl pointer-events-none"
+        style={{ background: primary, opacity: 0.07 }}
+      />
+
+      {/* Floating Amber Glow Particles in Footer */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        {[...Array(6)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1.5 h-1.5 rounded-full bg-amber-400/60 blur-[0.5px] animate-ambient-float"
+            style={{
+              left: `${8 + i * 16}%`,
+              bottom: `${10 + (i % 3) * 20}%`,
+              animationDelay: `${i * 0.9}s`,
+              animationDuration: `${4.5 + (i % 3)}s`,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Delicate Curved Fairy Light String on Footer Top */}
+      <div className="relative w-full h-6 pointer-events-none z-10 overflow-hidden opacity-35">
+        <svg className="w-full h-full text-amber-900/30" preserveAspectRatio="none" viewBox="0 0 100 8">
+          <path d="M 0 0 C 20 6, 35 6, 50 2 C 65 6, 80 6, 100 0" fill="none" stroke="currentColor" strokeWidth="0.4" strokeDasharray="1.5,1.5" />
+        </svg>
+      </div>
+
+      {/* ═══ Main Footer Content ═══ */}
+      <div className="relative z-10 w-full max-w-4xl mx-auto flex flex-col items-center justify-center text-center py-5 md:py-7 px-4">
+        {/* Animated Steaming Cup Emblem */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          className="relative mb-2.5 flex flex-col items-center justify-center"
+        >
+          {/* Animated Steam Wisps */}
+          <div className="relative h-5 w-8 flex justify-center gap-1.5">
+            <span
+              className="w-1 h-3.5 rounded-full bg-gradient-to-t from-amber-700/40 to-transparent animate-steam"
+              style={{ animationDelay: '0s', animationDuration: '2.2s' }}
+            />
+            <span
+              className="w-1 h-4.5 rounded-full bg-gradient-to-t from-amber-700/50 to-transparent animate-steam"
+              style={{ animationDelay: '0.4s', animationDuration: '2.5s' }}
+            />
+            <span
+              className="w-1 h-3 rounded-full bg-gradient-to-t from-amber-700/40 to-transparent animate-steam"
+              style={{ animationDelay: '0.8s', animationDuration: '2.1s' }}
+            />
+          </div>
+
+          {/* Cup & Saucer Badge */}
+          <div
+            className="w-10 h-10 rounded-full flex items-center justify-center shadow-xs -mt-1"
+            style={{
+              background: `linear-gradient(135deg, #ffffff, #faf5ee)`,
+              border: `1.5px solid ${primary}25`,
+            }}
+          >
+            <span className="text-sm select-none">☕</span>
+          </div>
+        </motion.div>
+
+        {/* Action CTAs: Download Menu PDF & Rate & Review Us */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-3.5 w-full max-w-md mx-auto mb-2.5">
+          <motion.button
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onDownloadPdf}
+            className="download-menu-btn w-full sm:w-auto"
+            style={{
+              background: `linear-gradient(135deg, ${primary}, ${secondary || primary})`,
+              boxShadow: `0 4px 14px -2px ${primary}40`,
+              fontFamily: headingFont,
+            }}
+          >
+            <Download className="w-4 h-4 flex-shrink-0" />
+            <span>Download Menu PDF</span>
+          </motion.button>
+
+          <motion.button
+            type="button"
+            onClick={onOpenReviewModal}
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="review-menu-btn w-full sm:w-auto"
+            style={{ fontFamily: headingFont }}
+          >
+            <Star className="w-4 h-4 text-amber-500 fill-amber-400 flex-shrink-0" />
+            <span>Rate & Review Us</span>
+          </motion.button>
+        </div>
+
+        <p className="text-[11px] sm:text-xs text-[#786b5f] font-medium max-w-sm mx-auto leading-tight mb-2.5 text-center">
+          Download a print-ready copy or tap above to share your dining rating & feedback
+        </p>
+
+        {/* Delicate Divider */}
+        <div className="w-full max-w-[160px] mx-auto flex items-center justify-center gap-2 my-2.5 opacity-60">
+          <div className="h-px bg-gradient-to-r from-transparent via-amber-900/30 to-amber-900/30 flex-1" />
+          <span className="text-[10px] text-amber-800/70 select-none">🫘</span>
+          <div className="h-px bg-gradient-to-l from-transparent via-amber-900/30 to-amber-900/30 flex-1" />
+        </div>
+
+        {/* Footer Bottom Bar */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 text-center w-full">
+          {/* Social Badge */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="inline-flex items-center gap-1.5 bg-white/90 hover:bg-white px-3 py-1 rounded-full text-[11px] font-semibold text-[#4a3f35] border border-amber-900/15 shadow-2xs transition-colors cursor-default"
+          >
+            <AtSign className="w-3 h-3" style={{ color: primary }} />
+            <span>Follow us <strong style={{ color: primary }}>@{socialHandle}</strong></span>
+          </motion.div>
+
+          <span className="hidden sm:inline text-amber-900/30 text-xs">·</span>
+
+          {/* Subtitle */}
+          <div className="text-[11px] text-[#8c7e72] font-medium tracking-wide">
+            Digital Tableside Menu · Handcrafted for Café Lovers
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
 /* ═══════════════════════════════════════════════
    MAIN COMPONENT
    ═══════════════════════════════════════════════ */
@@ -610,8 +772,37 @@ export default function CustomerMenuPage() {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const tabsRef = useRef<HTMLDivElement>(null);
 
-  /* Fetch data */
+  /* Fetch data with Instant SWR Cache for lightning-fast loading */
   useEffect(() => {
+    let isMounted = true;
+    const cacheKey = `emenu_cache_${slug || 'default'}`;
+
+    // 1. Instant Cache Retrieval for 0ms initial render
+    try {
+      const cachedStr = sessionStorage.getItem(cacheKey) || localStorage.getItem(cacheKey);
+      if (cachedStr) {
+        const cached: PublicMenuData = JSON.parse(cachedStr);
+        if (cached?.restaurant && cached?.categories && cached?.items) {
+          setData(cached);
+          setLoading(false);
+          const sorted = [...cached.categories]
+            .filter((c) => c.isActive !== false)
+            .sort((a, b) => (a.order ?? a.sortOrder ?? 0) - (b.order ?? b.sortOrder ?? 0));
+          const visibleSorted = sorted.filter((c) =>
+            cached.items.some((i) => i.category === c._id && i.isAvailable !== false && i.available !== false)
+          );
+          if (visibleSorted.length > 0) {
+            setActiveCatId(visibleSorted[0]._id);
+          } else if (sorted.length > 0) {
+            setActiveCatId(sorted[0]._id);
+          }
+        }
+      }
+    } catch {
+      // Ignore cache parse error
+    }
+
+    // 2. Fresh Network Fetch in Background
     (async () => {
       try {
         const serverHost = (API_BASE || '').replace(/\/api\/?$/, '');
@@ -621,9 +812,19 @@ export default function CustomerMenuPage() {
           success: boolean;
           data: { restaurant: Restaurant; categories: (Category & { items: MenuItem[] })[] };
         }>(url);
+        if (!isMounted) return;
+
         const { restaurant, categories } = res.data.data;
         const items = categories.flatMap((c) => c.items || []);
-        setData({ restaurant, categories, items });
+        const payload: PublicMenuData = { restaurant, categories, items };
+        setData(payload);
+
+        // Store in cache for instant re-loads
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify(payload));
+          localStorage.setItem(cacheKey, JSON.stringify(payload));
+        } catch {}
+
         const sorted = [...categories]
           .filter((c) => c.isActive !== false)
           .sort((a, b) => (a.order ?? a.sortOrder ?? 0) - (b.order ?? b.sortOrder ?? 0));
@@ -641,13 +842,20 @@ export default function CustomerMenuPage() {
           setPage([0, 0]);
         }
       } catch (err) {
-        setError(axios.isAxiosError(err) && err.response?.status === 404
-          ? 'This menu could not be found.'
-          : 'Something went wrong. Please try again.');
+        if (!isMounted) return;
+        if (!data) {
+          setError(axios.isAxiosError(err) && err.response?.status === 404
+            ? 'This menu could not be found.'
+            : 'Something went wrong. Please try again.');
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     })();
+
+    return () => {
+      isMounted = false;
+    };
   }, [slug]);
 
   // Page booklet swipe/transition states
@@ -840,25 +1048,25 @@ export default function CustomerMenuPage() {
         />
 
         {/* Mobile header: compact centered stack */}
-        <div className="md:hidden relative z-20 flex flex-col items-center justify-center text-center px-5 pt-8 pb-3 w-full mx-auto">
+        <div className="md:hidden relative z-20 flex flex-col items-center justify-center text-center px-4 pt-5 pb-2 w-full mx-auto">
           {/* Logo */}
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-            className="mb-3 flex items-center justify-center w-full mx-auto text-center"
+            className="mb-2 flex items-center justify-center w-full mx-auto text-center"
           >
             {rest.logo ? (
-              <div className="w-14 h-14 rounded-full overflow-hidden shadow-md mx-auto"
+              <div className="w-12 h-12 rounded-full overflow-hidden shadow-md mx-auto"
                 style={{ border: `2px solid ${primary}18` }}
               >
                 <img src={getImageUrl(rest.logo)} alt={rest.name} className="w-full h-full object-cover" />
               </div>
             ) : (
-              <div className="w-14 h-14 rounded-full flex items-center justify-center shadow-md mx-auto"
+              <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-md mx-auto"
                 style={{ background: `linear-gradient(135deg, ${primary}18, ${primary}08)`, border: `2px solid ${primary}10` }}
               >
-                <UtensilsCrossed className="w-7 h-7" style={{ color: primary }} />
+                <UtensilsCrossed className="w-6 h-6" style={{ color: primary }} />
               </div>
             )}
           </motion.div>
@@ -867,7 +1075,7 @@ export default function CustomerMenuPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15, duration: 0.4 }}
-            className="text-[26px] font-bold leading-tight text-center w-full"
+            className="text-[22px] font-bold leading-tight text-center w-full"
             style={{ fontFamily: headingFont, color: tc.colors.text }}
           >
             {rest.name}
@@ -877,7 +1085,7 @@ export default function CustomerMenuPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="text-[13px] mt-1.5 italic font-light leading-relaxed max-w-xs text-center mx-auto"
+            className="text-[12px] mt-0.5 italic font-light leading-relaxed max-w-xs text-center mx-auto"
             style={{ color: tc.colors.textSecondary, fontFamily: headingFont }}
           >
             {rest.description || 'Welcome to our menu'}
@@ -885,25 +1093,25 @@ export default function CustomerMenuPage() {
         </div>
 
         {/* Desktop header: centered brand identity */}
-        <div className="hidden md:flex flex-col w-full mx-auto px-4 md:px-6 pt-16 pb-10 items-center justify-center text-center">
+        <div className="hidden md:flex flex-col w-full mx-auto px-4 md:px-6 pt-6 pb-4 md:pt-8 md:pb-5 items-center justify-center text-center">
           {/* Logo */}
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-            className="mb-4 flex items-center justify-center w-full mx-auto text-center"
+            className="mb-2.5 flex items-center justify-center w-full mx-auto text-center"
           >
             {rest.logo ? (
-              <div className="w-20 h-20 rounded-full overflow-hidden shadow-lg mx-auto"
+              <div className="w-16 h-16 rounded-full overflow-hidden shadow-lg mx-auto"
                 style={{ border: `3px solid ${primary}18` }}
               >
                 <img src={getImageUrl(rest.logo)} alt={rest.name} className="w-full h-full object-cover" />
               </div>
             ) : (
-              <div className="w-20 h-20 rounded-full flex items-center justify-center shadow-lg mx-auto"
+              <div className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg mx-auto"
                 style={{ background: `linear-gradient(135deg, ${primary}18, ${primary}08)`, border: `2px solid ${primary}10` }}
               >
-                <UtensilsCrossed className="w-9 h-9" style={{ color: primary }} />
+                <UtensilsCrossed className="w-8 h-8" style={{ color: primary }} />
               </div>
             )}
           </motion.div>
@@ -914,7 +1122,7 @@ export default function CustomerMenuPage() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15, duration: 0.5 }}
-              className="text-[40px] font-bold leading-tight text-center w-full"
+              className="text-[30px] md:text-[34px] font-bold leading-tight text-center w-full"
               style={{ fontFamily: headingFont, color: tc.colors.text }}
             >
               {rest.name}
@@ -923,7 +1131,7 @@ export default function CustomerMenuPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className="text-[16px] mt-2 italic max-w-xl font-light leading-relaxed text-center mx-auto"
+              className="text-[14px] md:text-[15px] mt-1 italic max-w-xl font-light leading-relaxed text-center mx-auto"
               style={{ color: tc.colors.textSecondary, fontFamily: headingFont }}
             >
               {rest.description || 'Welcome to our menu'}
@@ -933,16 +1141,16 @@ export default function CustomerMenuPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4 }}
-                className="flex flex-wrap items-center justify-center gap-4 mt-3 w-full mx-auto"
+                className="flex flex-wrap items-center justify-center gap-4 mt-2 w-full mx-auto"
               >
                 {rest.address && (
-                  <span className="flex items-center gap-1.5 text-[12px] text-gray-400">
-                    <MapPin className="w-3.5 h-3.5" /> {rest.address}
+                  <span className="flex items-center gap-1.5 text-[11px] text-gray-400">
+                    <MapPin className="w-3 h-3" /> {rest.address}
                   </span>
                 )}
                 {rest.phone && (
-                  <a href={`tel:${rest.phone}`} className="flex items-center gap-1.5 text-[12px]" style={{ color: primary }}>
-                    <Phone className="w-3.5 h-3.5" /> {rest.phone}
+                  <a href={`tel:${rest.phone}`} className="flex items-center gap-1.5 text-[11px]" style={{ color: primary }}>
+                    <Phone className="w-3 h-3" /> {rest.phone}
                   </a>
                 )}
               </motion.div>
@@ -984,10 +1192,10 @@ export default function CustomerMenuPage() {
       <div id="menu-content-anchor" className="scroll-mt-16" />
 
       {/* ═══════════ MENU SECTIONS ═══════════ */}
-      <main className="max-w-5xl w-full mx-auto px-4 md:px-6 py-4 md:py-14">
+      <main className="max-w-5xl w-full mx-auto px-4 md:px-6 pt-2 pb-6 md:pt-3 md:pb-8">
         {/* Mobile Page-Based Menu Booklet */}
         <div
-          className="md:hidden flex flex-col flex-1 mt-5"
+          className="md:hidden flex flex-col flex-1 mt-2.5"
         >
           {sortedCats.length > 0 && (
             (() => {
@@ -1022,14 +1230,14 @@ export default function CustomerMenuPage() {
                     }}
                   >
                     {/* Sketch Illustration Banner */}
-                    <div className="w-full h-36 rounded-2xl overflow-hidden mb-5 border border-[#c8a97e]/30 shadow-sm relative">
+                    <div className="w-full h-32 rounded-xl overflow-hidden mb-3 border border-[#c8a97e]/30 shadow-sm relative">
                       <img
                         src={getImageUrl(sketchPath)}
                         alt={cat.name}
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-transparent flex items-end p-4">
-                        <h2 className="text-white text-[17px] font-bold uppercase tracking-wider flex items-center gap-2" style={{ fontFamily: headingFont }}>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-transparent flex items-end p-3.5">
+                        <h2 className="text-white text-[16px] font-bold uppercase tracking-wider flex items-center gap-2" style={{ fontFamily: headingFont }}>
                           {cat.icon && <span>{cat.icon}</span>}
                           {cat.name}
                         </h2>
@@ -1039,7 +1247,7 @@ export default function CustomerMenuPage() {
                     {/* Items List */}
                     <div className="flex-1 flex flex-col gap-1.5">
                       {catItems.length === 0 ? (
-                        <div className="text-center py-10 text-xs text-text-secondary/60 font-medium">
+                        <div className="text-center py-8 text-xs text-text-secondary/60 font-medium">
                           No items available in this category.
                         </div>
                       ) : (
@@ -1057,7 +1265,7 @@ export default function CustomerMenuPage() {
                     </div>
 
                     {/* Booklet Page Turn Navigation Controls */}
-                    <div className="flex items-center justify-between mt-8 text-[11px] text-text-secondary/80 font-bold pt-4 border-t border-border/40 uppercase tracking-wider">
+                    <div className="flex items-center justify-between mt-5 text-[11px] text-text-secondary/80 font-bold pt-3 border-t border-border/40 uppercase tracking-wider">
                       <button
                         onClick={goToPrevCategory}
                         disabled={currentIdx === 0}
@@ -1084,7 +1292,7 @@ export default function CustomerMenuPage() {
         </div>
 
         {/* Desktop Layout — Keeps Alternate Spacious List Scroll */}
-        <div className="hidden md:flex md:flex-col gap-14 md:gap-20">
+        <div className="hidden md:flex md:flex-col gap-5 md:gap-7">
           {sortedCats.map((cat, idx) => {
             const catItems = getItems(cat._id);
             if (catItems.length === 0) return null;
@@ -1103,83 +1311,15 @@ export default function CustomerMenuPage() {
         </div>
       </main>
 
-      {/* ═══════════ FOOTER ═══════════ */}
-      <footer className="w-full border-t border-[#e8dfd5] mt-16 md:mt-24 relative overflow-hidden" style={{ width: '100%', background: 'linear-gradient(180deg, #faf7f2 0%, #f4eee5 100%)' }}>
-        {/* Subtle Warm Background Glow */}
-        <div
-          className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full blur-3xl pointer-events-none"
-          style={{ background: primary, opacity: 0.05 }}
-        />
-
-        {/* ═══ Main Footer Content ═══ */}
-        <div className="relative z-10 w-full max-w-5xl mx-auto flex flex-col items-center justify-center text-center py-12 md:py-16 px-4">
-          {/* Action CTAs: Download Menu PDF & Rate & Review Us */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 sm:gap-4 w-full max-w-md mx-auto mb-3">
-            <motion.button
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => window.print()}
-              className="download-menu-btn w-full sm:w-auto"
-              style={{
-                background: `linear-gradient(135deg, ${primary}, ${tc.colors.secondary || primary})`,
-                boxShadow: `0 6px 20px -4px ${primary}40`,
-              }}
-            >
-              <Download className="w-4 h-4 flex-shrink-0" />
-              <span>Download Menu PDF</span>
-            </motion.button>
-
-            <motion.button
-              type="button"
-              onClick={() => setShowReviewModal(true)}
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="review-menu-btn w-full sm:w-auto"
-            >
-              <Star className="w-4 h-4 text-amber-500 fill-amber-400 flex-shrink-0" />
-              <span>Rate & Review Us</span>
-            </motion.button>
-          </div>
-
-          <p className="text-xs text-[#786b5f] font-medium max-w-md mx-auto leading-relaxed mb-4 text-center">
-            Download a print-ready copy or tap above to share your dining rating & feedback
-          </p>
-
-          {/* Delicate Divider */}
-          <div className="w-full max-w-[220px] mx-auto flex items-center justify-center gap-3 my-5 opacity-60">
-            <div className="h-px bg-gradient-to-r from-transparent via-amber-900/30 to-amber-900/30 flex-1" />
-            <span className="text-xs text-amber-800/70 select-none">🫘</span>
-            <div className="h-px bg-gradient-to-l from-transparent via-amber-900/30 to-amber-900/30 flex-1" />
-          </div>
-
-          {/* Footer Bottom Bar */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-center w-full">
-            {/* Social Badge */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              className="inline-flex items-center gap-1.5 bg-white/90 hover:bg-white px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#4a3f35] border border-amber-900/15 shadow-2xs transition-colors cursor-default"
-            >
-              <AtSign className="w-3.5 h-3.5" style={{ color: primary }} />
-              <span>Follow us <strong style={{ color: primary }}>@{socialHandle}</strong></span>
-            </motion.div>
-
-            <span className="hidden sm:inline text-amber-900/30">·</span>
-
-            {/* Subtitle */}
-            <div className="text-xs text-[#8c7e72] font-medium tracking-wide">
-              Digital Tableside Menu · Handcrafted for Café Lovers
-            </div>
-          </div>
-        </div>
-      </footer>
+      {/* ═══════════ ANIMATED CAFÉ FOOTER ═══════════ */}
+      <AnimatedCafeFooter
+        primary={primary}
+        secondary={tc.colors.secondary}
+        headingFont={headingFont}
+        socialHandle={socialHandle}
+        onDownloadPdf={() => window.print()}
+        onOpenReviewModal={() => setShowReviewModal(true)}
+      />
 
       {/* ── Item Detail Modal ── */}
       <ItemModal

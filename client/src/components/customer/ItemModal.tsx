@@ -60,59 +60,59 @@ export default function ItemModal({ item, templateConfig, onClose }: ItemModalPr
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: '100%', opacity: 0, scale: 0.95 }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="relative w-full max-w-lg max-h-[85vh] md:max-h-[90vh] overflow-y-auto bg-white rounded-t-3xl md:rounded-2xl shadow-2xl flex flex-col safe-bottom"
+            className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-white rounded-t-3xl md:rounded-2xl shadow-2xl flex flex-col my-auto"
             style={{ backgroundColor: surface, color: text }}
           >
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 z-10 flex items-center justify-center w-11 h-11 rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 active:scale-95 transition-all cursor-pointer"
+              className="absolute top-3 right-3 z-20 flex items-center justify-center w-8 h-8 rounded-full bg-black/50 text-white backdrop-blur-md hover:bg-black/70 active:scale-95 transition-all cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
 
             {/* Pull indicator for mobile */}
-            <div className="md:hidden flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 rounded-full bg-gray-300" />
+            <div className="md:hidden flex justify-center pt-2.5 pb-0.5">
+              <div className="w-9 h-1 rounded-full bg-gray-300" />
             </div>
 
             {/* Image */}
             {item.image ? (
-              <div className="relative w-full h-64 md:h-80 overflow-hidden md:rounded-t-2xl">
+              <div className="relative w-full h-48 sm:h-56 overflow-hidden md:rounded-t-2xl flex-shrink-0">
                 <img
                   src={getImageUrl(item.image)}
                   alt={item.name}
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
                 {/* Discount badge */}
                 {item.discountPrice && item.discountPrice < item.price && (
-                  <div className="absolute top-4 left-4 bg-red-500 text-white text-sm font-bold px-3 py-1 rounded-full">
+                  <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full shadow-md">
                     {Math.round(((item.price - item.discountPrice) / item.price) * 100)}% OFF
                   </div>
                 )}
               </div>
             ) : (
               <div
-                className="w-full h-48 flex items-center justify-center md:rounded-t-2xl"
+                className="w-full h-36 flex items-center justify-center md:rounded-t-2xl flex-shrink-0"
                 style={{
                   background: `linear-gradient(135deg, ${templateConfig.colors.primary}20, ${templateConfig.colors.secondary}20)`,
                 }}
               >
-                <UtensilsCrossed className="w-16 h-16 opacity-20" style={{ color: templateConfig.colors.primary }} />
+                <UtensilsCrossed className="w-12 h-12 opacity-20" style={{ color: templateConfig.colors.primary }} />
               </div>
             )}
 
             {/* Content */}
-            <div className="p-6 md:p-8 pb-8 md:pb-10 flex flex-col gap-4">
+            <div className="p-4 sm:p-5 flex flex-col gap-2.5">
               {/* Badges */}
               {activeBadges.length > 0 && (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {activeBadges.map((badge) => (
                     <span
                       key={badge.label}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold ${badge.color}`}
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${badge.color}`}
                     >
                       {badge.icon}
                       {badge.label}
@@ -125,7 +125,7 @@ export default function ItemModal({ item, templateConfig, onClose }: ItemModalPr
               <div className="flex items-center gap-2">
                 <VegBadge type={item.vegType} />
                 <h2
-                  className="text-2xl font-bold"
+                  className="text-xl sm:text-2xl font-bold leading-tight"
                   style={{
                     fontFamily: templateConfig.fonts.heading,
                     color: templateConfig.colors.text,
@@ -138,7 +138,7 @@ export default function ItemModal({ item, templateConfig, onClose }: ItemModalPr
               {/* Description */}
               {item.description && (
                 <p
-                  className="text-base leading-relaxed"
+                  className="text-xs sm:text-sm leading-relaxed"
                   style={{
                     fontFamily: templateConfig.fonts.body,
                     color: templateConfig.colors.textSecondary,
@@ -150,11 +150,11 @@ export default function ItemModal({ item, templateConfig, onClose }: ItemModalPr
 
               {/* Tags */}
               {item.tags && item.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
                   {item.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="text-sm px-3 py-1 rounded-full font-medium"
+                      className="text-xs px-2.5 py-0.5 rounded-full font-medium"
                       style={{
                         backgroundColor: `${templateConfig.colors.primary}12`,
                         color: templateConfig.colors.primary,
@@ -167,26 +167,26 @@ export default function ItemModal({ item, templateConfig, onClose }: ItemModalPr
               )}
 
               {/* Price */}
-              <div className="flex items-center justify-between pt-5 pb-2 border-t mt-2" style={{ borderColor: `${templateConfig.colors.text}10` }}>
-                <div className="flex items-baseline gap-3">
+              <div className="flex items-center justify-between pt-3 border-t mt-1" style={{ borderColor: `${templateConfig.colors.text}12` }}>
+                <div className="flex items-baseline gap-2.5">
                   {item.discountPrice && item.discountPrice < item.price ? (
                     <>
-                      <span className="text-3xl font-bold" style={{ color: templateConfig.colors.accent }}>
+                      <span className="text-2xl font-bold" style={{ color: templateConfig.colors.accent }}>
                         ₹{item.discountPrice.toFixed(0)}
                       </span>
-                      <span className="text-lg line-through opacity-40" style={{ color: templateConfig.colors.textSecondary }}>
+                      <span className="text-sm line-through opacity-40" style={{ color: templateConfig.colors.textSecondary }}>
                         ₹{item.price.toFixed(0)}
                       </span>
                     </>
                   ) : (
-                    <span className="text-3xl font-bold" style={{ color: templateConfig.colors.text }}>
+                    <span className="text-2xl font-bold" style={{ color: templateConfig.colors.text }}>
                       ₹{item.price.toFixed(0)}
                     </span>
                   )}
                 </div>
 
                 {!item.isAvailable && (
-                  <span className="text-sm font-semibold text-red-500 bg-red-50 px-3 py-1.5 rounded-full">
+                  <span className="text-xs font-semibold text-red-500 bg-red-50 px-2.5 py-1 rounded-full">
                     Currently Unavailable
                   </span>
                 )}
