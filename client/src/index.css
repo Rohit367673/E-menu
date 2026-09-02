@@ -75,30 +75,18 @@
   --animate-pulse-ring: pulse-ring 2s ease-out infinite;
 }
 
-/* ─── Global Reset & Base ─────────────────────────────────── */
-*,
-*::before,
-*::after {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-html,
-body,
-#root {
-  width: 100%;
-  min-height: 100vh;
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-}
+/* ─── Global Base Styles ──────────────────────────────────── */
+/* NOTE: Do NOT add * { margin: 0 } here — Tailwind v4 preflight
+   already does this inside @layer base. Adding it outside a layer
+   would override ALL Tailwind utilities (mx-auto, p-4, etc.)
+   because unlayered CSS always beats @layer in the cascade. */
 
 html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
 }
 
 body {
@@ -108,6 +96,7 @@ body {
   min-height: 100vh;
   line-height: 1.6;
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  overflow-x: hidden;
 }
 
 /* ─── Custom Scrollbar ────────────────────────────────────── */
@@ -919,15 +908,7 @@ select:focus-visible {
   transform: scale(1.05);
 }
 
-.screen-ui {
-  display: block !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  min-height: 100vh !important;
-  margin: 0 auto !important;
-  overflow-x: hidden !important;
-  position: relative !important;
-}
+/* screen-ui: no special overrides needed — centering handled by Tailwind utilities */
 
 /* ─── Print Styles — Classic Café Menu ───────────────────── */
 @media print {
