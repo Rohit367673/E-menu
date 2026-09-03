@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -12,8 +12,10 @@ import {
   FolderOpen,
   FileOutput,
   LayoutDashboard,
+  ShoppingBag,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import apiClient from '../../api/client';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -22,6 +24,7 @@ interface SidebarProps {
 
 const navItems = [
   { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard', end: true },
+  { to: '/admin/orders', icon: ShoppingBag, label: 'Live Orders', end: false, hasBadge: true },
   { to: '/admin/add-item', icon: Plus, label: 'Add Menu Item', end: false },
   { to: '/admin/menu', icon: FolderOpen, label: 'Menu Items', end: false },
   { to: '/admin/qr-menu', icon: QrCode, label: 'QR Menu', end: false },
@@ -31,8 +34,24 @@ const navItems = [
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkOrders = async () => {
+      try {
+        const res = await apiClient.get<{ success: boolean; data: { stats: { pendingCount: number } } }>('/orders/admin');
+        if (res.data.success && res.data.data.stats) {
+          setPendingOrdersCount(res.data.data.stats.pendingCount || 0);
+        }
+      } catch {}
+    };
+
+    checkOrders();
+    const interval = setInterval(checkOrders, 8000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -48,7 +67,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           initial={false}
           animate={{ opacity: 1 }}
         >
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl gradient-accent shadow-lg shadow-primary/20">
+          <div className="flex items-center justify-center w-10 h-10 rounded-xl gradient-accent shadow-lg shadow-primary/20 flex-shrink-0">
             <UtensilsCrossed className="w-5 h-5 text-white" />
           </div>
           <AnimatePresence>
@@ -58,9 +77,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 animate={{ opacity: 1, width: 'auto' }}
                 exit={{ opacity: 0, width: 0 }}
                 transition={{ duration: 0.2 }}
-                className="text-lg font-bold text-white whitespace-nowrap overflow-hidden"
+                className="text-base font-bold text-white whitespace-nowrap overflow-hidden tracking-tight"
               >
-                E-Menu
+                Sukoon Cafe & Bar
               </motion.span>
             )}
           </AnimatePresence>
@@ -123,9 +142,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       animate={{ opacity: 1, width: 'auto' }}
                       exit={{ opacity: 0, width: 0 }}
                       transition={{ duration: 0.2 }}
-                      className="whitespace-nowrap overflow-hidden"
+                      className="whitespace-nowrap overflow-hidden flex-1 text-left flex items-center justify-between"
                     >
-                      {item.label}
+                      <span>{item.label}</span>
+                      {item.hasBadge && pendingOrdersCount > 0 && (
+                        <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-stone-950 animate-pulse shadow-xs">
+                          {pendingOrdersCount}
+                        </span>
+                      )}
                     </motion.span>
                   )}
                 </AnimatePresence>

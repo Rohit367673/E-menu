@@ -139,9 +139,9 @@ async function seed() {
   // Update restaurant name if it's still default
   await db.collection('restaurants').updateOne(
     { _id: restId },
-    { $set: { name: 'ChillCups Café', description: 'Welcome to our menu — freshly brewed, freshly served.', slug: 'chillcups' } }
+    { $set: { name: 'Sukoon Cafe & Bar', description: 'Welcome to our menu — freshly brewed, crafted with serenity.', slug: 'sukoon' } }
   );
-  console.log('Updated restaurant name to ChillCups Café');
+  console.log('Updated restaurant name to Sukoon Cafe & Bar');
 
   await mongoose.disconnect();
   console.log('Done! Seeded successfully.');

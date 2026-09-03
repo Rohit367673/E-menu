@@ -6,6 +6,7 @@ import { useRestaurant } from '../../contexts/RestaurantContext';
 
 const pageTitles: Record<string, string> = {
   '/admin/dashboard': 'Dashboard',
+  '/admin/orders': 'Live Orders',
   '/admin/add-item': 'Add Menu Item',
   '/admin/menu': 'Menu Management',
   '/admin/qr-menu': 'QR Menu',

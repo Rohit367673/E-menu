@@ -1,9 +1,10 @@
 import { useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Flame, Leaf, Star, Sparkles, UtensilsCrossed } from 'lucide-react';
+import { X, Flame, Leaf, Star, Sparkles, UtensilsCrossed, Plus, Minus } from 'lucide-react';
 import VegBadge from './VegBadge';
 import type { MenuItem, TemplateConfig } from '../../types/menu';
 import { getImageUrl } from '../../utils/image';
+import { useCart } from '../../contexts/CartContext';
 
 interface ItemModalProps {
   item: MenuItem | null;
@@ -12,6 +13,7 @@ interface ItemModalProps {
 }
 
 export default function ItemModal({ item, templateConfig, onClose }: ItemModalProps) {
+  const { addItem, removeItem, getItemQuantity } = useCart();
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -185,7 +187,41 @@ export default function ItemModal({ item, templateConfig, onClose }: ItemModalPr
                   )}
                 </div>
 
-                {!item.isAvailable && (
+                {item.isAvailable !== false ? (
+                  <div className="flex items-center gap-2">
+                    {getItemQuantity(item._id) > 0 ? (
+                      <div className="flex items-center rounded-xl border border-amber-500/40 bg-amber-50/70 overflow-hidden shadow-2xs">
+                        <button
+                          type="button"
+                          onClick={() => removeItem(item._id)}
+                          className="w-8 h-8 flex items-center justify-center text-amber-900 hover:bg-amber-100 transition-colors cursor-pointer"
+                        >
+                          <Minus className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="w-7 text-center text-xs font-bold text-amber-950">
+                          {getItemQuantity(item._id)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => addItem(item)}
+                          className="w-8 h-8 flex items-center justify-center text-amber-900 hover:bg-amber-100 transition-colors cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => addItem(item)}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider text-white shadow-xs cursor-pointer hover:brightness-110 active:scale-95 transition-all"
+                        style={{ background: `linear-gradient(135deg, ${templateConfig.colors.primary}, #a86c3d)` }}
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add to Order</span>
+                      </button>
+                    )}
+                  </div>
+                ) : (
                   <span className="text-xs font-semibold text-red-500 bg-red-50 px-2.5 py-1 rounded-full">
                     Currently Unavailable
                   </span>

@@ -19,7 +19,7 @@ export const formatAsRestaurant = (restaurant: {
   updatedAt?: Date;
 }) => ({
   _id: restaurant._id,
-  name: restaurant.name || "Client's Restaurant",
+  name: restaurant.name || "Sukoon Cafe & Bar",
   slug: restaurant.slug || 'menu',
   description: restaurant.description || 'Welcome to our menu!',
   logo: restaurant.logo || '',
@@ -64,7 +64,7 @@ export const getOrCreateRestaurant = async () => {
   }
 
   restaurant = new Restaurant({
-    name: "Client's Restaurant",
+    name: "Sukoon Cafe & Bar",
     slug: 'menu',
     theme: 'modern-cafe',
   });

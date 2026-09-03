@@ -8,10 +8,13 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'motion/react';
-import { UtensilsCrossed, AtSign, Download, MapPin, Phone, Star } from 'lucide-react';
+import { UtensilsCrossed, AtSign, Download, MapPin, Phone, Star, Plus, Minus } from 'lucide-react';
 import type { Restaurant, MenuItem, Category, TemplateConfig } from '../../types/menu';
 import ItemModal from '../../components/customer/ItemModal';
 import ReviewModal from '../../components/customer/ReviewModal';
+import FloatingOrderBar from '../../components/customer/FloatingOrderBar';
+import OrderDrawer from '../../components/customer/OrderDrawer';
+import { useCart } from '../../contexts/CartContext';
 import { getImageUrl } from '../../utils/image';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
@@ -123,23 +126,24 @@ function MobileItemCard({
   item: MenuItem; primary: string; headingFont: string;
   onClick: () => void; index: number;
 }) {
-  const isAvail = item.isAvailable !== false && item.available !== false;
   const [imgErr, setImgErr] = useState(false);
+  const isAvail = item.isAvailable !== false && item.available !== false;
+  const { addItem, removeItem, getItemQuantity } = useCart();
+  const qty = getItemQuantity(item._id);
 
   return (
-    <motion.button
+    <motion.div
       initial={{ opacity: 0, y: 8 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}
       transition={{ duration: 0.3, delay: index * 0.04 }}
       onClick={onClick}
-      disabled={!isAvail}
-      className="menu-card-item w-full text-left"
+      className="menu-card-item w-full flex items-center justify-between gap-2.5 cursor-pointer select-none"
       style={{ opacity: isAvail ? 1 : 0.4 }}
     >
       {/* Thumbnail */}
       {item.image && !imgErr ? (
-        <div className="menu-card-thumb">
+        <div className="menu-card-thumb flex-shrink-0">
           <img
             src={getImageUrl(item.image)}
             alt={item.name}
@@ -149,7 +153,7 @@ function MobileItemCard({
         </div>
       ) : (
         <div
-          className="menu-card-thumb flex items-center justify-center"
+          className="menu-card-thumb flex items-center justify-center flex-shrink-0"
           style={{ background: `linear-gradient(135deg, ${primary}12, ${primary}06)` }}
         >
           <UtensilsCrossed className="w-6 h-6" style={{ color: primary, opacity: 0.25 }} />
@@ -172,19 +176,60 @@ function MobileItemCard({
             {item.description}
           </p>
         )}
-        <span
-          className="font-bold text-[15px]"
-          style={{ fontFamily: headingFont, color: primary }}
-        >
-          ₹{item.price}
-        </span>
-        {!isAvail && (
-          <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider ml-2">
-            Sold out
+        <div className="flex items-center gap-2">
+          <span
+            className="font-bold text-[15px]"
+            style={{ fontFamily: headingFont, color: primary }}
+          >
+            ₹{item.price}
           </span>
-        )}
+          {!isAvail && (
+            <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider">
+              Sold out
+            </span>
+          )}
+        </div>
       </div>
-    </motion.button>
+
+      {/* Quick Add / Stepper Button */}
+      {isAvail && (
+        <div
+          className="flex-shrink-0 ml-1"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {qty > 0 ? (
+            <div className="flex items-center rounded-xl border border-amber-500/40 bg-amber-50 shadow-2xs overflow-hidden">
+              <button
+                type="button"
+                onClick={() => removeItem(item._id)}
+                className="w-7 h-7 flex items-center justify-center text-amber-900 hover:bg-amber-100 active:bg-amber-200 transition-colors cursor-pointer"
+              >
+                <Minus className="w-3 h-3" />
+              </button>
+              <span className="w-6 text-center text-xs font-black text-amber-950">
+                {qty}
+              </span>
+              <button
+                type="button"
+                onClick={() => addItem(item)}
+                className="w-7 h-7 flex items-center justify-center text-amber-900 hover:bg-amber-100 active:bg-amber-200 transition-colors cursor-pointer"
+              >
+                <Plus className="w-3 h-3" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => addItem(item)}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-bold uppercase tracking-wider text-amber-950 bg-amber-100 hover:bg-amber-200 active:scale-95 border border-amber-300/80 transition-all cursor-pointer shadow-2xs"
+            >
+              <Plus className="w-3 h-3 text-amber-800" />
+              <span>Add</span>
+            </button>
+          )}
+        </div>
+      )}
+    </motion.div>
   );
 }
 
@@ -196,9 +241,11 @@ function ItemRow({
   onHover: () => void; onClick: () => void; index: number;
 }) {
   const isAvail = item.isAvailable !== false && item.available !== false;
+  const { addItem, removeItem, getItemQuantity } = useCart();
+  const qty = getItemQuantity(item._id);
 
   return (
-    <motion.button
+    <motion.div
       initial={{ opacity: 0, x: -10 }}
       whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true, amount: 0.3 }}
@@ -206,8 +253,7 @@ function ItemRow({
       onMouseEnter={onHover}
       onFocus={onHover}
       onClick={onClick}
-      disabled={!isAvail}
-      className="w-full text-left group cursor-pointer"
+      className="w-full text-left group cursor-pointer flex items-center justify-between select-none"
       style={{
         padding: '8px 12px',
         borderLeft: `3px solid ${isActive ? primary : 'transparent'}`,
@@ -217,44 +263,85 @@ function ItemRow({
         opacity: isAvail ? 1 : 0.4,
       }}
     >
-      {/* Name ··· Price */}
-      <div className="flex items-baseline gap-2">
-        <VegDot type={item.vegType} />
-        <span
-          className="font-bold text-[16px] md:text-[17px] whitespace-nowrap"
-          style={{ fontFamily: headingFont, color: isActive ? primary : '#1f2937', transition: 'color 0.2s' }}
-        >
-          {item.name}
-        </span>
-        {/* Dotted leader */}
-        <span
-          className="flex-1"
-          style={{
-            minWidth: 16,
-            borderBottom: '1.5px dotted #d1d5db',
-            alignSelf: 'flex-end',
-            margin: '0 4px',
-            marginBottom: 4,
-          }}
-        />
-        <span className="font-bold text-[15px] md:text-[16px] flex-shrink-0" style={{ fontFamily: headingFont, color: primary }}>
-          ₹{item.price}
-        </span>
+      <div className="flex-1 min-w-0 mr-3">
+        {/* Name ··· Price */}
+        <div className="flex items-baseline gap-2">
+          <VegDot type={item.vegType} />
+          <span
+            className="font-bold text-[16px] md:text-[17px] whitespace-nowrap"
+            style={{ fontFamily: headingFont, color: isActive ? primary : '#1f2937', transition: 'color 0.2s' }}
+          >
+            {item.name}
+          </span>
+          {/* Dotted leader */}
+          <span
+            className="flex-1"
+            style={{
+              minWidth: 16,
+              borderBottom: '1.5px dotted #d1d5db',
+              alignSelf: 'flex-end',
+              margin: '0 4px',
+              marginBottom: 4,
+            }}
+          />
+          <span className="font-bold text-[15px] md:text-[16px] flex-shrink-0" style={{ fontFamily: headingFont, color: primary }}>
+            ₹{item.price}
+          </span>
+        </div>
+
+        {/* Description */}
+        {item.description && (
+          <p className="text-[12px] mt-0.5 line-clamp-1" style={{ color: '#9ca3af', paddingLeft: 22 }}>
+            {item.description}
+          </p>
+        )}
+
+        {!isAvail && (
+          <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider mt-0.5" style={{ paddingLeft: 22 }}>
+            Sold out
+          </span>
+        )}
       </div>
 
-      {/* Description */}
-      {item.description && (
-        <p className="text-[12px] mt-0.5 line-clamp-1" style={{ color: '#9ca3af', paddingLeft: 22 }}>
-          {item.description}
-        </p>
+      {/* Quick Add Button */}
+      {isAvail && (
+        <div
+          className="flex-shrink-0 opacity-85 group-hover:opacity-100 transition-opacity"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {qty > 0 ? (
+            <div className="flex items-center rounded-xl border border-amber-500/40 bg-amber-50 shadow-2xs overflow-hidden">
+              <button
+                type="button"
+                onClick={() => removeItem(item._id)}
+                className="w-7 h-7 flex items-center justify-center text-amber-900 hover:bg-amber-100 active:bg-amber-200 transition-colors cursor-pointer"
+              >
+                <Minus className="w-3 h-3" />
+              </button>
+              <span className="w-6 text-center text-xs font-black text-amber-950">
+                {qty}
+              </span>
+              <button
+                type="button"
+                onClick={() => addItem(item)}
+                className="w-7 h-7 flex items-center justify-center text-amber-900 hover:bg-amber-100 active:bg-amber-200 transition-colors cursor-pointer"
+              >
+                <Plus className="w-3 h-3" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => addItem(item)}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-bold uppercase tracking-wider text-amber-950 bg-amber-100 hover:bg-amber-200 active:scale-95 border border-amber-300/80 transition-all cursor-pointer shadow-2xs"
+            >
+              <Plus className="w-3 h-3 text-amber-800" />
+              <span>Add</span>
+            </button>
+          )}
+        </div>
       )}
-
-      {!isAvail && (
-        <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider mt-0.5" style={{ paddingLeft: 22 }}>
-          Sold out
-        </span>
-      )}
-    </motion.button>
+    </motion.div>
   );
 }
 
@@ -967,7 +1054,15 @@ export default function CustomerMenuPage() {
   if (loading) return <SkeletonLoader />;
   if (error || !data) return <ErrorState message={error || 'Something went wrong.'} />;
 
-  const { restaurant: rest } = data;
+  const rest = {
+    ...data.restaurant,
+    name:
+      !data.restaurant.name ||
+      data.restaurant.name === "Client's Restaurant" ||
+      data.restaurant.name === 'ChillCups Café'
+        ? 'Sukoon Cafe & Bar'
+        : data.restaurant.name,
+  };
   const tc = { ...defaultTemplateConfig, ...(rest.templateConfig || {}) };
   const primary = tc.colors.primary || '#6366f1';
   const headingFont = 'Cormorant Garamond, serif';
@@ -1336,6 +1431,20 @@ export default function CustomerMenuPage() {
         slug={slug}
         googleReviewUrl={rest.googleReviewUrl}
         templateConfig={tc}
+      />
+
+      {/* ── Tableside Floating Order Bar ── */}
+      <FloatingOrderBar
+        primaryColor={primary}
+        headingFont={headingFont}
+      />
+
+      {/* ── Tableside Order Checkout & Flow Ordering Drawer ── */}
+      <OrderDrawer
+        primaryColor={primary}
+        headingFont={headingFont}
+        restaurantName={rest.name}
+        slug={slug}
       />
     </div>
     </>

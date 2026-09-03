@@ -30,7 +30,7 @@ const restaurantSchema = new Schema<IRestaurant>(
   {
     name: {
       type: String,
-      default: "Client's Restaurant",
+      default: "Sukoon Cafe & Bar",
       trim: true,
     },
     slug: {

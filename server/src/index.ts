@@ -12,6 +12,7 @@ import uploadRoutes from './routes/upload.js';
 import exportRoutes from './routes/export.js';
 import qrRoutes from './routes/qr.js';
 import reviewRoutes from './routes/reviews.js';
+import orderRoutes from './routes/orders.js';
 import Admin from './models/Admin.js';
 import Restaurant from './models/Restaurant.js';
 import Category from './models/Category.js';
@@ -66,6 +67,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/export', exportRoutes);
 app.use('/api/qr', qrRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/orders', orderRoutes);
 
 // 404 handler
 app.use((_req, res) => {
@@ -208,13 +210,22 @@ const seedDatabase = async () => {
         });
       }
 
-      if (restaurant!.name === "Client's Restaurant") {
-        restaurant!.name = 'ChillCups Café';
-        restaurant!.description = 'Welcome to our menu — freshly brewed, freshly served.';
+      if (restaurant!.name === "Client's Restaurant" || restaurant!.name === 'ChillCups Café') {
+        restaurant!.name = 'Sukoon Cafe & Bar';
+        restaurant!.description = 'Welcome to our menu — freshly brewed, crafted with serenity.';
         await restaurant!.save();
       }
 
       console.log('Demo menu items seeded successfully!');
+    }
+
+    // Always ensure current restaurant name is updated to "Sukoon Cafe & Bar"
+    const currentRest = await Restaurant.findOne();
+    if (currentRest && (currentRest.name === "Client's Restaurant" || currentRest.name === 'ChillCups Café')) {
+      currentRest.name = 'Sukoon Cafe & Bar';
+      currentRest.description = 'Welcome to our menu — freshly brewed, crafted with serenity.';
+      await currentRest.save();
+      console.log('Updated restaurant brand to Sukoon Cafe & Bar in database');
     }
   } catch (error) {
     console.error('Database seeding failed:', error);

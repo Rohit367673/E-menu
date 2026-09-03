@@ -12,12 +12,13 @@ import {
   Star,
   MessageSquareHeart,
   Trash2,
+  ShoppingBag,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRestaurant } from '../../contexts/RestaurantContext';
 import Button from '../../components/ui/Button';
 import apiClient from '../../api/client';
-import type { Review } from '../../types/menu';
+import type { Review, OrderDashboardStats } from '../../types/menu';
 import toast from 'react-hot-toast';
 
 const containerVariants = {
@@ -36,21 +37,40 @@ export default function DashboardHome() {
   const [avgRating, setAvgRating] = useState<number>(4.9);
   const [totalReviews, setTotalReviews] = useState<number>(0);
   const [isLoadingReviews, setIsLoadingReviews] = useState<boolean>(true);
+  const [orderStats, setOrderStats] = useState<OrderDashboardStats>({
+    pendingCount: 0,
+    preparingCount: 0,
+    servedCount: 0,
+    activeCount: 0,
+    todayOrdersCount: 0,
+    todaySales: 0,
+  });
 
   useEffect(() => {
     (async () => {
       try {
-        const res = await apiClient.get<{
-          success: boolean;
-          data: { reviews: Review[]; total: number; averageRating: number };
-        }>('/reviews/admin');
-        if (res.data.success) {
-          setReviews(res.data.data.reviews || []);
-          setAvgRating(res.data.data.averageRating || 4.9);
-          setTotalReviews(res.data.data.total || 0);
+        const [reviewsRes, ordersRes] = await Promise.allSettled([
+          apiClient.get<{
+            success: boolean;
+            data: { reviews: Review[]; total: number; averageRating: number };
+          }>('/reviews/admin'),
+          apiClient.get<{
+            success: boolean;
+            data: { stats: OrderDashboardStats };
+          }>('/orders/admin'),
+        ]);
+
+        if (reviewsRes.status === 'fulfilled' && reviewsRes.value.data.success) {
+          setReviews(reviewsRes.value.data.data.reviews || []);
+          setAvgRating(reviewsRes.value.data.data.averageRating || 4.9);
+          setTotalReviews(reviewsRes.value.data.data.total || 0);
+        }
+
+        if (ordersRes.status === 'fulfilled' && ordersRes.value.data.success && ordersRes.value.data.data.stats) {
+          setOrderStats(ordersRes.value.data.data.stats);
         }
       } catch (err) {
-        console.error('Failed to load reviews:', err);
+        console.error('Failed to load dashboard data:', err);
       } finally {
         setIsLoadingReviews(false);
       }
@@ -78,6 +98,15 @@ export default function DashboardHome() {
 
   const stats = [
     {
+      label: 'Active Table Orders',
+      value: orderStats.activeCount,
+      icon: ShoppingBag,
+      bg: 'from-amber-500/10 to-orange-500/10',
+      iconBg: 'bg-amber-600',
+      trend: `${orderStats.pendingCount} pending kitchen`,
+      link: '/admin/orders',
+    },
+    {
       label: 'Total Menu Items',
       value: menuItems.length,
       icon: UtensilsCrossed,
@@ -89,8 +118,8 @@ export default function DashboardHome() {
       label: 'Categories',
       value: categories.length,
       icon: FolderOpen,
-      bg: 'from-amber-500/10 to-orange-500/10',
-      iconBg: 'bg-amber-500',
+      bg: 'from-blue-500/10 to-indigo-500/10',
+      iconBg: 'bg-blue-600',
       trend: `${categories.length} sections`,
     },
     {
@@ -99,11 +128,21 @@ export default function DashboardHome() {
       icon: Star,
       bg: 'from-amber-500/10 to-yellow-500/10',
       iconBg: 'bg-amber-500',
-      trend: `${totalReviews} customer feedback`,
+      trend: `${totalReviews} customer reviews`,
     },
   ];
 
   const quickActions = [
+    {
+      id: 'qa-orders',
+      label: 'Live Orders',
+      description: 'Review incoming table orders and settle guest bills',
+      icon: ShoppingBag,
+      to: '/admin/orders',
+      gradient: 'from-amber-500 to-orange-600',
+      lightBg: 'bg-amber-50',
+      iconColor: 'text-amber-600',
+    },
     {
       id: 'qa-add-item',
       label: 'Add Menu Item',
@@ -120,9 +159,9 @@ export default function DashboardHome() {
       description: 'View, edit, and organize your menu items',
       icon: UtensilsCrossed,
       to: '/admin/menu',
-      gradient: 'from-amber-500 to-orange-600',
-      lightBg: 'bg-amber-50',
-      iconColor: 'text-amber-600',
+      gradient: 'from-emerald-500 to-teal-600',
+      lightBg: 'bg-emerald-50',
+      iconColor: 'text-emerald-600',
     },
     {
       id: 'qa-qr-code',
@@ -130,9 +169,9 @@ export default function DashboardHome() {
       description: 'Create and download your restaurant QR code',
       icon: QrCode,
       to: '/admin/qr-menu',
-      gradient: 'from-emerald-500 to-teal-600',
-      lightBg: 'bg-emerald-50',
-      iconColor: 'text-emerald-600',
+      gradient: 'from-blue-500 to-indigo-600',
+      lightBg: 'bg-blue-50',
+      iconColor: 'text-blue-600',
     },
   ];
 

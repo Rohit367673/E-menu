@@ -10,6 +10,8 @@ import PrintMenuPage from './pages/dashboard/PrintMenuPage';
 import CustomerMenuPage from './pages/public/CustomerMenuPage';
 import AddItemPage from './pages/dashboard/AddItemPage';
 import DashboardHome from './pages/dashboard/DashboardHome';
+import OrdersPage from './pages/dashboard/OrdersPage';
+import { CartProvider } from './contexts/CartContext';
 import type { ReactNode } from 'react';
 import { motion } from 'motion/react';
 
@@ -38,23 +40,25 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <RestaurantProvider>
-          <ToastProvider />
-          <Routes>
-            <Route path="/" element={<CustomerMenuPage />} />
-            <Route path="/menu/:slug" element={<CustomerMenuPage />} />
-            <Route path="/admin/login" element={<LoginPage />} />
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Navigate to="/admin/dashboard" replace />} />
-              <Route path="dashboard" element={<DashboardHome />} />
-              <Route path="add-item" element={<AddItemPage />} />
-              <Route path="menu" element={<MenuPage />} />
+          <CartProvider>
+            <ToastProvider />
+            <Routes>
+              <Route path="/" element={<CustomerMenuPage />} />
+              <Route path="/menu/:slug" element={<CustomerMenuPage />} />
+              <Route path="/admin/login" element={<LoginPage />} />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Navigate to="/admin/dashboard" replace />} />
+                <Route path="dashboard" element={<DashboardHome />} />
+                <Route path="orders" element={<OrdersPage />} />
+                <Route path="add-item" element={<AddItemPage />} />
+                <Route path="menu" element={<MenuPage />} />
               <Route path="qr-menu" element={<QRCodePage />} />
               <Route path="qr" element={<Navigate to="/admin/qr-menu" replace />} />
               <Route path="print-menu" element={<PrintMenuPage />} />
@@ -68,6 +72,7 @@ export default function App() {
             <Route path="/login" element={<Navigate to="/admin/login" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </CartProvider>
         </RestaurantProvider>
       </AuthProvider>
     </BrowserRouter>

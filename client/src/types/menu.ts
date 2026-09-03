@@ -100,3 +100,41 @@ export interface ApiResponse<T> {
   message?: string;
   count?: number;
 }
+
+export type OrderStatus = 'pending' | 'preparing' | 'served' | 'completed' | 'cancelled';
+
+export interface OrderItem {
+  menuItemId?: string;
+  name: string;
+  price: number;
+  quantity: number;
+  vegType?: 'veg' | 'nonveg';
+  notes?: string;
+}
+
+export interface Order {
+  _id: string;
+  orderNumber: string;
+  restaurantId: string;
+  tableNumber: string;
+  customerName: string;
+  customerPhone?: string;
+  items: OrderItem[];
+  totalAmount: number;
+  totalItems: number;
+  status: OrderStatus;
+  specialInstructions?: string;
+  round: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OrderDashboardStats {
+  pendingCount: number;
+  preparingCount: number;
+  servedCount: number;
+  activeCount: number;
+  todayOrdersCount: number;
+  todaySales: number;
+}
+
