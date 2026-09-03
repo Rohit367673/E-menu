@@ -1037,7 +1037,7 @@ export default function CustomerMenuPage() {
   /* Auto-scroll active tab into view in the tabs bar without shifting the window */
   useEffect(() => {
     if (!activeCatId || !tabsRef.current) return;
-    const scrollContainer = tabsRef.current.querySelector('.overflow-x-auto') as HTMLElement;
+    const scrollContainer = (tabsRef.current.querySelector('.category-tabs-row') || tabsRef.current) as HTMLElement;
     const activeTab = tabsRef.current.querySelector(`[data-cat="${activeCatId}"]`) as HTMLElement;
     if (scrollContainer && activeTab) {
       const containerRect = scrollContainer.getBoundingClientRect();
@@ -1045,7 +1045,7 @@ export default function CustomerMenuPage() {
       const relativeTabLeft = tabRect.left - containerRect.left + scrollContainer.scrollLeft;
       const targetScrollLeft = relativeTabLeft - (containerRect.width / 2) + (tabRect.width / 2);
       scrollContainer.scrollTo({
-        left: targetScrollLeft,
+        left: Math.max(0, targetScrollLeft),
         behavior: 'smooth',
       });
     }
@@ -1313,13 +1313,15 @@ export default function CustomerMenuPage() {
                     transition={{ duration: 0.25, ease: 'easeInOut' }}
                     className="flex flex-col flex-1"
                     drag="x"
+                    dragDirectionLock
                     dragConstraints={{ left: 0, right: 0 }}
-                    dragElastic={0.4}
+                    dragElastic={0.25}
                     onDragEnd={(_e, info) => {
-                      const swipeThreshold = 70;
-                      if (info.offset.x < -swipeThreshold) {
+                      const swipeThreshold = 45;
+                      const velocityThreshold = 350;
+                      if (info.offset.x < -swipeThreshold || info.velocity.x < -velocityThreshold) {
                         goToNextCategory();
-                      } else if (info.offset.x > swipeThreshold) {
+                      } else if (info.offset.x > swipeThreshold || info.velocity.x > velocityThreshold) {
                         goToPrevCategory();
                       }
                     }}

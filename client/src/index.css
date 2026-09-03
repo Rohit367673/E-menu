@@ -724,11 +724,19 @@ select:focus-visible {
   padding-right: 1.5rem;
   display: flex;
   align-items: center;
-  justify-content: space-around;
+  justify-content: flex-start;
   gap: 0.5rem;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
   scrollbar-width: none;
   -ms-overflow-style: none;
+}
+
+@media (min-width: 768px) {
+  .category-tabs-row {
+    justify-content: center;
+  }
 }
 
 .category-tabs-row::-webkit-scrollbar {
@@ -736,8 +744,8 @@ select:focus-visible {
 }
 
 .category-pill-btn {
-  flex: 1 1 0%;
-  min-width: 90px;
+  flex: 0 0 auto;
+  min-width: fit-content;
   font-size: 0.8125rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -746,7 +754,7 @@ select:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem 1rem;
+  padding: 0.45rem 1rem;
   border-radius: var(--radius-full);
   cursor: pointer;
   white-space: nowrap;
@@ -755,6 +763,7 @@ select:focus-visible {
   outline: none;
   position: relative;
   overflow: hidden;
+  scroll-margin: 1.5rem;
 }
 
 .category-pill-btn::before {
