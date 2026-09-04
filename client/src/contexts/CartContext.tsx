@@ -1,6 +1,6 @@
-import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { ReactNode } from 'react';
-import type { MenuItem, Order } from '../types/menu';
+import type { MenuItem, Order, OrderStatus, ActiveTableData } from '../types/menu';
 import apiClient from '../api/client';
 
 export interface CartLineItem {
@@ -31,6 +31,10 @@ interface CartContextType {
   activeOrders: Order[];
   activeTableBill: number;
   activeRoundsCount: number;
+  overallStatus: 'none' | OrderStatus;
+  isTableSettled: boolean;
+  dismissSettledNotification: () => void;
+  resetTableSession: () => void;
   fetchActiveOrders: () => Promise<void>;
   lastPlacedOrder: Order | null;
   setLastPlacedOrder: (order: Order | null) => void;
@@ -91,6 +95,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
   const [activeTableBill, setActiveTableBill] = useState(0);
   const [activeRoundsCount, setActiveRoundsCount] = useState(0);
+  const [overallStatus, setOverallStatus] = useState<'none' | OrderStatus>('none');
+  const [isTableSettled, setIsTableSettled] = useState(false);
+  const hadActiveOrdersRef = useRef(false);
   const [lastPlacedOrder, setLastPlacedOrder] = useState<Order | null>(null);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
 
@@ -208,25 +215,60 @@ export function CartProvider({ children }: { children: ReactNode }) {
     try {
       const res = await apiClient.get<{
         success: boolean;
-        data: { tableNumber: string; orders: Order[]; totalBill: number; activeRounds: number };
+        data: ActiveTableData;
       }>(`/orders/public/active/${encodeURIComponent(tableNumber)}`);
 
-      if (res.data.success) {
-        setActiveOrders(res.data.data.orders || []);
+      if (res.data.success && res.data.data) {
+        const fetchedOrders = res.data.data.orders || [];
+        const wasActive = hadActiveOrdersRef.current;
+
+        setActiveOrders(fetchedOrders);
         setActiveTableBill(res.data.data.totalBill || 0);
         setActiveRoundsCount(res.data.data.activeRounds || 0);
+        setOverallStatus(res.data.data.overallStatus || 'none');
+
+        if (fetchedOrders.length > 0) {
+          hadActiveOrdersRef.current = true;
+          if (res.data.data.customerName && !customerName) {
+            setCustomerNameState(res.data.data.customerName);
+          }
+        } else if (wasActive && fetchedOrders.length === 0) {
+          // Table was settled by receptionist!
+          setIsTableSettled(true);
+          hadActiveOrdersRef.current = false;
+        }
       }
     } catch {
       // Quiet fail if network unavailable
     }
-  }, [tableNumber]);
+  }, [tableNumber, customerName]);
 
-  // Initial fetch of active table orders
+  // Initial fetch and auto-polling every 5 seconds for real-time live status without refreshing
   useEffect(() => {
-    if (tableNumber) {
+    if (!tableNumber) return;
+
+    fetchActiveOrders();
+
+    const intervalId = setInterval(() => {
       fetchActiveOrders();
-    }
+    }, 5000);
+
+    return () => clearInterval(intervalId);
   }, [tableNumber, fetchActiveOrders]);
+
+  const dismissSettledNotification = useCallback(() => {
+    setIsTableSettled(false);
+  }, []);
+
+  const resetTableSession = useCallback(() => {
+    setActiveOrders([]);
+    setActiveTableBill(0);
+    setActiveRoundsCount(0);
+    setOverallStatus('none');
+    setIsTableSettled(false);
+    hadActiveOrdersRef.current = false;
+    clearCart();
+  }, [clearCart]);
 
   // Place order
   const placeOrder = useCallback(
@@ -311,6 +353,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       activeOrders,
       activeTableBill,
       activeRoundsCount,
+      overallStatus,
+      isTableSettled,
+      dismissSettledNotification,
+      resetTableSession,
       fetchActiveOrders,
       lastPlacedOrder,
       setLastPlacedOrder,
@@ -337,6 +383,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       activeOrders,
       activeTableBill,
       activeRoundsCount,
+      overallStatus,
+      isTableSettled,
+      dismissSettledNotification,
+      resetTableSession,
       fetchActiveOrders,
       lastPlacedOrder,
       placeOrder,

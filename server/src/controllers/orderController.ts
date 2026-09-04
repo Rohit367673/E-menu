@@ -130,6 +130,29 @@ export const getActiveTableOrders = async (req: Request, res: Response): Promise
     const totalBill = orders.reduce((sum, o) => sum + o.totalAmount, 0);
     const totalItems = orders.reduce((sum, o) => sum + o.totalItems, 0);
 
+    let overallStatus: 'none' | OrderStatus = 'none';
+    if (orders.some((o) => o.status === 'pending')) {
+      overallStatus = 'pending';
+    } else if (orders.some((o) => o.status === 'preparing')) {
+      overallStatus = 'preparing';
+    } else if (orders.some((o) => o.status === 'served')) {
+      overallStatus = 'served';
+    }
+
+    // Check if table was recently completed
+    let recentlySettled = false;
+    if (orders.length === 0) {
+      const lastCompleted = await Order.findOne({
+        restaurantId: restaurant._id,
+        tableNumber: cleanTable,
+        status: 'completed',
+      }).sort({ updatedAt: -1 });
+
+      if (lastCompleted && (Date.now() - new Date(lastCompleted.updatedAt).getTime()) < 30 * 60 * 1000) {
+        recentlySettled = true;
+      }
+    }
+
     res.json({
       success: true,
       data: {
@@ -138,6 +161,9 @@ export const getActiveTableOrders = async (req: Request, res: Response): Promise
         totalBill: Math.round(totalBill * 100) / 100,
         totalItems,
         activeRounds: orders.length,
+        overallStatus,
+        customerName: orders[0]?.customerName || '',
+        recentlySettled,
       },
     });
   } catch (error) {
@@ -273,3 +299,35 @@ export const deleteOrder = async (req: AuthRequest, res: Response): Promise<void
     res.status(500).json({ success: false, message: 'Failed to delete order' });
   }
 };
+
+export const resetTableSession = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { tableNumber } = req.params;
+    const restaurant = await getOrCreateRestaurant();
+
+    if (!tableNumber) {
+      res.status(400).json({ success: false, message: 'Table number is required' });
+      return;
+    }
+
+    const cleanTable = tableNumber.toString().trim();
+    const result = await Order.updateMany(
+      {
+        restaurantId: restaurant._id,
+        tableNumber: cleanTable,
+        status: { $in: ['pending', 'preparing', 'served'] },
+      },
+      { $set: { status: 'cancelled' } }
+    );
+
+    res.json({
+      success: true,
+      message: `Table ${cleanTable} session reset successfully (${result.modifiedCount} orders cleared)`,
+      data: { clearedCount: result.modifiedCount },
+    });
+  } catch (error) {
+    console.error('Reset table session error:', error);
+    res.status(500).json({ success: false, message: 'Failed to reset table session' });
+  }
+};
+

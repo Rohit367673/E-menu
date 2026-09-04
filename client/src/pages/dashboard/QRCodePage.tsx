@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
@@ -32,6 +32,8 @@ export default function QRCodePage() {
   const [size, setSize] = useState(280);
   const [includeLogo, setIncludeLogo] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [selectedTable, setSelectedTable] = useState<string>('all');
+  const [customTable, setCustomTable] = useState<string>('');
   const qrCanvasRef = useRef<HTMLDivElement>(null);
   const qrSvgRef = useRef<HTMLDivElement>(null);
 
@@ -54,7 +56,18 @@ export default function QRCodePage() {
     fetchRestaurant();
   }, []);
 
-  const menuUrl = `${APP_URL}/menu/${restaurant?.slug || 'menu'}`;
+  const activeTableLabel = selectedTable === 'all'
+    ? ''
+    : selectedTable === 'custom'
+      ? (customTable.trim() || 'Custom')
+      : selectedTable;
+
+  const menuUrl = useMemo(() => {
+    const base = `${APP_URL}/menu/${restaurant?.slug || 'menu'}`;
+    if (selectedTable === 'all') return base;
+    const tbl = selectedTable === 'custom' ? (customTable.trim() || '1') : selectedTable;
+    return `${base}?table=${encodeURIComponent(tbl)}`;
+  }, [restaurant?.slug, selectedTable, customTable]);
 
   const handleCopyLink = useCallback(async () => {
     try {
@@ -74,12 +87,16 @@ export default function QRCodePage() {
   }, [menuUrl]);
 
   const handleDownloadPNG = useCallback(async () => {
+    const filePrefix = selectedTable !== 'all'
+      ? `${restaurant?.slug || 'menu'}-table-${activeTableLabel.toLowerCase().replace(/\s+/g, '-')}`
+      : `${restaurant?.slug || 'menu'}`;
+
     try {
       const res = await downloadQR({ format: 'png', size: 1024, fgColor, bgColor });
       const blob = new Blob([res.data], { type: 'image/png' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.download = `${restaurant?.slug || 'menu'}-qr-code.png`;
+      link.download = `${filePrefix}-qr-code.png`;
       link.href = url;
       link.click();
       URL.revokeObjectURL(url);
@@ -89,19 +106,23 @@ export default function QRCodePage() {
       if (!canvas) return;
       const url = canvas.toDataURL('image/png');
       const link = document.createElement('a');
-      link.download = `${restaurant?.name || 'menu'}-qr-code.png`;
+      link.download = `${filePrefix}-qr-code.png`;
       link.href = url;
       link.click();
     }
-  }, [restaurant, fgColor, bgColor]);
+  }, [restaurant, fgColor, bgColor, selectedTable, activeTableLabel]);
 
   const handleDownloadSVG = useCallback(async () => {
+    const filePrefix = selectedTable !== 'all'
+      ? `${restaurant?.slug || 'menu'}-table-${activeTableLabel.toLowerCase().replace(/\s+/g, '-')}`
+      : `${restaurant?.slug || 'menu'}`;
+
     try {
       const res = await downloadQR({ format: 'svg', size: 1024, fgColor, bgColor });
       const blob = new Blob([res.data], { type: 'image/svg+xml' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.download = `${restaurant?.slug || 'menu'}-qr-code.svg`;
+      link.download = `${filePrefix}-qr-code.svg`;
       link.href = url;
       link.click();
       URL.revokeObjectURL(url);
@@ -114,12 +135,12 @@ export default function QRCodePage() {
       const blob = new Blob([svgString], { type: 'image/svg+xml' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.download = `${restaurant?.name || 'menu'}-qr-code.svg`;
+      link.download = `${filePrefix}-qr-code.svg`;
       link.href = url;
       link.click();
       URL.revokeObjectURL(url);
     }
-  }, [restaurant, fgColor, bgColor]);
+  }, [restaurant, fgColor, bgColor, selectedTable, activeTableLabel]);
 
   if (loading) {
     return (
@@ -203,7 +224,9 @@ export default function QRCodePage() {
                 />
               )}
               <h2 className="text-xl font-bold text-white">{restaurant.name}</h2>
-              <p className="text-white/70 text-sm mt-1">Scan to view our menu</p>
+              <p className="text-white/85 text-sm mt-1 font-medium">
+                {selectedTable === 'all' ? 'Scan to view our menu' : `Table ${activeTableLabel} — Scan to Order`}
+              </p>
             </div>
 
             {/* QR Code */}
@@ -306,6 +329,64 @@ export default function QRCodePage() {
               <Palette className="w-5 h-5 text-primary" />
               Customize
             </h2>
+
+            {/* Table Specific QR Assignment */}
+            <div className="border-b border-border/60 pb-5">
+              <label className="block text-sm font-semibold text-text mb-2">Table Assignment</label>
+              <p className="text-xs text-text-secondary mb-2.5">
+                Generate QR codes for specific tables so customer orders are automatically tagged.
+              </p>
+              <div className="grid grid-cols-4 gap-1.5 mb-2.5">
+                <button
+                  type="button"
+                  onClick={() => setSelectedTable('all')}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    selectedTable === 'all'
+                      ? 'bg-primary text-white shadow-xs'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  General
+                </button>
+                {['1', '2', '3', '4', '5', '6', '7'].map((tbl) => (
+                  <button
+                    key={tbl}
+                    type="button"
+                    onClick={() => setSelectedTable(tbl)}
+                    className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      selectedTable === tbl
+                        ? 'bg-primary text-white shadow-xs'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    T-{tbl}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedTable('custom')}
+                  className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex-shrink-0 cursor-pointer ${
+                    selectedTable === 'custom'
+                      ? 'bg-primary text-white shadow-xs'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Custom Table
+                </button>
+                {selectedTable === 'custom' && (
+                  <input
+                    type="text"
+                    placeholder="e.g. 8, Bar 1, Patio 2"
+                    value={customTable}
+                    onChange={(e) => setCustomTable(e.target.value)}
+                    className="flex-1 h-8 px-2.5 text-xs border border-border rounded-lg outline-none focus:border-primary"
+                  />
+                )}
+              </div>
+            </div>
 
             {/* Foreground Color */}
             <div>

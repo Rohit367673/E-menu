@@ -5,6 +5,7 @@ import {
   getAdminOrders,
   updateOrderStatus,
   settleTableOrders,
+  resetTableSession,
   deleteOrder,
 } from '../controllers/orderController.js';
 import auth from '../middleware/auth.js';
@@ -19,6 +20,7 @@ router.get('/public/active/:tableNumber', getActiveTableOrders);
 router.get('/admin', auth, getAdminOrders);
 router.patch('/admin/:id/status', auth, updateOrderStatus);
 router.patch('/admin/table/:tableNumber/settle', auth, settleTableOrders);
+router.post('/admin/table/:tableNumber/reset', auth, resetTableSession);
 router.delete('/admin/:id', auth, deleteOrder);
 
 export default router;

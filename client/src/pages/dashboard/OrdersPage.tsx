@@ -118,6 +118,24 @@ export default function OrdersPage() {
     }
   };
 
+  const handleResetTable = async (tableNum: string) => {
+    if (!window.confirm(`Force reset session for Table ${tableNum}? This will clear active table orders immediately.`)) {
+      return;
+    }
+
+    try {
+      const res = await apiClient.post<{ success: boolean; message: string }>(
+        `/orders/admin/table/${encodeURIComponent(tableNum)}/reset`
+      );
+
+      if (res.data.success) {
+        fetchOrders(true);
+      }
+    } catch (err) {
+      console.error('Failed to reset table:', err);
+    }
+  };
+
   // Extract unique table numbers
   const uniqueTables = Array.from(
     new Set(orders.map((o) => o.tableNumber))
@@ -508,11 +526,17 @@ export default function OrdersPage() {
                   ))}
                 </div>
 
-                {/* Settle Entire Table Bill CTA */}
-                <div className="p-3 bg-stone-50 border-t border-stone-100 flex items-center justify-between">
-                  <div className="text-xs text-stone-500">
-                    Settle Table {grp.tableNumber}
-                  </div>
+                {/* Settle / Clear Entire Table Bill CTA */}
+                <div className="p-3 bg-stone-50 border-t border-stone-100 flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleResetTable(grp.tableNumber)}
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-stone-500 hover:text-red-600 hover:bg-red-50 text-xs font-semibold transition-colors cursor-pointer border border-transparent hover:border-red-200"
+                    title="Force clear active session for this table"
+                  >
+                    <span>Clear Table</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => handleSettleTable(grp.tableNumber)}

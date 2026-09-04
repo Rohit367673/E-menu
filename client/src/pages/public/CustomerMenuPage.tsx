@@ -14,6 +14,7 @@ import ItemModal from '../../components/customer/ItemModal';
 import ReviewModal from '../../components/customer/ReviewModal';
 import FloatingOrderBar from '../../components/customer/FloatingOrderBar';
 import OrderDrawer from '../../components/customer/OrderDrawer';
+import LiveOrderStatusBanner from '../../components/customer/LiveOrderStatusBanner';
 import { useCart } from '../../contexts/CartContext';
 import { getImageUrl } from '../../utils/image';
 
@@ -1282,6 +1283,13 @@ export default function CustomerMenuPage() {
           })}
         </div>
       </div>
+
+      {/* ═══════════ LIVE ORDER STATUS BANNER (Real-Time Tableside Tracker) ═══════════ */}
+      <LiveOrderStatusBanner
+        primaryColor={primary}
+        headingFont={headingFont}
+        restaurantName={rest.name}
+      />
 
       {/* Anchor point to auto-scroll top of booklet on mobile */}
       <div id="menu-content-anchor" className="scroll-mt-16" />

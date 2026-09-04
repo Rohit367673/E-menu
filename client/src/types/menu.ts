@@ -138,3 +138,14 @@ export interface OrderDashboardStats {
   todaySales: number;
 }
 
+export interface ActiveTableData {
+  tableNumber: string;
+  orders: Order[];
+  totalBill: number;
+  totalItems: number;
+  activeRounds: number;
+  overallStatus?: 'none' | OrderStatus;
+  customerName?: string;
+  recentlySettled?: boolean;
+}
+
