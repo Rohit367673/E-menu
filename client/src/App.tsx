@@ -11,6 +11,7 @@ import CustomerMenuPage from './pages/public/CustomerMenuPage';
 import AddItemPage from './pages/dashboard/AddItemPage';
 import DashboardHome from './pages/dashboard/DashboardHome';
 import OrdersPage from './pages/dashboard/OrdersPage';
+import MonthlyEarningsPage from './pages/dashboard/MonthlyEarningsPage';
 import { CartProvider } from './contexts/CartContext';
 import type { ReactNode } from 'react';
 import { motion } from 'motion/react';
@@ -57,11 +58,13 @@ export default function App() {
                 <Route index element={<Navigate to="/admin/dashboard" replace />} />
                 <Route path="dashboard" element={<DashboardHome />} />
                 <Route path="orders" element={<OrdersPage />} />
+                <Route path="earnings" element={<MonthlyEarningsPage />} />
+                <Route path="monthly-earnings" element={<Navigate to="/admin/earnings" replace />} />
                 <Route path="add-item" element={<AddItemPage />} />
                 <Route path="menu" element={<MenuPage />} />
-              <Route path="qr-menu" element={<QRCodePage />} />
-              <Route path="qr" element={<Navigate to="/admin/qr-menu" replace />} />
-              <Route path="print-menu" element={<PrintMenuPage />} />
+                <Route path="qr-menu" element={<QRCodePage />} />
+                <Route path="qr" element={<Navigate to="/admin/qr-menu" replace />} />
+                <Route path="print-menu" element={<PrintMenuPage />} />
               {/* Legacy redirects — keep old bookmarks working */}
               <Route path="settings" element={<Navigate to="/admin/menu" replace />} />
               <Route path="export" element={<Navigate to="/admin/menu" replace />} />

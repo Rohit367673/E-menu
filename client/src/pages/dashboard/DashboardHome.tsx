@@ -12,7 +12,6 @@ import {
   MessageSquareHeart,
   Trash2,
   ShoppingBag,
-  IndianRupee,
   ChefHat,
   ShieldCheck,
   UserCheck,
@@ -143,122 +142,130 @@ export default function DashboardHome() {
     return 'Good Evening';
   };
 
-  // Role-specific stats metrics
-  const stats = isAdmin
+  // Strictly operational stats for both roles — income is removed from dashboard
+  const stats = [
+    {
+      label: 'Active Dining Tables',
+      value: orderStats.activeCount,
+      icon: ShoppingBag,
+      bg: 'from-amber-500/10 to-orange-500/10',
+      iconBg: 'bg-amber-600',
+      trend: `${orderStats.pendingCount} pending kitchen`,
+      link: '/admin/orders',
+    },
+    {
+      label: 'In Kitchen (Preparing)',
+      value: orderStats.preparingCount,
+      icon: ChefHat,
+      bg: 'from-blue-500/10 to-indigo-500/10',
+      iconBg: 'bg-blue-600',
+      trend: `${orderStats.servedCount} served to tables`,
+      link: '/admin/orders',
+    },
+    {
+      label: 'Total Menu Items',
+      value: menuItems.length,
+      icon: UtensilsCrossed,
+      bg: 'from-violet-500/10 to-indigo-500/10',
+      iconBg: 'bg-violet-600',
+      trend: `${categories.length} sections active`,
+      link: '/admin/menu',
+    },
+    {
+      label: 'Customer Rating',
+      value: `${avgRating.toFixed(1)} ★`,
+      icon: Star,
+      bg: 'from-yellow-500/10 to-amber-500/10',
+      iconBg: 'bg-amber-500',
+      trend: `${totalReviews} customer reviews`,
+    },
+  ];
+
+  const quickActions = isAdmin
     ? [
         {
-          label: "Today's Earnings",
-          value: `₹${orderStats.todaySales ?? 0}`,
-          icon: IndianRupee,
-          bg: 'from-emerald-500/10 to-teal-500/10',
-          iconBg: 'bg-emerald-600',
-          trend: `${orderStats.todayOrdersCount} orders placed today`,
-        },
-        {
-          label: 'Monthly Earnings',
-          value: `₹${orderStats.monthlySales ?? 0}`,
-          icon: TrendingUp,
-          bg: 'from-blue-500/10 to-indigo-500/10',
-          iconBg: 'bg-blue-600',
-          trend: 'Month-to-date total revenue',
-        },
-        {
-          label: 'Active Table Orders',
-          value: orderStats.activeCount,
+          id: 'qa-orders',
+          label: 'Live Orders',
+          description: 'Review incoming table orders and settle guest bills',
           icon: ShoppingBag,
-          bg: 'from-amber-500/10 to-orange-500/10',
-          iconBg: 'bg-amber-600',
-          trend: `${orderStats.pendingCount} pending kitchen`,
-          link: '/admin/orders',
+          to: '/admin/orders',
+          gradient: 'from-amber-500 to-orange-600',
+          lightBg: 'bg-amber-50',
+          iconColor: 'text-amber-600',
         },
         {
-          label: 'Total Menu Items',
-          value: menuItems.length,
+          id: 'qa-earnings',
+          label: 'Monthly Earnings',
+          description: 'View day-by-day revenue and detailed dish sales breakdown',
+          icon: TrendingUp,
+          to: '/admin/earnings',
+          gradient: 'from-emerald-500 to-teal-600',
+          lightBg: 'bg-emerald-50',
+          iconColor: 'text-emerald-600',
+        },
+        {
+          id: 'qa-add-item',
+          label: 'Add Menu Item',
+          description: 'Add a new dish with image, price, and details',
+          icon: Plus,
+          to: '/admin/add-item',
+          gradient: 'from-violet-600 to-indigo-600',
+          lightBg: 'bg-violet-50',
+          iconColor: 'text-violet-600',
+        },
+        {
+          id: 'qa-manage-menu',
+          label: 'Manage Menu',
+          description: 'View, edit, and organize your menu items',
           icon: UtensilsCrossed,
-          bg: 'from-violet-500/10 to-indigo-500/10',
-          iconBg: 'bg-violet-600',
-          trend: `${categories.length} categories available`,
+          to: '/admin/menu',
+          gradient: 'from-blue-500 to-indigo-600',
+          lightBg: 'bg-blue-50',
+          iconColor: 'text-blue-600',
         },
       ]
     : [
         {
-          label: 'Active Dining Tables',
-          value: orderStats.activeCount,
+          id: 'qa-orders',
+          label: 'Live Orders',
+          description: 'Review incoming table orders and settle guest bills',
           icon: ShoppingBag,
-          bg: 'from-amber-500/10 to-orange-500/10',
-          iconBg: 'bg-amber-600',
-          trend: `${orderStats.pendingCount} new incoming orders`,
-          link: '/admin/orders',
+          to: '/admin/orders',
+          gradient: 'from-amber-500 to-orange-600',
+          lightBg: 'bg-amber-50',
+          iconColor: 'text-amber-600',
         },
         {
-          label: 'In Kitchen (Preparing)',
-          value: orderStats.preparingCount,
-          icon: ChefHat,
-          bg: 'from-blue-500/10 to-indigo-500/10',
-          iconBg: 'bg-blue-600',
-          trend: `${orderStats.servedCount} served to tables`,
-          link: '/admin/orders',
+          id: 'qa-add-item',
+          label: 'Add Menu Item',
+          description: 'Add a new dish with image, price, and details',
+          icon: Plus,
+          to: '/admin/add-item',
+          gradient: 'from-violet-600 to-indigo-600',
+          lightBg: 'bg-violet-50',
+          iconColor: 'text-violet-600',
         },
         {
-          label: 'Total Menu Items',
-          value: menuItems.length,
+          id: 'qa-manage-menu',
+          label: 'Manage Menu',
+          description: 'View, edit, and organize your menu items',
           icon: UtensilsCrossed,
-          bg: 'from-violet-500/10 to-indigo-500/10',
-          iconBg: 'bg-violet-600',
-          trend: `${categories.length} sections active`,
+          to: '/admin/menu',
+          gradient: 'from-emerald-500 to-teal-600',
+          lightBg: 'bg-emerald-50',
+          iconColor: 'text-emerald-600',
         },
         {
-          label: 'Customer Rating',
-          value: `${avgRating.toFixed(1)} ★`,
-          icon: Star,
-          bg: 'from-amber-500/10 to-yellow-500/10',
-          iconBg: 'bg-amber-500',
-          trend: `${totalReviews} customer reviews`,
+          id: 'qa-qr-code',
+          label: 'Generate QR Code',
+          description: 'Create and download your restaurant QR code',
+          icon: QrCode,
+          to: '/admin/qr-menu',
+          gradient: 'from-blue-500 to-indigo-600',
+          lightBg: 'bg-blue-50',
+          iconColor: 'text-blue-600',
         },
       ];
-
-  const quickActions = [
-    {
-      id: 'qa-orders',
-      label: 'Live Orders',
-      description: 'Review incoming table orders and settle guest bills',
-      icon: ShoppingBag,
-      to: '/admin/orders',
-      gradient: 'from-amber-500 to-orange-600',
-      lightBg: 'bg-amber-50',
-      iconColor: 'text-amber-600',
-    },
-    {
-      id: 'qa-add-item',
-      label: 'Add Menu Item',
-      description: 'Add a new dish with image, price, and details',
-      icon: Plus,
-      to: '/admin/add-item',
-      gradient: 'from-violet-600 to-indigo-600',
-      lightBg: 'bg-violet-50',
-      iconColor: 'text-violet-600',
-    },
-    {
-      id: 'qa-manage-menu',
-      label: 'Manage Menu',
-      description: 'View, edit, and organize your menu items',
-      icon: UtensilsCrossed,
-      to: '/admin/menu',
-      gradient: 'from-emerald-500 to-teal-600',
-      lightBg: 'bg-emerald-50',
-      iconColor: 'text-emerald-600',
-    },
-    {
-      id: 'qa-qr-code',
-      label: 'Generate QR Code',
-      description: 'Create and download your restaurant QR code',
-      icon: QrCode,
-      to: '/admin/qr-menu',
-      gradient: 'from-blue-500 to-indigo-600',
-      lightBg: 'bg-blue-50',
-      iconColor: 'text-blue-600',
-    },
-  ];
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="admin-page flex flex-col gap-8 py-2">
@@ -289,6 +296,17 @@ export default function DashboardHome() {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
+          {isAdmin && (
+            <Link
+              to="/admin/earnings"
+              id="dashboard-earnings-btn"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+            >
+              <TrendingUp className="w-4 h-4" />
+              <span>Monthly Earnings</span>
+            </Link>
+          )}
+
           <button
             type="button"
             onClick={() => handleOpenTakeOrder('Table 1')}
@@ -307,28 +325,45 @@ export default function DashboardHome() {
 
       {/* Stats Cards (4 Columns) */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
-          <motion.div
-            key={stat.label}
-            whileHover={{ y: -3 }}
-            className="relative overflow-hidden admin-card p-5 border border-border/80 shadow-sm"
-          >
-            <div className={`absolute inset-0 bg-gradient-to-br ${stat.bg} opacity-60`} />
-            <div className="relative flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-text-secondary/80 mb-1">{stat.label}</p>
-                <p className="text-2xl font-black text-text">{stat.value}</p>
-                <div className="flex items-center gap-1.5 mt-2">
-                  <TrendingUp className="w-3.5 h-3.5 text-text-secondary/60" />
-                  <span className="text-xs font-medium text-text-secondary/70">{stat.trend}</span>
+        {stats.map((stat) => {
+          const cardContent = (
+            <>
+              <div className={`absolute inset-0 bg-gradient-to-br ${stat.bg} opacity-60`} />
+              <div className="relative flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-text-secondary/80 mb-1">{stat.label}</p>
+                  <p className="text-2xl font-black text-text">{stat.value}</p>
+                  <div className="flex items-center gap-1.5 mt-2">
+                    <TrendingUp className="w-3.5 h-3.5 text-text-secondary/60" />
+                    <span className="text-xs font-medium text-text-secondary/70">{stat.trend}</span>
+                  </div>
+                </div>
+                <div className={`w-12 h-12 ${stat.iconBg} rounded-2xl flex items-center justify-center shadow-md flex-shrink-0`}>
+                  <stat.icon className="w-5 h-5 text-white" />
                 </div>
               </div>
-              <div className={`w-12 h-12 ${stat.iconBg} rounded-2xl flex items-center justify-center shadow-md flex-shrink-0`}>
-                <stat.icon className="w-5 h-5 text-white" />
-              </div>
-            </div>
-          </motion.div>
-        ))}
+            </>
+          );
+
+          return stat.link ? (
+            <Link key={stat.label} to={stat.link} className="block">
+              <motion.div
+                whileHover={{ y: -3 }}
+                className="relative overflow-hidden admin-card p-5 border border-border/80 shadow-sm cursor-pointer hover:border-primary/40 transition-all"
+              >
+                {cardContent}
+              </motion.div>
+            </Link>
+          ) : (
+            <motion.div
+              key={stat.label}
+              whileHover={{ y: -3 }}
+              className="relative overflow-hidden admin-card p-5 border border-border/80 shadow-sm"
+            >
+              {cardContent}
+            </motion.div>
+          );
+        })}
       </motion.div>
 
       {/* Visual Table Occupancy Map */}

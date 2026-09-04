@@ -1,13 +1,13 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { motion } from 'motion/react';
 import {
-  Users,
   ChefHat,
   Clock,
   Utensils,
   Plus,
   ArrowUpRight,
-  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import type { Order } from '../../types/menu';
 
@@ -26,10 +26,11 @@ const DEFAULT_TABLES = [
 
 export default function TableOccupancyMap({
   orders,
-  userRole = 'admin',
   onTakeOrder,
   onViewTable,
 }: TableOccupancyMapProps) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
   // Collect active orders (pending, preparing, served)
   const activeOrders = useMemo(() => {
     return orders.filter((o) => ['pending', 'preparing', 'served'].includes(o.status));
@@ -37,11 +38,9 @@ export default function TableOccupancyMap({
 
   // Group active orders by table
   const tableOccupancyData = useMemo(() => {
-    // Collect all table names (default tables + any custom active tables)
     const activeTableNames = Array.from(new Set(activeOrders.map((o) => o.tableNumber)));
     const allTableNames = Array.from(new Set([...DEFAULT_TABLES, ...activeTableNames]));
 
-    // Sort cleanly
     allTableNames.sort((a, b) => {
       const numA = parseInt(a.replace(/\D/g, ''), 10) || 999;
       const numB = parseInt(b.replace(/\D/g, ''), 10) || 999;
@@ -64,222 +63,198 @@ export default function TableOccupancyMap({
         highestStatus = 'served';
       }
 
-      const totalItems = tableOrders.reduce((sum, o) => sum + o.totalItems, 0);
-      const totalBill = tableOrders.reduce((sum, o) => sum + o.totalAmount, 0);
       const guestName = tableOrders[0]?.customerName || 'Guest';
       const roundsCount = tableOrders.length;
       const earliestOrder = tableOrders[0]?.createdAt;
 
-      // Elapsed minutes
       let elapsedMins = 0;
       if (earliestOrder) {
-        elapsedMins = Math.max(0, Math.floor((Date.now() - new Date(earliestOrder).getTime()) / 60000));
+        elapsedMins = Math.max(
+          0,
+          Math.floor((Date.now() - new Date(earliestOrder).getTime()) / 60000)
+        );
       }
 
       return {
         tableNumber: tableName,
         isBooked,
         highestStatus,
-        totalItems,
-        totalBill,
         guestName,
         roundsCount,
         elapsedMins,
-        orders: tableOrders,
       };
     });
   }, [activeOrders]);
 
   const bookedCount = tableOccupancyData.filter((t) => t.isBooked).length;
   const totalCount = tableOccupancyData.length;
-  const occupancyPercent = totalCount > 0 ? Math.round((bookedCount / totalCount) * 100) : 0;
+  const availableCount = totalCount - bookedCount;
+
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: -260, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: 260, behavior: 'smooth' });
+    }
+  };
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Top Header & Status Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-stone-200 shadow-2xs">
+    <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-2xs flex flex-col gap-3.5">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-100">
         <div>
-          <div className="flex items-center gap-2.5">
-            <h2 className="text-lg font-black text-stone-900 tracking-tight">
-              Table Occupancy Map
-            </h2>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-stone-900 text-white shadow-xs">
-              {bookedCount} / {totalCount} Booked ({occupancyPercent}%)
+          <div className="flex items-center gap-2">
+            <h3 className="text-base font-black text-stone-900 tracking-tight">
+              Table Floor Map
+            </h3>
+            <span className="text-xs font-bold text-stone-400">
+              ({totalCount} Tables)
             </span>
           </div>
-          <p className="text-xs text-stone-500 mt-1">
-            Real-time visual floor plan — Red for Booked (Occupied) tables, Green for Available
+          <p className="text-[11px] text-stone-500 mt-0.5">
+            Side-scroll floor map · Red for Occupied, Green for Available
           </p>
         </div>
 
-        {/* Legend */}
+        {/* Status Indicators & Scroll Buttons */}
         <div className="flex items-center gap-2 flex-wrap text-xs font-bold">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 text-rose-800 border border-rose-200">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
-            <span>Red = Booked ({bookedCount})</span>
-          </div>
+          <span className="px-2.5 py-1 rounded-xl bg-rose-50 text-rose-800 border border-rose-200 flex items-center gap-1.5 shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+            <span>{bookedCount} Booked</span>
+          </span>
 
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-            <span>Green = Available ({totalCount - bookedCount})</span>
+          <span className="px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1.5 shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span>{availableCount} Available</span>
+          </span>
+
+          {/* Scroll arrow buttons */}
+          <div className="hidden sm:flex items-center gap-1 ml-1 bg-stone-100 p-1 rounded-xl">
+            <button
+              type="button"
+              onClick={scrollLeft}
+              className="p-1 rounded-lg hover:bg-white text-stone-600 transition-colors cursor-pointer"
+              title="Scroll Left"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={scrollRight}
+              className="p-1 rounded-lg hover:bg-white text-stone-600 transition-colors cursor-pointer"
+              title="Scroll Right"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Tables Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      {/* Horizontal Side-Scroll Floor Track */}
+      <div
+        ref={scrollContainerRef}
+        className="overflow-x-auto flex items-center gap-3 pb-2 pt-1 scroll-smooth scrollbar-thin select-none"
+      >
         {tableOccupancyData.map((table) => {
           if (table.isBooked) {
-            // BOOKED TABLE (RED)
+            // BOOKED TABLE (RED BOX)
             return (
               <motion.div
                 key={table.tableNumber}
-                whileHover={{ y: -3 }}
-                className="relative overflow-hidden rounded-2xl border-2 border-rose-500/80 bg-gradient-to-br from-rose-50/90 via-white to-rose-50/40 p-4 shadow-sm flex flex-col justify-between gap-3 group"
+                whileHover={{ y: -3, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  if (onViewTable) {
+                    onViewTable(table.tableNumber);
+                  } else {
+                    onTakeOrder(table.tableNumber);
+                  }
+                }}
+                className="min-w-[125px] max-w-[125px] sm:min-w-[135px] sm:max-w-[135px] h-32 p-3 rounded-2xl bg-rose-500/10 border-2 border-rose-500/80 hover:border-rose-600 hover:bg-rose-500/20 transition-all flex flex-col justify-between items-center text-center cursor-pointer shadow-2xs relative flex-shrink-0"
               >
-                {/* Top Accent Strip */}
-                <div className="absolute top-0 left-0 right-0 h-1.5 bg-rose-500" />
+                {/* Top: Table name & Live dot */}
+                <div className="w-full flex items-center justify-between">
+                  <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse" />
+                  <span className="font-black text-xs text-rose-950 truncate max-w-[80px]">
+                    {table.tableNumber}
+                  </span>
+                  <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-rose-600 text-white">
+                    R{table.roundsCount}
+                  </span>
+                </div>
 
-                <div>
-                  {/* Table Header */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse" />
-                        <h3 className="font-black text-base text-rose-950">
-                          {table.tableNumber}
-                        </h3>
-                      </div>
-                      <p className="text-xs font-bold text-rose-900/80 mt-0.5 flex items-center gap-1">
-                        <Users className="w-3 h-3 text-rose-600" />
-                        {table.guestName}
-                      </p>
-                    </div>
+                {/* Center: Guest name & Kitchen status */}
+                <div className="flex flex-col items-center my-auto w-full">
+                  <span className="text-xs font-bold text-rose-900 truncate max-w-[105px]">
+                    {table.guestName}
+                  </span>
 
-                    {/* Booked Tag */}
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-600 text-white shadow-2xs">
-                      Booked
-                    </span>
-                  </div>
-
-                  {/* Status & Timing */}
-                  <div className="mt-3 pt-2.5 border-t border-rose-200/60 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-1 text-rose-800 font-bold">
-                      {table.highestStatus === 'pending' && (
-                        <span className="flex items-center gap-1 text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md font-extrabold border border-amber-300 animate-pulse">
-                          <Clock className="w-3 h-3" /> New Pending
-                        </span>
-                      )}
-                      {table.highestStatus === 'preparing' && (
-                        <span className="flex items-center gap-1 text-blue-800 bg-blue-100 px-2 py-0.5 rounded-md font-bold border border-blue-200">
-                          <ChefHat className="w-3 h-3" /> In Kitchen
-                        </span>
-                      )}
-                      {table.highestStatus === 'served' && (
-                        <span className="flex items-center gap-1 text-purple-800 bg-purple-100 px-2 py-0.5 rounded-md font-bold border border-purple-200">
-                          <Utensils className="w-3 h-3" /> Served
-                        </span>
-                      )}
-                    </div>
-
-                    <span className="text-[11px] text-rose-700/80 font-semibold flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-rose-500" />
-                      {table.elapsedMins}m dining
-                    </span>
-                  </div>
-
-                  {/* Round & Items Summary */}
-                  <div className="mt-2 text-xs flex items-center justify-between text-stone-600">
-                    <span className="font-semibold text-[11px]">
-                      Round {table.roundsCount} · {table.totalItems} dishes
-                    </span>
-                    {/* Financial privacy: Only display running bill to owner/admin */}
-                    {userRole !== 'manager' ? (
-                      <span className="font-black text-rose-950 text-sm">
-                        ₹{table.totalBill}
+                  <div className="mt-1">
+                    {table.highestStatus === 'preparing' && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1">
+                        <ChefHat className="w-2.5 h-2.5" /> Prep
                       </span>
-                    ) : (
-                      <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">
-                        Active Round
+                    )}
+                    {table.highestStatus === 'pending' && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 animate-pulse flex items-center gap-1">
+                        <Clock className="w-2.5 h-2.5" /> New
+                      </span>
+                    )}
+                    {table.highestStatus === 'served' && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200 flex items-center gap-1">
+                        <Utensils className="w-2.5 h-2.5" /> Served
                       </span>
                     )}
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="pt-2 border-t border-rose-200/60 flex items-center gap-1.5">
-                  {onViewTable && (
-                    <button
-                      type="button"
-                      onClick={() => onViewTable(table.tableNumber)}
-                      className="flex-1 py-1.5 px-2 rounded-xl text-xs font-bold text-rose-900 bg-white border border-rose-300 hover:bg-rose-100/60 transition-colors flex items-center justify-center gap-1 cursor-pointer"
-                    >
-                      <span>View Orders</span>
-                      <ArrowUpRight className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => onTakeOrder(table.tableNumber)}
-                    className="py-1.5 px-2.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 transition-colors flex items-center justify-center gap-1 cursor-pointer shadow-xs"
-                    title="Add another round to this table"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>+ Dish</span>
-                  </button>
+                {/* Bottom: Elapsed time & View button */}
+                <div className="w-full flex items-center justify-between pt-1.5 border-t border-rose-200/60 text-[10px] text-rose-800 font-semibold">
+                  <span>{table.elapsedMins}m</span>
+                  <span className="font-bold underline flex items-center gap-0.5 text-rose-900 hover:text-rose-700">
+                    Orders <ArrowUpRight className="w-2.5 h-2.5" />
+                  </span>
                 </div>
               </motion.div>
             );
           }
 
-          // AVAILABLE TABLE (GREEN)
+          // AVAILABLE TABLE (GREEN BOX)
           return (
             <motion.div
               key={table.tableNumber}
-              whileHover={{ y: -3 }}
-              className="relative overflow-hidden rounded-2xl border-2 border-emerald-400/70 bg-gradient-to-br from-emerald-50/60 via-white to-emerald-50/20 p-4 shadow-sm flex flex-col justify-between gap-3 group hover:border-emerald-500 transition-all"
+              whileHover={{ y: -3, scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => onTakeOrder(table.tableNumber)}
+              className="min-w-[125px] max-w-[125px] sm:min-w-[135px] sm:max-w-[135px] h-32 p-3 rounded-2xl bg-emerald-500/10 border-2 border-emerald-500/80 hover:border-emerald-600 hover:bg-emerald-500/20 transition-all flex flex-col justify-between items-center text-center cursor-pointer shadow-2xs relative flex-shrink-0"
             >
-              {/* Top Accent Strip */}
-              <div className="absolute top-0 left-0 right-0 h-1.5 bg-emerald-500" />
-
-              <div>
-                {/* Table Header */}
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                      <h3 className="font-black text-base text-stone-900">
-                        {table.tableNumber}
-                      </h3>
-                    </div>
-                    <p className="text-xs font-bold text-emerald-700 mt-0.5 flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                      Vacant & Ready
-                    </p>
-                  </div>
-
-                  {/* Available Tag */}
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
-                    Available
-                  </span>
-                </div>
-
-                {/* Subtext */}
-                <p className="text-[11px] text-stone-500 mt-3.5 leading-relaxed">
-                  Clean table. Customers can scan QR code or manager can take walk-in order.
-                </p>
+              {/* Top: Table name & Free dot */}
+              <div className="w-full flex items-center justify-between">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="font-black text-xs text-stone-900 truncate max-w-[80px]">
+                  {table.tableNumber}
+                </span>
+                <span className="w-2" />
               </div>
 
-              {/* Action Button */}
-              <div className="pt-2 border-t border-emerald-200/50">
-                <button
-                  type="button"
-                  onClick={() => onTakeOrder(table.tableNumber)}
-                  className="w-full py-2 px-3 rounded-xl text-xs font-bold text-emerald-900 bg-emerald-100/70 border border-emerald-300 hover:bg-emerald-600 hover:text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer group-hover:shadow-xs"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Book / Take Order</span>
-                </button>
+              {/* Center: Cafe table icon & Free badge */}
+              <div className="flex flex-col items-center my-auto">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-800 mb-1">
+                  <Utensils className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">
+                  Available
+                </span>
+              </div>
+
+              {/* Bottom: Book action button */}
+              <div className="w-full pt-1.5 border-t border-emerald-200/60 text-[10px] font-bold text-emerald-800 flex items-center justify-center gap-1 hover:text-emerald-950">
+                <Plus className="w-3 h-3" />
+                <span>Book Table</span>
               </div>
             </motion.div>
           );

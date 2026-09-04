@@ -13,6 +13,7 @@ import {
   FileOutput,
   LayoutDashboard,
   ShoppingBag,
+  TrendingUp,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../api/client';
@@ -22,21 +23,30 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-const navItems = [
-  { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard', end: true },
-  { to: '/admin/orders', icon: ShoppingBag, label: 'Live Orders', end: false, hasBadge: true },
-  { to: '/admin/add-item', icon: Plus, label: 'Add Menu Item', end: false },
-  { to: '/admin/menu', icon: FolderOpen, label: 'Menu Items', end: false },
-  { to: '/admin/qr-menu', icon: QrCode, label: 'QR Menu', end: false },
-  { to: '/admin/print-menu', icon: FileOutput, label: 'Print Menu', end: false },
-];
-
-
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  const isOwner = user?.role !== 'manager';
+
+  const navItems = isOwner
+    ? [
+        { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard', end: true },
+        { to: '/admin/orders', icon: ShoppingBag, label: 'Live Orders', end: false, hasBadge: true },
+        { to: '/admin/earnings', icon: TrendingUp, label: 'Monthly Earnings', end: false },
+        { to: '/admin/add-item', icon: Plus, label: 'Add Menu Item', end: false },
+        { to: '/admin/menu', icon: FolderOpen, label: 'Menu Items', end: false },
+      ]
+    : [
+        { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard', end: true },
+        { to: '/admin/orders', icon: ShoppingBag, label: 'Live Orders', end: false, hasBadge: true },
+        { to: '/admin/add-item', icon: Plus, label: 'Add Menu Item', end: false },
+        { to: '/admin/menu', icon: FolderOpen, label: 'Menu Items', end: false },
+        { to: '/admin/qr-menu', icon: QrCode, label: 'QR Menu', end: false },
+        { to: '/admin/print-menu', icon: FileOutput, label: 'Print Menu', end: false },
+      ];
 
   useEffect(() => {
     const checkOrders = async () => {
