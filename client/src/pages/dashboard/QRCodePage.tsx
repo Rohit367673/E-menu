@@ -379,7 +379,7 @@ export default function QRCodePage() {
                 {selectedTable === 'custom' && (
                   <input
                     type="text"
-                    placeholder="e.g. 8, Bar 1, Patio 2"
+                    placeholder="e.g. Table 8, Patio 2"
                     value={customTable}
                     onChange={(e) => setCustomTable(e.target.value)}
                     className="flex-1 h-8 px-2.5 text-xs border border-border rounded-lg outline-none focus:border-primary"

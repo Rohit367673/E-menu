@@ -34,7 +34,6 @@ interface ManualOrderModalProps {
 const COMMON_TABLES = [
   'Table 1', 'Table 2', 'Table 3', 'Table 4', 'Table 5',
   'Table 6', 'Table 7', 'Table 8', 'Table 9', 'Table 10',
-  'Bar 1', 'Bar 2',
 ];
 
 export default function ManualOrderModal({

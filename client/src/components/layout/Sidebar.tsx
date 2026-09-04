@@ -115,7 +115,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 flex flex-col gap-1.5">
+      <nav className="flex-1 px-3 flex flex-col gap-1.5 overflow-y-auto scrollbar-none py-1">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
@@ -170,7 +170,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       </nav>
 
       {/* User */}
-      <div className="px-3 pb-5">
+      <div className="px-3 pb-5 flex-shrink-0 border-t border-white/5 pt-3">
         <div className={`flex items-center gap-3 px-3 py-3 rounded-xl bg-white/5 ${isCollapsed ? 'justify-center' : ''}`}>
           <div className="w-9 h-9 rounded-full gradient-accent flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
             {user?.email?.charAt(0).toUpperCase() || 'A'}
@@ -252,12 +252,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         )}
       </AnimatePresence>
 
-      {/* Desktop sidebar */}
+      {/* Desktop sidebar - static pinned height, never scrolls with main page */}
       <motion.aside
         initial={false}
         animate={{ width: isCollapsed ? 76 : 260 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="hidden lg:flex flex-col gradient-sidebar border-r border-white/5 h-screen sticky top-0 overflow-hidden"
+        className="hidden lg:flex flex-col gradient-sidebar border-r border-white/5 h-full flex-shrink-0 select-none"
       >
         {sidebarContent}
       </motion.aside>

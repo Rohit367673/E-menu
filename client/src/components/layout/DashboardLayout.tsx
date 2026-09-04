@@ -29,15 +29,15 @@ export default function DashboardLayout() {
   }, [fetchRestaurant, fetchCategories, fetchMenuItems]);
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Hide TopBar on Print Menu page (it has its own toolbar) */}
         {!isPrintMenu && (
           <TopBar title={title} onMenuClick={() => setSidebarOpen(true)} />
         )}
-        <main className={isPrintMenu ? 'flex-1' : 'flex-1 p-4 md:p-6 lg:p-8'}>
+        <main className={isPrintMenu ? 'flex-1 overflow-y-auto' : 'flex-1 overflow-y-auto p-4 md:p-6 lg:p-8'}>
           <Outlet />
         </main>
       </div>

@@ -18,11 +18,110 @@ interface TableOccupancyMapProps {
   onViewTable?: (tableNumber: string) => void;
 }
 
+// Cafe has dining tables only (no bar tables)
 const DEFAULT_TABLES = [
-  'Table 1', 'Table 2', 'Table 3', 'Table 4', 'Table 5',
-  'Table 6', 'Table 7', 'Table 8', 'Table 9', 'Table 10',
-  'Bar 1', 'Bar 2',
+  'Table 1',
+  'Table 2',
+  'Table 3',
+  'Table 4',
+  'Table 5',
+  'Table 6',
+  'Table 7',
+  'Table 8',
+  'Table 9',
+  'Table 10',
 ];
+
+/**
+ * Normalizes any table input to standard "Table X" format
+ * (e.g., "2" -> "Table 2", "table 2" -> "Table 2", "Table02" -> "Table 2")
+ */
+export const normalizeTableName = (raw: string | undefined | null): string => {
+  if (!raw) return 'Table 1';
+  const trimmed = String(raw).trim();
+  if (/^\d+$/.test(trimmed)) {
+    return `Table ${parseInt(trimmed, 10)}`;
+  }
+  const match = trimmed.match(/^table\s*(\d+)$/i);
+  if (match) {
+    return `Table ${parseInt(match[1], 10)}`;
+  }
+  return trimmed;
+};
+
+/**
+ * Top-down architectural cafe dining table SVG with 4 chairs and place setting
+ */
+function CafeTableSVG({ isBooked }: { isBooked: boolean }) {
+  if (isBooked) {
+    return (
+      <svg
+        viewBox="0 0 64 64"
+        className="w-11 h-11 flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        {/* Top Chair */}
+        <rect x="22" y="3" width="20" height="6.5" rx="3.25" fill="#f43f5e" fillOpacity="0.85" />
+        <rect x="25" y="7.5" width="14" height="2" rx="1" fill="#e11d48" />
+        {/* Bottom Chair */}
+        <rect x="22" y="54.5" width="20" height="6.5" rx="3.25" fill="#f43f5e" fillOpacity="0.85" />
+        <rect x="25" y="54.5" width="14" height="2" rx="1" fill="#e11d48" />
+        {/* Left Chair */}
+        <rect x="3" y="22" width="6.5" height="20" rx="3.25" fill="#f43f5e" fillOpacity="0.85" />
+        <rect x="7.5" y="25" width="2" height="14" rx="1" fill="#e11d48" />
+        {/* Right Chair */}
+        <rect x="54.5" y="22" width="6.5" height="20" rx="3.25" fill="#f43f5e" fillOpacity="0.85" />
+        <rect x="54.5" y="25" width="2" height="14" rx="1" fill="#e11d48" />
+
+        {/* Table Surface (Dining Table) */}
+        <rect x="14" y="14" width="36" height="36" rx="9" fill="#ffe4e6" stroke="#f43f5e" strokeWidth="2" />
+        <rect x="18" y="18" width="28" height="28" rx="6" fill="#fecdd3" fillOpacity="0.5" stroke="#fb7185" strokeWidth="1" strokeDasharray="2 2" />
+
+        {/* Served Feast Dish Platter */}
+        <circle cx="32" cy="32" r="7.5" fill="#ffffff" stroke="#e11d48" strokeWidth="1.5" />
+        <circle cx="32" cy="32" r="4.5" fill="#f43f5e" fillOpacity="0.3" />
+        {/* Dining Utensils */}
+        <line x1="21" y1="28" x2="21" y2="36" stroke="#9f1239" strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="43" y1="28" x2="43" y2="36" stroke="#9f1239" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  // Clean Available Cafe Table (Emerald)
+  return (
+    <svg
+      viewBox="0 0 64 64"
+      className="w-11 h-11 flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {/* Top Chair */}
+      <rect x="22" y="3" width="20" height="6.5" rx="3.25" fill="#10b981" fillOpacity="0.85" />
+      <rect x="25" y="7.5" width="14" height="2" rx="1" fill="#059669" />
+      {/* Bottom Chair */}
+      <rect x="22" y="54.5" width="20" height="6.5" rx="3.25" fill="#10b981" fillOpacity="0.85" />
+      <rect x="25" y="54.5" width="14" height="2" rx="1" fill="#059669" />
+      {/* Left Chair */}
+      <rect x="3" y="22" width="6.5" height="20" rx="3.25" fill="#10b981" fillOpacity="0.85" />
+      <rect x="7.5" y="25" width="2" height="14" rx="1" fill="#059669" />
+      {/* Right Chair */}
+      <rect x="54.5" y="22" width="6.5" height="20" rx="3.25" fill="#10b981" fillOpacity="0.85" />
+      <rect x="54.5" y="25" width="2" height="14" rx="1" fill="#059669" />
+
+      {/* Table Surface (Clean Ready Table) */}
+      <rect x="14" y="14" width="36" height="36" rx="9" fill="#d1fae5" stroke="#10b981" strokeWidth="2" />
+      <rect x="18" y="18" width="28" height="28" rx="6" fill="#a7f3d0" fillOpacity="0.35" stroke="#34d399" strokeWidth="1" strokeDasharray="2 2" />
+
+      {/* Clean Place Setting */}
+      <circle cx="32" cy="32" r="7.5" fill="#ffffff" stroke="#059669" strokeWidth="1.5" />
+      <circle cx="32" cy="32" r="4.5" fill="#10b981" fillOpacity="0.25" />
+      {/* Cutlery */}
+      <line x1="21" y1="28" x2="21" y2="36" stroke="#047857" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="43" y1="28" x2="43" y2="36" stroke="#047857" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 export default function TableOccupancyMap({
   orders,
@@ -36,11 +135,30 @@ export default function TableOccupancyMap({
     return orders.filter((o) => ['pending', 'preparing', 'served'].includes(o.status));
   }, [orders]);
 
-  // Group active orders by table
+  // Group active orders by normalized table name (excluding any bar tables)
   const tableOccupancyData = useMemo(() => {
-    const activeTableNames = Array.from(new Set(activeOrders.map((o) => o.tableNumber)));
-    const allTableNames = Array.from(new Set([...DEFAULT_TABLES, ...activeTableNames]));
+    const activeTableMap = new Map<string, Order[]>();
 
+    for (const order of activeOrders) {
+      const raw = order.tableNumber;
+      const normalized = normalizeTableName(raw);
+      // Cafe only has dining tables (filter out any bar entries)
+      if (!normalized.toLowerCase().includes('bar')) {
+        if (!activeTableMap.has(normalized)) {
+          activeTableMap.set(normalized, []);
+        }
+        activeTableMap.get(normalized)!.push(order);
+      }
+    }
+
+    const allTableNames = Array.from(
+      new Set([
+        ...DEFAULT_TABLES,
+        ...Array.from(activeTableMap.keys()),
+      ])
+    ).filter((t) => !t.toLowerCase().includes('bar'));
+
+    // Sort tables naturally (Table 1, Table 2, ... Table 10)
     allTableNames.sort((a, b) => {
       const numA = parseInt(a.replace(/\D/g, ''), 10) || 999;
       const numB = parseInt(b.replace(/\D/g, ''), 10) || 999;
@@ -51,7 +169,7 @@ export default function TableOccupancyMap({
     });
 
     return allTableNames.map((tableName) => {
-      const tableOrders = activeOrders.filter((o) => o.tableNumber === tableName);
+      const tableOrders = activeTableMap.get(tableName) || [];
       const isBooked = tableOrders.length > 0;
 
       let highestStatus: 'pending' | 'preparing' | 'served' | 'none' = 'none';
@@ -161,7 +279,7 @@ export default function TableOccupancyMap({
       >
         {tableOccupancyData.map((table) => {
           if (table.isBooked) {
-            // BOOKED TABLE (RED BOX)
+            // BOOKED TABLE (RED BOX WITH CAFE TABLE SVG)
             return (
               <motion.div
                 key={table.tableNumber}
@@ -174,38 +292,39 @@ export default function TableOccupancyMap({
                     onTakeOrder(table.tableNumber);
                   }
                 }}
-                className="min-w-[125px] max-w-[125px] sm:min-w-[135px] sm:max-w-[135px] h-32 p-3 rounded-2xl bg-rose-500/10 border-2 border-rose-500/80 hover:border-rose-600 hover:bg-rose-500/20 transition-all flex flex-col justify-between items-center text-center cursor-pointer shadow-2xs relative flex-shrink-0"
+                className="group min-w-[136px] max-w-[136px] sm:min-w-[146px] sm:max-w-[146px] h-[158px] p-3 rounded-2xl bg-rose-500/10 border-2 border-rose-500/80 hover:border-rose-600 hover:bg-rose-500/20 transition-all flex flex-col justify-between items-center text-center cursor-pointer shadow-2xs relative flex-shrink-0"
               >
-                {/* Top: Table name & Live dot */}
+                {/* Top: Table name & Live dot & Round */}
                 <div className="w-full flex items-center justify-between">
-                  <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse" />
-                  <span className="font-black text-xs text-rose-950 truncate max-w-[80px]">
+                  <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse flex-shrink-0" />
+                  <span className="font-black text-xs text-rose-950 truncate max-w-[85px]">
                     {table.tableNumber}
                   </span>
-                  <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-rose-600 text-white">
+                  <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-rose-600 text-white flex-shrink-0">
                     R{table.roundsCount}
                   </span>
                 </div>
 
-                {/* Center: Guest name & Kitchen status */}
-                <div className="flex flex-col items-center my-auto w-full">
-                  <span className="text-xs font-bold text-rose-900 truncate max-w-[105px]">
+                {/* Center: Cafe Table SVG Illustration & Guest Details */}
+                <div className="flex flex-col items-center my-auto w-full gap-1">
+                  <CafeTableSVG isBooked={true} />
+                  <span className="text-xs font-bold text-rose-900 truncate max-w-[115px] leading-tight">
                     {table.guestName}
                   </span>
 
-                  <div className="mt-1">
+                  <div>
                     {table.highestStatus === 'preparing' && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1">
-                        <ChefHat className="w-2.5 h-2.5" /> Prep
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1">
+                        <ChefHat className="w-2.5 h-2.5" /> Kitchen
                       </span>
                     )}
                     {table.highestStatus === 'pending' && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 animate-pulse flex items-center gap-1">
-                        <Clock className="w-2.5 h-2.5" /> New
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-100 text-amber-900 border border-amber-300 animate-pulse flex items-center gap-1">
+                        <Clock className="w-2.5 h-2.5" /> New Order
                       </span>
                     )}
                     {table.highestStatus === 'served' && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200 flex items-center gap-1">
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-purple-100 text-purple-800 border border-purple-200 flex items-center gap-1">
                         <Utensils className="w-2.5 h-2.5" /> Served
                       </span>
                     )}
@@ -223,36 +342,34 @@ export default function TableOccupancyMap({
             );
           }
 
-          // AVAILABLE TABLE (GREEN BOX)
+          // AVAILABLE TABLE (GREEN BOX WITH CAFE TABLE SVG)
           return (
             <motion.div
               key={table.tableNumber}
               whileHover={{ y: -3, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => onTakeOrder(table.tableNumber)}
-              className="min-w-[125px] max-w-[125px] sm:min-w-[135px] sm:max-w-[135px] h-32 p-3 rounded-2xl bg-emerald-500/10 border-2 border-emerald-500/80 hover:border-emerald-600 hover:bg-emerald-500/20 transition-all flex flex-col justify-between items-center text-center cursor-pointer shadow-2xs relative flex-shrink-0"
+              className="group min-w-[136px] max-w-[136px] sm:min-w-[146px] sm:max-w-[146px] h-[158px] p-3 rounded-2xl bg-emerald-500/10 border-2 border-emerald-500/80 hover:border-emerald-600 hover:bg-emerald-500/20 transition-all flex flex-col justify-between items-center text-center cursor-pointer shadow-2xs relative flex-shrink-0"
             >
               {/* Top: Table name & Free dot */}
               <div className="w-full flex items-center justify-between">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="font-black text-xs text-stone-900 truncate max-w-[80px]">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+                <span className="font-black text-xs text-stone-900 truncate max-w-[85px]">
                   {table.tableNumber}
                 </span>
                 <span className="w-2" />
               </div>
 
-              {/* Center: Cafe table icon & Free badge */}
-              <div className="flex flex-col items-center my-auto">
-                <div className="w-9 h-9 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-800 mb-1">
-                  <Utensils className="w-4 h-4" />
-                </div>
+              {/* Center: Cafe Table SVG Illustration & Available label */}
+              <div className="flex flex-col items-center my-auto gap-1">
+                <CafeTableSVG isBooked={false} />
                 <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">
                   Available
                 </span>
               </div>
 
               {/* Bottom: Book action button */}
-              <div className="w-full pt-1.5 border-t border-emerald-200/60 text-[10px] font-bold text-emerald-800 flex items-center justify-center gap-1 hover:text-emerald-950">
+              <div className="w-full pt-1.5 border-t border-emerald-200/60 text-[10px] font-bold text-emerald-800 flex items-center justify-center gap-1 group-hover:text-emerald-950">
                 <Plus className="w-3 h-3" />
                 <span>Book Table</span>
               </div>
