@@ -97,8 +97,22 @@ export default function DashboardHome() {
 
   useEffect(() => {
     fetchDashboardData();
-    const interval = setInterval(fetchDashboardData, 7000);
-    return () => clearInterval(interval);
+
+    const interval = setInterval(() => {
+      if (document.hidden) return;
+      fetchDashboardData();
+    }, 7000);
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) fetchDashboardData();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [fetchDashboardData]);
 
   const handleOpenTakeOrder = (tableName: string) => {

@@ -79,14 +79,25 @@ export default function OrdersPage() {
     }
   }, [soundEnabled]);
 
-  // Initial fetch and auto-polling every 6 seconds
+  // Initial fetch and auto-polling every 6 seconds with Page Visibility guard (rush hour optimization)
   useEffect(() => {
     fetchOrders();
+
     const interval = setInterval(() => {
+      if (document.hidden) return;
       fetchOrders();
     }, 6000);
 
-    return () => clearInterval(interval);
+    const handleVisibilityChange = () => {
+      if (!document.hidden) fetchOrders();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [fetchOrders]);
 
   const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {

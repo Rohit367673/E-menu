@@ -243,17 +243,30 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [tableNumber, customerName]);
 
-  // Initial fetch and auto-polling every 5 seconds for real-time live status without refreshing
+  // Initial fetch and auto-polling every 5 seconds with Page Visibility guard (rush hour optimization)
   useEffect(() => {
     if (!tableNumber) return;
 
     fetchActiveOrders();
 
     const intervalId = setInterval(() => {
+      // Don't poll if the customer minimized browser or locked screen
+      if (document.hidden) return;
       fetchActiveOrders();
     }, 5000);
 
-    return () => clearInterval(intervalId);
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchActiveOrders();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [tableNumber, fetchActiveOrders]);
 
   const dismissSettledNotification = useCallback(() => {

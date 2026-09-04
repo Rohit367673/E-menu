@@ -129,7 +129,7 @@ export const getActiveTableOrders = async (req: Request, res: Response): Promise
       restaurantId: restaurant._id,
       tableNumber: cleanTable,
       status: { $in: ['pending', 'preparing', 'served'] },
-    }).sort({ createdAt: 1 });
+    }).sort({ createdAt: 1 }).lean();
 
     const totalBill = orders.reduce((sum, o) => sum + o.totalAmount, 0);
     const totalItems = orders.reduce((sum, o) => sum + o.totalItems, 0);
@@ -150,7 +150,7 @@ export const getActiveTableOrders = async (req: Request, res: Response): Promise
         restaurantId: restaurant._id,
         tableNumber: cleanTable,
         status: 'completed',
-      }).sort({ updatedAt: -1 });
+      }).sort({ updatedAt: -1 }).select('_id updatedAt').lean();
 
       if (lastCompleted && (Date.now() - new Date(lastCompleted.updatedAt).getTime()) < 30 * 60 * 1000) {
         recentlySettled = true;
@@ -191,7 +191,7 @@ export const getAdminOrders = async (req: AuthRequest, res: Response): Promise<v
       query.tableNumber = table;
     }
 
-    const orders = await Order.find(query).sort({ createdAt: -1 }).limit(100);
+    const orders = await Order.find(query).sort({ createdAt: -1 }).limit(100).lean();
 
     // Calculate live summary stats
     const startOfToday = new Date();
@@ -224,12 +224,12 @@ export const getAdminOrders = async (req: AuthRequest, res: Response): Promise<v
           restaurantId: restaurant._id,
           createdAt: { $gte: startOfToday },
           status: { $ne: 'cancelled' },
-        }),
+        }).select('totalAmount').lean(),
         Order.find({
           restaurantId: restaurant._id,
           createdAt: { $gte: startOfMonth },
           status: { $ne: 'cancelled' },
-        }),
+        }).select('totalAmount').lean(),
       ]);
 
       todaySales = Math.round(todayOrders.reduce((sum, o) => sum + o.totalAmount, 0) * 100) / 100;
