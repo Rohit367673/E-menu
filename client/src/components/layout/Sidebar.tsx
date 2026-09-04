@@ -174,8 +174,21 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 transition={{ duration: 0.2 }}
                 className="flex-1 min-w-0 overflow-hidden"
               >
-                <p className="text-sm font-medium text-white truncate">{user?.email?.split('@')[0] || 'Admin'}</p>
-                <p className="text-xs text-white/40 truncate">{user?.email}</p>
+                <p className="text-sm font-bold text-white truncate">
+                  {user?.name || user?.email?.split('@')[0] || 'Admin'}
+                </p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span
+                    className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded ${
+                      user?.role === 'manager'
+                        ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                        : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                    }`}
+                  >
+                    {user?.role === 'manager' ? '👔 Manager' : '👑 Owner'}
+                  </span>
+                  <p className="text-[10px] text-white/40 truncate">{user?.email}</p>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

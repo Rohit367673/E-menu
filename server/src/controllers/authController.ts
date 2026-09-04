@@ -45,6 +45,8 @@ export const login = async (req: AuthRequest, res: Response): Promise<void> => {
         user: {
           id: admin._id,
           email: admin.email,
+          role: admin.role || 'admin',
+          name: admin.name || (admin.role === 'manager' ? 'Store Manager' : 'Sukoon Owner'),
         },
       },
       message: 'Login successful',
@@ -74,6 +76,8 @@ export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
       data: {
         id: user._id,
         email: user.email,
+        role: user.role || 'admin',
+        name: user.name || (user.role === 'manager' ? 'Store Manager' : 'Sukoon Owner'),
       },
     });
   } catch (error: any) {

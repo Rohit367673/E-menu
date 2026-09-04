@@ -1,5 +1,6 @@
-import { Menu, ExternalLink } from 'lucide-react';
+import { Menu, ExternalLink, ShieldCheck, UserCheck } from 'lucide-react';
 import { useRestaurant } from '../../contexts/RestaurantContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface TopBarProps {
   title: string;
@@ -8,6 +9,7 @@ interface TopBarProps {
 
 export default function TopBar({ title, onMenuClick }: TopBarProps) {
   const { restaurant } = useRestaurant();
+  const { user } = useAuth();
 
   return (
     <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-border/50">
@@ -31,7 +33,29 @@ export default function TopBar({ title, onMenuClick }: TopBarProps) {
         </div>
 
         {/* Right-side actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
+          {user && (
+            <span
+              className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border shadow-2xs ${
+                user.role === 'manager'
+                  ? 'bg-blue-50 text-blue-800 border-blue-200'
+                  : 'bg-amber-50 text-amber-900 border-amber-300'
+              }`}
+            >
+              {user.role === 'manager' ? (
+                <>
+                  <UserCheck className="w-3.5 h-3.5 text-blue-600" />
+                  Store Manager
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-700" />
+                  Sukoon Owner
+                </>
+              )}
+            </span>
+          )}
+
           {restaurant && (
             <a
               href={`${window.location.origin}/menu/${restaurant.slug || 'menu'}`}

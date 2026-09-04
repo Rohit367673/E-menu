@@ -4,6 +4,8 @@ import bcrypt from 'bcryptjs';
 export interface IAdmin extends Document {
   email: string;
   password: string;
+  role: 'admin' | 'manager';
+  name: string;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -20,13 +22,21 @@ const adminSchema = new Schema<IAdmin>(
       type: String,
       required: [true, 'Password is required'],
     },
+    role: {
+      type: String,
+      enum: ['admin', 'manager'],
+      default: 'admin',
+    },
+    name: {
+      type: String,
+      default: 'Administrator',
+      trim: true,
+    },
   },
   {
     timestamps: true,
   }
 );
-
-adminSchema.index({ email: 1 }, { unique: true });
 
 adminSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {

@@ -83,17 +83,42 @@ app.use(errorHandler);
 // Database Seeding Logic for Single Restaurant Setup
 const seedDatabase = async () => {
   try {
-    // 1. Seed Admin
-    const adminCount = await Admin.countDocuments();
-    if (adminCount === 0) {
-      const email = process.env.ADMIN_EMAIL || 'admin@example.com';
-      const password = process.env.ADMIN_PASSWORD || 'admin123';
-      const admin = new Admin({
-        email: email.toLowerCase(),
-        password,
+    // 1. Seed or Update Admin (Owner)
+    const adminEmail = (process.env.ADMIN_EMAIL || 'admin@example.com').toLowerCase();
+    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    let admin = await Admin.findOne({ email: adminEmail });
+    if (!admin) {
+      admin = new Admin({
+        email: adminEmail,
+        password: adminPassword,
+        role: 'admin',
+        name: 'Sukoon Owner',
       });
       await admin.save();
-      console.log(`Seeded default admin account: ${email}`);
+      console.log(`Seeded default admin (owner) account: ${adminEmail}`);
+    } else if (!admin.role) {
+      admin.role = 'admin';
+      admin.name = admin.name || 'Sukoon Owner';
+      await admin.save();
+    }
+
+    // 1b. Seed or Update Manager
+    const managerEmail = (process.env.MANAGER_EMAIL || 'manager@example.com').toLowerCase();
+    const managerPassword = process.env.MANAGER_PASSWORD || 'manager123';
+    let manager = await Admin.findOne({ email: managerEmail });
+    if (!manager) {
+      manager = new Admin({
+        email: managerEmail,
+        password: managerPassword,
+        role: 'manager',
+        name: 'Restaurant Manager',
+      });
+      await manager.save();
+      console.log(`Seeded default manager account: ${managerEmail}`);
+    } else if (manager.role !== 'manager') {
+      manager.role = 'manager';
+      manager.name = manager.name || 'Restaurant Manager';
+      await manager.save();
     }
 
     // 2. Seed default Restaurant (migrate from legacy MenuDesign if present)

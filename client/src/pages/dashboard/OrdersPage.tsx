@@ -14,8 +14,13 @@ import {
 import apiClient from '../../api/client';
 import type { Order, OrderStatus, OrderDashboardStats } from '../../types/menu';
 import { playOrderNotificationSound } from '../../utils/sound';
+import { useAuth } from '../../contexts/AuthContext';
+import ManualOrderModal from '../../components/admin/ManualOrderModal';
 
 export default function OrdersPage() {
+  const { user } = useAuth();
+  const isAdmin = user?.role !== 'manager';
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [stats, setStats] = useState<OrderDashboardStats>({
     pendingCount: 0,
@@ -23,7 +28,8 @@ export default function OrdersPage() {
     servedCount: 0,
     activeCount: 0,
     todayOrdersCount: 0,
-    todaySales: 0,
+    todaySales: null,
+    monthlySales: null,
   });
   const [loading, setLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -32,6 +38,10 @@ export default function OrdersPage() {
   const [viewMode, setViewMode] = useState<'grouped' | 'feed'>('grouped');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Manual Walk-in POS state
+  const [isPosOpen, setIsPosOpen] = useState(false);
+  const [posTable, setPosTable] = useState('Table 1');
 
   const prevPendingCountRef = useRef<number>(0);
 
@@ -248,6 +258,20 @@ export default function OrdersPage() {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Manual Walk-in Order Button */}
+          <button
+            type="button"
+            onClick={() => {
+              setPosTable('Table 1');
+              setIsPosOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-md shadow-amber-600/20 transition-all cursor-pointer"
+            id="orders-walkin-btn"
+          >
+            <ChefHat className="w-4 h-4" />
+            <span>+ Walk-in Order (POS)</span>
+          </button>
+
           {/* Sound Alert Toggle */}
           <button
             type="button"
@@ -340,17 +364,31 @@ export default function OrdersPage() {
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-2xs">
-          <div className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
-            Today's Table Sales
+        {isAdmin ? (
+          <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-2xs">
+            <div className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
+              Today's Table Sales
+            </div>
+            <div className="text-2xl font-black text-emerald-700 mt-1">
+              ₹{stats.todaySales ?? 0}
+            </div>
+            <div className="text-[11px] text-emerald-600 font-semibold mt-0.5">
+              {stats.todayOrdersCount} orders placed today
+            </div>
           </div>
-          <div className="text-2xl font-black text-emerald-700 mt-1">
-            ₹{stats.todaySales}
+        ) : (
+          <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-2xs">
+            <div className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
+              Total Table Orders
+            </div>
+            <div className="text-2xl font-black text-emerald-700 mt-1">
+              {stats.todayOrdersCount}
+            </div>
+            <div className="text-[11px] text-emerald-600 font-semibold mt-0.5">
+              Orders placed today
+            </div>
           </div>
-          <div className="text-[11px] text-emerald-600 font-semibold mt-0.5">
-            {stats.todayOrdersCount} orders placed today
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Filter Tabs & Table selector */}
@@ -669,6 +707,14 @@ export default function OrdersPage() {
           ))}
         </div>
       )}
+
+      {/* Manual Walk-in POS Order Modal */}
+      <ManualOrderModal
+        isOpen={isPosOpen}
+        onClose={() => setIsPosOpen(false)}
+        defaultTable={posTable}
+        onOrderCreated={() => fetchOrders(true)}
+      />
     </div>
   );
 }

@@ -30,14 +30,14 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    const restaurant = await findRestaurantBySlug(slug);
+    let restaurant = slug ? await findRestaurantBySlug(slug) : null;
     if (!restaurant) {
-      res.status(404).json({ success: false, message: 'Restaurant not found' });
-      return;
+      restaurant = await getOrCreateRestaurant();
     }
 
     const cleanTable = tableNumber.toString().trim();
     const cleanCustomerName = customerName.toString().trim();
+    const isDirect = Boolean(req.body.isDirectOrder || req.body.initialStatus === 'preparing');
 
     // Check existing active orders for this table to calculate Flow Ordering round
     const existingActive = await Order.find({
@@ -81,7 +81,7 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
       items: validatedItems,
       totalAmount: Math.round(totalAmount * 100) / 100,
       totalItems,
-      status: 'pending',
+      status: isDirect ? 'preparing' : 'pending',
       specialInstructions: (specialInstructions || '').toString().trim(),
       round,
     });
@@ -90,7 +90,11 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
 
     res.status(201).json({
       success: true,
-      message: round > 1 ? `Round ${round} order placed for Table ${cleanTable}!` : `Order placed successfully for Table ${cleanTable}!`,
+      message: isDirect
+        ? `Walk-in order for Table ${cleanTable} sent directly to kitchen!`
+        : round > 1
+        ? `Round ${round} order placed for Table ${cleanTable}!`
+        : `Order placed successfully for Table ${cleanTable}!`,
       data: {
         order,
         round,
@@ -193,18 +197,44 @@ export const getAdminOrders = async (req: AuthRequest, res: Response): Promise<v
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
-    const [pendingCount, preparingCount, servedCount, todayOrders] = await Promise.all([
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const isManager = req.user?.role === 'manager';
+
+    const [pendingCount, preparingCount, servedCount, todayOrdersCount] = await Promise.all([
       Order.countDocuments({ restaurantId: restaurant._id, status: 'pending' }),
       Order.countDocuments({ restaurantId: restaurant._id, status: 'preparing' }),
       Order.countDocuments({ restaurantId: restaurant._id, status: 'served' }),
-      Order.find({
+      Order.countDocuments({
         restaurantId: restaurant._id,
         createdAt: { $gte: startOfToday },
         status: { $ne: 'cancelled' },
       }),
     ]);
 
-    const todaySales = todayOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+    // Financial privacy: Only admin (owner) receives daily and monthly earnings
+    let todaySales: number | null = null;
+    let monthlySales: number | null = null;
+
+    if (!isManager) {
+      const [todayOrders, monthOrders] = await Promise.all([
+        Order.find({
+          restaurantId: restaurant._id,
+          createdAt: { $gte: startOfToday },
+          status: { $ne: 'cancelled' },
+        }),
+        Order.find({
+          restaurantId: restaurant._id,
+          createdAt: { $gte: startOfMonth },
+          status: { $ne: 'cancelled' },
+        }),
+      ]);
+
+      todaySales = Math.round(todayOrders.reduce((sum, o) => sum + o.totalAmount, 0) * 100) / 100;
+      monthlySales = Math.round(monthOrders.reduce((sum, o) => sum + o.totalAmount, 0) * 100) / 100;
+    }
 
     res.json({
       success: true,
@@ -215,8 +245,9 @@ export const getAdminOrders = async (req: AuthRequest, res: Response): Promise<v
           preparingCount,
           servedCount,
           activeCount: pendingCount + preparingCount + servedCount,
-          todayOrdersCount: todayOrders.length,
-          todaySales: Math.round(todaySales * 100) / 100,
+          todayOrdersCount,
+          todaySales,
+          monthlySales,
         },
       },
     });

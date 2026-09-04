@@ -77,9 +77,11 @@ export interface Restaurant {
 }
 
 export interface User {
-  _id: string;
+  _id?: string;
+  id?: string;
   email: string;
   name?: string;
+  role?: 'admin' | 'manager';
 }
 
 export interface Review {
@@ -135,7 +137,8 @@ export interface OrderDashboardStats {
   servedCount: number;
   activeCount: number;
   todayOrdersCount: number;
-  todaySales: number;
+  todaySales?: number | null;
+  monthlySales?: number | null;
 }
 
 export interface ActiveTableData {

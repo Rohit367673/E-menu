@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'motion/react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   UtensilsCrossed,
-  FolderOpen,
   Plus,
   QrCode,
   ArrowRight,
@@ -13,12 +12,18 @@ import {
   MessageSquareHeart,
   Trash2,
   ShoppingBag,
+  IndianRupee,
+  ChefHat,
+  ShieldCheck,
+  UserCheck,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRestaurant } from '../../contexts/RestaurantContext';
 import Button from '../../components/ui/Button';
 import apiClient from '../../api/client';
-import type { Review, OrderDashboardStats } from '../../types/menu';
+import type { Review, OrderDashboardStats, Order } from '../../types/menu';
+import ManualOrderModal from '../../components/admin/ManualOrderModal';
+import TableOccupancyMap from '../../components/admin/TableOccupancyMap';
 import toast from 'react-hot-toast';
 
 const containerVariants = {
@@ -32,50 +37,78 @@ const itemVariants = {
 
 export default function DashboardHome() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { categories, menuItems, restaurant } = useRestaurant();
+
   const [reviews, setReviews] = useState<Review[]>([]);
   const [avgRating, setAvgRating] = useState<number>(4.9);
   const [totalReviews, setTotalReviews] = useState<number>(0);
   const [isLoadingReviews, setIsLoadingReviews] = useState<boolean>(true);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [orderStats, setOrderStats] = useState<OrderDashboardStats>({
     pendingCount: 0,
     preparingCount: 0,
     servedCount: 0,
     activeCount: 0,
     todayOrdersCount: 0,
-    todaySales: 0,
+    todaySales: null,
+    monthlySales: null,
   });
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const [reviewsRes, ordersRes] = await Promise.allSettled([
-          apiClient.get<{
-            success: boolean;
-            data: { reviews: Review[]; total: number; averageRating: number };
-          }>('/reviews/admin'),
-          apiClient.get<{
-            success: boolean;
-            data: { stats: OrderDashboardStats };
-          }>('/orders/admin'),
-        ]);
+  // Manual Order POS modal state
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [selectedTableForOrder, setSelectedTableForOrder] = useState('Table 1');
 
-        if (reviewsRes.status === 'fulfilled' && reviewsRes.value.data.success) {
-          setReviews(reviewsRes.value.data.data.reviews || []);
-          setAvgRating(reviewsRes.value.data.data.averageRating || 4.9);
-          setTotalReviews(reviewsRes.value.data.data.total || 0);
+  const isAdmin = user?.role !== 'manager';
+
+  const fetchDashboardData = useCallback(async () => {
+    try {
+      const [reviewsRes, ordersRes] = await Promise.allSettled([
+        apiClient.get<{
+          success: boolean;
+          data: { reviews: Review[]; total: number; averageRating: number };
+        }>('/reviews/admin'),
+        apiClient.get<{
+          success: boolean;
+          data: { orders: Order[]; stats: OrderDashboardStats };
+        }>('/orders/admin'),
+      ]);
+
+      if (reviewsRes.status === 'fulfilled' && reviewsRes.value.data.success) {
+        setReviews(reviewsRes.value.data.data.reviews || []);
+        setAvgRating(reviewsRes.value.data.data.averageRating || 4.9);
+        setTotalReviews(reviewsRes.value.data.data.total || 0);
+      }
+
+      if (ordersRes.status === 'fulfilled' && ordersRes.value.data.success) {
+        if (ordersRes.value.data.data.orders) {
+          setOrders(ordersRes.value.data.data.orders);
         }
-
-        if (ordersRes.status === 'fulfilled' && ordersRes.value.data.success && ordersRes.value.data.data.stats) {
+        if (ordersRes.value.data.data.stats) {
           setOrderStats(ordersRes.value.data.data.stats);
         }
-      } catch (err) {
-        console.error('Failed to load dashboard data:', err);
-      } finally {
-        setIsLoadingReviews(false);
       }
-    })();
+    } catch (err) {
+      console.error('Failed to load dashboard data:', err);
+    } finally {
+      setIsLoadingReviews(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+    const interval = setInterval(fetchDashboardData, 7000);
+    return () => clearInterval(interval);
+  }, [fetchDashboardData]);
+
+  const handleOpenTakeOrder = (tableName: string) => {
+    setSelectedTableForOrder(tableName);
+    setIsOrderModalOpen(true);
+  };
+
+  const handleOrderCreated = () => {
+    fetchDashboardData();
+  };
 
   const handleDeleteReview = async (id: string) => {
     if (!confirm('Are you sure you want to delete this customer review?')) return;
@@ -96,41 +129,79 @@ export default function DashboardHome() {
     return 'Good Evening';
   };
 
-  const stats = [
-    {
-      label: 'Active Table Orders',
-      value: orderStats.activeCount,
-      icon: ShoppingBag,
-      bg: 'from-amber-500/10 to-orange-500/10',
-      iconBg: 'bg-amber-600',
-      trend: `${orderStats.pendingCount} pending kitchen`,
-      link: '/admin/orders',
-    },
-    {
-      label: 'Total Menu Items',
-      value: menuItems.length,
-      icon: UtensilsCrossed,
-      bg: 'from-violet-500/10 to-indigo-500/10',
-      iconBg: 'bg-violet-500',
-      trend: `${menuItems.length} items`,
-    },
-    {
-      label: 'Categories',
-      value: categories.length,
-      icon: FolderOpen,
-      bg: 'from-blue-500/10 to-indigo-500/10',
-      iconBg: 'bg-blue-600',
-      trend: `${categories.length} sections`,
-    },
-    {
-      label: 'Customer Rating',
-      value: `${avgRating.toFixed(1)} ★`,
-      icon: Star,
-      bg: 'from-amber-500/10 to-yellow-500/10',
-      iconBg: 'bg-amber-500',
-      trend: `${totalReviews} customer reviews`,
-    },
-  ];
+  // Role-specific stats metrics
+  const stats = isAdmin
+    ? [
+        {
+          label: "Today's Earnings",
+          value: `₹${orderStats.todaySales ?? 0}`,
+          icon: IndianRupee,
+          bg: 'from-emerald-500/10 to-teal-500/10',
+          iconBg: 'bg-emerald-600',
+          trend: `${orderStats.todayOrdersCount} orders placed today`,
+        },
+        {
+          label: 'Monthly Earnings',
+          value: `₹${orderStats.monthlySales ?? 0}`,
+          icon: TrendingUp,
+          bg: 'from-blue-500/10 to-indigo-500/10',
+          iconBg: 'bg-blue-600',
+          trend: 'Month-to-date total revenue',
+        },
+        {
+          label: 'Active Table Orders',
+          value: orderStats.activeCount,
+          icon: ShoppingBag,
+          bg: 'from-amber-500/10 to-orange-500/10',
+          iconBg: 'bg-amber-600',
+          trend: `${orderStats.pendingCount} pending kitchen`,
+          link: '/admin/orders',
+        },
+        {
+          label: 'Total Menu Items',
+          value: menuItems.length,
+          icon: UtensilsCrossed,
+          bg: 'from-violet-500/10 to-indigo-500/10',
+          iconBg: 'bg-violet-600',
+          trend: `${categories.length} categories available`,
+        },
+      ]
+    : [
+        {
+          label: 'Active Dining Tables',
+          value: orderStats.activeCount,
+          icon: ShoppingBag,
+          bg: 'from-amber-500/10 to-orange-500/10',
+          iconBg: 'bg-amber-600',
+          trend: `${orderStats.pendingCount} new incoming orders`,
+          link: '/admin/orders',
+        },
+        {
+          label: 'In Kitchen (Preparing)',
+          value: orderStats.preparingCount,
+          icon: ChefHat,
+          bg: 'from-blue-500/10 to-indigo-500/10',
+          iconBg: 'bg-blue-600',
+          trend: `${orderStats.servedCount} served to tables`,
+          link: '/admin/orders',
+        },
+        {
+          label: 'Total Menu Items',
+          value: menuItems.length,
+          icon: UtensilsCrossed,
+          bg: 'from-violet-500/10 to-indigo-500/10',
+          iconBg: 'bg-violet-600',
+          trend: `${categories.length} sections active`,
+        },
+        {
+          label: 'Customer Rating',
+          value: `${avgRating.toFixed(1)} ★`,
+          icon: Star,
+          bg: 'from-amber-500/10 to-yellow-500/10',
+          iconBg: 'bg-amber-500',
+          trend: `${totalReviews} customer reviews`,
+        },
+      ];
 
   const quickActions = [
     {
@@ -180,46 +251,80 @@ export default function DashboardHome() {
       {/* Header Banner */}
       <motion.div variants={itemVariants} className="admin-header-card">
         <div>
-          <div className="flex items-center gap-2 mb-1.5">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
             <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" />
             <span className="admin-breadcrumb">Dashboard</span>
+            {isAdmin ? (
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 shadow-2xs">
+                <ShieldCheck className="w-3.5 h-3.5 text-amber-700" />
+                Sukoon Owner (Full Access & Earnings)
+              </span>
+            ) : (
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-blue-100 text-blue-900 border border-blue-300 flex items-center gap-1 shadow-2xs">
+                <UserCheck className="w-3.5 h-3.5 text-blue-700" />
+                Store Manager (Orders & Kitchen)
+              </span>
+            )}
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-text leading-tight">
-            {greeting()}, <span className="text-gradient">{user?.email?.split('@')[0] || 'Admin'}</span>! 👋
+            {greeting()}, <span className="text-gradient">{user?.name || user?.email?.split('@')[0] || 'Admin'}</span>! 👋
           </h1>
           <p className="text-text-secondary mt-1.5 text-sm leading-relaxed">
-            {restaurant ? `Managing ${restaurant.name}` : 'Welcome to your E-Menu dashboard'}
+            {restaurant ? `Managing ${restaurant.name}` : 'Welcome to your Sukoon Cafe & Bar dashboard'}
           </p>
         </div>
-        <Link to="/admin/add-item" id="dashboard-add-item-header" className="flex-shrink-0">
-          <Button icon={<Plus className="w-4 h-4" />}>Add Menu Item</Button>
-        </Link>
+
+        <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
+          <button
+            type="button"
+            onClick={() => handleOpenTakeOrder('Table 1')}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-md shadow-amber-600/20 transition-all cursor-pointer"
+            id="dashboard-walkin-order-btn"
+          >
+            <ChefHat className="w-4 h-4" />
+            <span>+ Walk-in Order (POS)</span>
+          </button>
+
+          <Link to="/admin/add-item" id="dashboard-add-item-header">
+            <Button icon={<Plus className="w-4 h-4" />}>Add Menu Item</Button>
+          </Link>
+        </div>
       </motion.div>
 
-      {/* Stats */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      {/* Stats Cards (4 Columns) */}
+      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat) => (
           <motion.div
             key={stat.label}
             whileHover={{ y: -3 }}
-            className="relative overflow-hidden admin-card p-6 border border-border/80 shadow-sm"
+            className="relative overflow-hidden admin-card p-5 border border-border/80 shadow-sm"
           >
             <div className={`absolute inset-0 bg-gradient-to-br ${stat.bg} opacity-60`} />
             <div className="relative flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-text-secondary/80 mb-1">{stat.label}</p>
-                <p className="text-3xl font-black text-text">{stat.value}</p>
-                <div className="flex items-center gap-1.5 mt-2.5">
+                <p className="text-2xl font-black text-text">{stat.value}</p>
+                <div className="flex items-center gap-1.5 mt-2">
                   <TrendingUp className="w-3.5 h-3.5 text-text-secondary/60" />
                   <span className="text-xs font-medium text-text-secondary/70">{stat.trend}</span>
                 </div>
               </div>
-              <div className={`w-13 h-13 ${stat.iconBg} rounded-2xl flex items-center justify-center shadow-md flex-shrink-0`}>
-                <stat.icon className="w-6 h-6 text-white" />
+              <div className={`w-12 h-12 ${stat.iconBg} rounded-2xl flex items-center justify-center shadow-md flex-shrink-0`}>
+                <stat.icon className="w-5 h-5 text-white" />
               </div>
             </div>
           </motion.div>
         ))}
+      </motion.div>
+
+      {/* Visual Table Occupancy Map */}
+      <motion.div variants={itemVariants}>
+        <TableOccupancyMap
+          orders={orders}
+          userRole={user?.role}
+          onTakeOrder={handleOpenTakeOrder}
+          onViewTable={(table) => navigate(`/admin/orders?table=${encodeURIComponent(table)}`)}
+        />
       </motion.div>
 
       {/* Customer Reviews & Feedback */}
@@ -363,6 +468,14 @@ export default function DashboardHome() {
           </div>
         </div>
       </motion.div>
+
+      {/* Manual Walk-in POS Order Modal */}
+      <ManualOrderModal
+        isOpen={isOrderModalOpen}
+        onClose={() => setIsOrderModalOpen(false)}
+        defaultTable={selectedTableForOrder}
+        onOrderCreated={handleOrderCreated}
+      />
     </motion.div>
   );
 }
