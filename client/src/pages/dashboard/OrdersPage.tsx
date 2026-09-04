@@ -119,9 +119,12 @@ export default function OrdersPage() {
   };
 
   const handleResetTable = async (tableNum: string) => {
-    if (!window.confirm(`Force reset session for Table ${tableNum}? This will clear active table orders immediately.`)) {
+    if (!window.confirm(`Clear Table ${tableNum}? This will remove all orders for Table ${tableNum} from the dashboard.`)) {
       return;
     }
+
+    // Optimistically remove from state so the card vanishes immediately
+    setOrders((prev) => prev.filter((o) => o.tableNumber !== tableNum));
 
     try {
       const res = await apiClient.post<{ success: boolean; message: string }>(
@@ -133,6 +136,7 @@ export default function OrdersPage() {
       }
     } catch (err) {
       console.error('Failed to reset table:', err);
+      fetchOrders(true);
     }
   };
 
@@ -152,23 +156,31 @@ export default function OrdersPage() {
   const tableGroups = uniqueTables.map((tableNum) => {
     const tableOrders = orders.filter((o) => o.tableNumber === tableNum);
     const activeOrders = tableOrders.filter((o) => ['pending', 'preparing', 'served'].includes(o.status));
-    const totalBill = activeOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+    const completedOrders = tableOrders.filter((o) => o.status === 'completed');
+
+    const displayOrders = statusFilter === 'completed'
+      ? completedOrders
+      : (statusFilter !== 'all' ? tableOrders.filter((o) => o.status === statusFilter) : activeOrders);
+
+    const totalBill = displayOrders.reduce((sum, o) => sum + o.totalAmount, 0);
 
     return {
       tableNumber: tableNum,
       activeOrders,
+      displayOrders,
       allOrders: tableOrders,
       totalBill,
       hasPending: activeOrders.some((o) => o.status === 'pending'),
       hasPreparing: activeOrders.some((o) => o.status === 'preparing'),
-      customerName: activeOrders[0]?.customerName || tableOrders[0]?.customerName || 'Guest',
+      isCompleted: activeOrders.length === 0 && completedOrders.length > 0,
+      customerName: activeOrders[0]?.customerName || completedOrders[0]?.customerName || tableOrders[0]?.customerName || 'Guest',
     };
   }).filter((grp) => {
     if (tableFilter !== 'all' && grp.tableNumber !== tableFilter) return false;
-    if (statusFilter !== 'all') {
-      return grp.allOrders.some((o) => o.status === statusFilter);
+    if (statusFilter === 'all') {
+      return grp.activeOrders.length > 0;
     }
-    return grp.activeOrders.length > 0;
+    return grp.displayOrders.length > 0;
   });
 
   const getStatusBadge = (status: OrderStatus) => {
@@ -420,7 +432,7 @@ export default function OrdersPage() {
                       </h4>
                       <p className="text-[11px] text-stone-400 font-medium">
                         Guest: <strong className="text-stone-700">{grp.customerName}</strong> ·{' '}
-                        {grp.activeOrders.length} active round{grp.activeOrders.length > 1 ? 's' : ''}
+                        {grp.displayOrders.length} {grp.isCompleted ? 'completed' : 'active'} round{grp.displayOrders.length > 1 ? 's' : ''}
                       </p>
                     </div>
                   </div>
@@ -428,9 +440,9 @@ export default function OrdersPage() {
                   {/* Cumulative Table Bill Badge */}
                   <div className="text-right">
                     <div className="text-[10px] text-stone-400 uppercase font-bold tracking-wider">
-                      Running Total
+                      {grp.isCompleted ? 'Total Paid' : 'Running Total'}
                     </div>
-                    <div className="text-base font-black text-amber-700">
+                    <div className={`text-base font-black ${grp.isCompleted ? 'text-emerald-700' : 'text-amber-700'}`}>
                       ₹{grp.totalBill}
                     </div>
                   </div>
@@ -438,7 +450,7 @@ export default function OrdersPage() {
 
                 {/* Table Rounds List */}
                 <div className="p-4 flex-1 space-y-4 divide-y divide-stone-100">
-                  {grp.activeOrders.map((order) => (
+                  {grp.displayOrders.map((order) => (
                     <div key={order._id} className="pt-3 first:pt-0 space-y-2.5">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -531,20 +543,27 @@ export default function OrdersPage() {
                   <button
                     type="button"
                     onClick={() => handleResetTable(grp.tableNumber)}
-                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-stone-500 hover:text-red-600 hover:bg-red-50 text-xs font-semibold transition-colors cursor-pointer border border-transparent hover:border-red-200"
-                    title="Force clear active session for this table"
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-stone-600 hover:text-red-700 hover:bg-red-50 text-xs font-semibold transition-colors cursor-pointer border border-stone-200 hover:border-red-300 shadow-2xs"
+                    title="Clear table and remove from dashboard"
                   >
                     <span>Clear Table</span>
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleSettleTable(grp.tableNumber)}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
-                  >
-                    <CreditCard className="w-3.5 h-3.5" />
-                    <span>Settle Bill (₹{grp.totalBill})</span>
-                  </button>
+                  {grp.activeOrders.length > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => handleSettleTable(grp.tableNumber)}
+                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                    >
+                      <CreditCard className="w-3.5 h-3.5" />
+                      <span>Settle Bill (₹{grp.totalBill})</span>
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Paid & Settled (₹{grp.totalBill})</span>
+                    </div>
+                  )}
                 </div>
               </div>
             ))

@@ -23,8 +23,6 @@ interface OrderDrawerProps {
   slug?: string;
 }
 
-const COMMON_TABLES = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Bar 1', 'Bar 2'];
-
 export default function OrderDrawer({
   primaryColor = '#8B5E3C',
   headingFont = 'Playfair Display',
@@ -225,42 +223,40 @@ export default function OrderDrawer({
                     1. Table & Guest Details
                   </h4>
 
-                  {/* Table Selection */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-[#2C1810] flex items-center justify-between">
-                      <span>Table Number *</span>
-                      <span className="text-[11px] text-[#786b5f] font-normal">Look on your table card</span>
-                    </label>
-
-                    <div className="flex gap-2">
+                  {/* Table Badge (Auto-Assigned from Table QR Code) */}
+                  {tableNumber ? (
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-stone-900 text-white font-black text-xs flex items-center justify-center shadow-xs">
+                          T
+                        </div>
+                        <div>
+                          <div className="text-xs font-black text-stone-900">
+                            Table {tableNumber}
+                          </div>
+                          <div className="text-[10px] text-stone-500 font-medium">
+                            Auto-detected from QR Code
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/90 border border-emerald-200 px-2 py-0.5 rounded-md">
+                        Connected ✓
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-[#2C1810]">
+                        Table Number *
+                      </label>
                       <input
                         type="text"
-                        placeholder="e.g. 4 or Table 4"
+                        placeholder="e.g. 4"
                         value={tableNumber}
                         onChange={(e) => setTableNumber(e.target.value)}
                         className="w-full px-3 py-2 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 bg-stone-50/50"
                       />
                     </div>
-
-                    {/* Quick Table Chips */}
-                    <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                      <span className="text-[10px] text-stone-400 font-medium mr-1">Quick:</span>
-                      {COMMON_TABLES.map((t) => (
-                        <button
-                          key={t}
-                          type="button"
-                          onClick={() => setTableNumber(t)}
-                          className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
-                            tableNumber === t
-                              ? 'bg-amber-600 text-white shadow-2xs'
-                              : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-                          }`}
-                        >
-                          T-{t}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  )}
 
                   {/* Customer Name */}
                   <div className="space-y-1.5">

@@ -311,19 +311,16 @@ export const resetTableSession = async (req: AuthRequest, res: Response): Promis
     }
 
     const cleanTable = tableNumber.toString().trim();
-    const result = await Order.updateMany(
-      {
-        restaurantId: restaurant._id,
-        tableNumber: cleanTable,
-        status: { $in: ['pending', 'preparing', 'served'] },
-      },
-      { $set: { status: 'cancelled' } }
-    );
+    // Delete all orders for this table so the table is completely cleared from the dashboard
+    const result = await Order.deleteMany({
+      restaurantId: restaurant._id,
+      tableNumber: cleanTable,
+    });
 
     res.json({
       success: true,
-      message: `Table ${cleanTable} session reset successfully (${result.modifiedCount} orders cleared)`,
-      data: { clearedCount: result.modifiedCount },
+      message: `Table ${cleanTable} cleared successfully (${result.deletedCount} orders removed)`,
+      data: { clearedCount: result.deletedCount },
     });
   } catch (error) {
     console.error('Reset table session error:', error);
