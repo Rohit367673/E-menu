@@ -25,7 +25,7 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
+  const [kitchenOrdersCount, setKitchenOrdersCount] = useState(0);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -51,9 +51,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   useEffect(() => {
     const checkOrders = async () => {
       try {
-        const res = await apiClient.get<{ success: boolean; data: { stats: { pendingCount: number } } }>('/orders/admin');
+        const res = await apiClient.get<{ success: boolean; data: { stats: { preparingCount: number; pendingCount: number } } }>('/orders/admin');
         if (res.data.success && res.data.data.stats) {
-          setPendingOrdersCount(res.data.data.stats.pendingCount || 0);
+          const count = (res.data.data.stats.preparingCount || 0) + (res.data.data.stats.pendingCount || 0);
+          setKitchenOrdersCount(count);
         }
       } catch {}
     };
@@ -155,9 +156,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       className="whitespace-nowrap overflow-hidden flex-1 text-left flex items-center justify-between"
                     >
                       <span>{item.label}</span>
-                      {item.hasBadge && pendingOrdersCount > 0 && (
+                      {item.hasBadge && kitchenOrdersCount > 0 && (
                         <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-stone-950 animate-pulse shadow-xs">
-                          {pendingOrdersCount}
+                          {kitchenOrdersCount}
                         </span>
                       )}
                     </motion.span>

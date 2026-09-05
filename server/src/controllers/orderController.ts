@@ -37,7 +37,6 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
 
     const cleanTable = tableNumber.toString().trim();
     const cleanCustomerName = customerName.toString().trim();
-    const isDirect = Boolean(req.body.isDirectOrder || req.body.initialStatus === 'preparing');
 
     // Check existing active orders for this table to calculate Flow Ordering round
     const existingActive = await Order.find({
@@ -72,6 +71,7 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
     const totalOrderCount = await Order.countDocuments({ restaurantId: restaurant._id });
     const orderNumber = `#${101 + (totalOrderCount % 899)}`;
 
+    // Direct Kitchen Workflow: Orders enter 'preparing' immediately with NO approval click required
     const order = new Order({
       restaurantId: restaurant._id,
       orderNumber,
@@ -81,7 +81,7 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
       items: validatedItems,
       totalAmount: Math.round(totalAmount * 100) / 100,
       totalItems,
-      status: isDirect ? 'preparing' : 'pending',
+      status: 'preparing',
       specialInstructions: (specialInstructions || '').toString().trim(),
       round,
     });
@@ -90,11 +90,9 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
 
     res.status(201).json({
       success: true,
-      message: isDirect
-        ? `Walk-in order for Table ${cleanTable} sent directly to kitchen!`
-        : round > 1
-        ? `Round ${round} order placed for Table ${cleanTable}!`
-        : `Order placed successfully for Table ${cleanTable}!`,
+      message: round > 1
+        ? `Round ${round} order sent directly to kitchen!`
+        : `Order sent directly to kitchen for Table ${cleanTable}!`,
       data: {
         order,
         round,
@@ -135,9 +133,7 @@ export const getActiveTableOrders = async (req: Request, res: Response): Promise
     const totalItems = orders.reduce((sum, o) => sum + o.totalItems, 0);
 
     let overallStatus: 'none' | OrderStatus = 'none';
-    if (orders.some((o) => o.status === 'pending')) {
-      overallStatus = 'pending';
-    } else if (orders.some((o) => o.status === 'preparing')) {
+    if (orders.some((o) => o.status === 'preparing' || o.status === 'pending')) {
       overallStatus = 'preparing';
     } else if (orders.some((o) => o.status === 'served')) {
       overallStatus = 'served';

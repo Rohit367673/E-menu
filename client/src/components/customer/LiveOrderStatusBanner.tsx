@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { ChefHat, Clock, CheckCircle2, ChevronRight, Sparkles, X } from 'lucide-react';
+import { ChefHat, CheckCircle2, ChevronRight, Sparkles, X } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
 
 interface LiveOrderStatusBannerProps {
@@ -82,36 +82,36 @@ export default function LiveOrderStatusBanner({
 
   const statusConfig = {
     pending: {
-      label: 'Order Received',
-      subtext: 'Waiting for kitchen acceptance',
-      icon: Clock,
+      label: 'Preparing Order',
+      subtext: 'Chef is preparing your fresh dishes',
+      icon: ChefHat,
       badgeBg: 'bg-amber-100 text-amber-900 border-amber-300',
       pillBg: 'from-amber-500/10 to-orange-500/10 border-amber-500/30',
       accentColor: '#d97706',
     },
     preparing: {
-      label: 'In Kitchen',
-      subtext: 'Chef is preparing your dishes',
+      label: 'Preparing Order',
+      subtext: 'Chef is preparing your fresh dishes',
       icon: ChefHat,
+      badgeBg: 'bg-amber-100 text-amber-900 border-amber-300',
+      pillBg: 'from-amber-500/10 to-orange-500/10 border-amber-500/30',
+      accentColor: '#d97706',
+    },
+    served: {
+      label: 'Served (Complete)',
+      subtext: 'Dishes served at your table · Enjoy your meal!',
+      icon: CheckCircle2,
       badgeBg: 'bg-emerald-100 text-emerald-900 border-emerald-300',
       pillBg: 'from-emerald-500/10 to-teal-500/10 border-emerald-500/30',
       accentColor: '#059669',
     },
-    served: {
-      label: 'Served',
-      subtext: 'Dishes served at your table',
-      icon: CheckCircle2,
-      badgeBg: 'bg-blue-100 text-blue-900 border-blue-300',
-      pillBg: 'from-blue-500/10 to-indigo-500/10 border-blue-500/30',
-      accentColor: '#2563eb',
-    },
     completed: {
-      label: 'Completed',
-      subtext: 'Order settled',
+      label: 'Served (Complete)',
+      subtext: 'Dishes served · Table settled',
       icon: CheckCircle2,
-      badgeBg: 'bg-gray-100 text-gray-900 border-gray-300',
-      pillBg: 'from-gray-500/10 to-gray-500/10 border-gray-500/30',
-      accentColor: '#4b5563',
+      badgeBg: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+      pillBg: 'from-emerald-500/10 to-teal-500/10 border-emerald-500/30',
+      accentColor: '#059669',
     },
     cancelled: {
       label: 'Cancelled',

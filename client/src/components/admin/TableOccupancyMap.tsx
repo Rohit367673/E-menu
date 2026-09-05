@@ -2,8 +2,7 @@ import { useMemo, useRef } from 'react';
 import { motion } from 'motion/react';
 import {
   ChefHat,
-  Clock,
-  Utensils,
+  CheckCircle2,
   Plus,
   ArrowUpRight,
   ChevronLeft,
@@ -172,10 +171,8 @@ export default function TableOccupancyMap({
       const tableOrders = activeTableMap.get(tableName) || [];
       const isBooked = tableOrders.length > 0;
 
-      let highestStatus: 'pending' | 'preparing' | 'served' | 'none' = 'none';
-      if (tableOrders.some((o) => o.status === 'pending')) {
-        highestStatus = 'pending';
-      } else if (tableOrders.some((o) => o.status === 'preparing')) {
+      let highestStatus: 'preparing' | 'served' | 'none' = 'none';
+      if (tableOrders.some((o) => o.status === 'preparing' || o.status === 'pending')) {
         highestStatus = 'preparing';
       } else if (tableOrders.some((o) => o.status === 'served')) {
         highestStatus = 'served';
@@ -314,18 +311,13 @@ export default function TableOccupancyMap({
 
                   <div>
                     {table.highestStatus === 'preparing' && (
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1">
-                        <ChefHat className="w-2.5 h-2.5" /> Kitchen
-                      </span>
-                    )}
-                    {table.highestStatus === 'pending' && (
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-100 text-amber-900 border border-amber-300 animate-pulse flex items-center gap-1">
-                        <Clock className="w-2.5 h-2.5" /> New Order
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300 animate-pulse flex items-center gap-1">
+                        <ChefHat className="w-2.5 h-2.5 text-amber-700" /> Preparing
                       </span>
                     )}
                     {table.highestStatus === 'served' && (
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-purple-100 text-purple-800 border border-purple-200 flex items-center gap-1">
-                        <Utensils className="w-2.5 h-2.5" /> Served
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                        <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" /> Served
                       </span>
                     )}
                   </div>

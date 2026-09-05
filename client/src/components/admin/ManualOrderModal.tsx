@@ -157,7 +157,7 @@ export default function ManualOrderModal({
         customerPhone: customerPhone.trim() || undefined,
         items: selectedItems,
         specialInstructions: specialInstructions.trim() || undefined,
-        isDirectOrder: isDirectKitchen, // bypasses pending approval -> status: 'preparing'
+        isDirectOrder: true, // Always directly preparing in kitchen
         slug: restaurant?.slug || 'menu',
       };
 
@@ -168,11 +168,7 @@ export default function ManualOrderModal({
       }>('/orders', payload);
 
       if (res.data.success) {
-        toast.success(
-          isDirectKitchen
-            ? `Order for ${tableNumber} sent directly to Kitchen!`
-            : `Order placed for ${tableNumber}!`
-        );
+        toast.success(`Order for ${tableNumber} sent directly to Kitchen!`);
         setSelectedItems([]);
         setSearchQuery('');
         setSpecialInstructions('');
