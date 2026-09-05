@@ -15,6 +15,7 @@ import apiClient from '../../api/client';
 import type { Order, OrderStatus, OrderDashboardStats } from '../../types/menu';
 import { playOrderNotificationSound } from '../../utils/sound';
 import { useAuth } from '../../contexts/AuthContext';
+import { Link } from 'react-router-dom';
 import ManualOrderModal from '../../components/admin/ManualOrderModal';
 
 export default function OrdersPage() {
@@ -375,31 +376,26 @@ export default function OrdersPage() {
           </div>
         </div>
 
-        {isAdmin ? (
-          <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-2xs">
-            <div className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
-              Today's Table Sales
-            </div>
-            <div className="text-2xl font-black text-emerald-700 mt-1">
-              ₹{stats.todaySales ?? 0}
-            </div>
-            <div className="text-[11px] text-emerald-600 font-semibold mt-0.5">
-              {stats.todayOrdersCount} orders placed today
-            </div>
+        <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-2xs">
+          <div className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
+            Total Orders Today
           </div>
-        ) : (
-          <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-2xs">
-            <div className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
-              Total Table Orders
-            </div>
-            <div className="text-2xl font-black text-emerald-700 mt-1">
-              {stats.todayOrdersCount}
-            </div>
-            <div className="text-[11px] text-emerald-600 font-semibold mt-0.5">
-              Orders placed today
-            </div>
+          <div className="text-2xl font-black text-emerald-700 mt-1">
+            {stats.todayOrdersCount}
           </div>
-        )}
+          <div className="text-[11px] text-emerald-600 font-semibold mt-0.5 flex items-center justify-between flex-wrap gap-1">
+            <span>Orders placed today</span>
+            {isAdmin && (
+              <Link
+                to="/admin/earnings"
+                className="text-[11px] font-bold text-amber-700 hover:text-amber-900 underline transition-colors"
+                title="Only Owner can view Today's & Monthly Earnings"
+              >
+                Owner: Today's Earnings →
+              </Link>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Filter Tabs & Table selector */}
@@ -487,14 +483,25 @@ export default function OrdersPage() {
                   </div>
 
                   {/* Cumulative Table Bill Badge */}
-                  <div className="text-right">
-                    <div className="text-[10px] text-stone-400 uppercase font-bold tracking-wider">
-                      {grp.isCompleted ? 'Total Paid' : 'Running Total'}
+                  {isAdmin ? (
+                    <div className="text-right">
+                      <div className="text-[10px] text-stone-400 uppercase font-bold tracking-wider">
+                        {grp.isCompleted ? 'Total Paid' : 'Running Total'}
+                      </div>
+                      <div className={`text-base font-black ${grp.isCompleted ? 'text-emerald-700' : 'text-amber-700'}`}>
+                        ₹{grp.totalBill}
+                      </div>
                     </div>
-                    <div className={`text-base font-black ${grp.isCompleted ? 'text-emerald-700' : 'text-amber-700'}`}>
-                      ₹{grp.totalBill}
+                  ) : (
+                    <div className="text-right">
+                      <div className="text-[10px] text-stone-400 uppercase font-bold tracking-wider">
+                        Table Status
+                      </div>
+                      <div className="text-xs font-bold text-stone-700">
+                        {grp.isCompleted ? 'Completed' : `${grp.activeOrders.length} Active`}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Table Rounds List */}
@@ -529,9 +536,11 @@ export default function OrdersPage() {
                               <span className="font-bold text-stone-900">{it.quantity}x</span>
                               <span className="truncate">{it.name}</span>
                             </div>
-                            <span className="font-semibold text-stone-900 flex-shrink-0">
-                              ₹{it.price * it.quantity}
-                            </span>
+                            {isAdmin && (
+                              <span className="font-semibold text-stone-900 flex-shrink-0">
+                                ₹{it.price * it.quantity}
+                              </span>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -605,12 +614,12 @@ export default function OrdersPage() {
                       className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
                     >
                       <CreditCard className="w-3.5 h-3.5" />
-                      <span>Settle Bill (₹{grp.totalBill})</span>
+                      <span>{isAdmin ? `Settle Bill (₹${grp.totalBill})` : 'Settle Table'}</span>
                     </button>
                   ) : (
                     <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Paid & Settled (₹{grp.totalBill})</span>
+                      <span>{isAdmin ? `Paid & Settled (₹${grp.totalBill})` : 'Paid & Settled'}</span>
                     </div>
                   )}
                 </div>
@@ -674,12 +683,21 @@ export default function OrdersPage() {
 
               {/* Right Action */}
               <div className="flex items-center justify-between sm:justify-end gap-4 pt-3 sm:pt-0 border-t sm:border-t-0 border-stone-100">
-                <div className="text-right">
-                  <div className="text-[10px] text-stone-400 font-bold uppercase">Amount</div>
-                  <div className="text-lg font-black text-amber-800">
-                    ₹{order.totalAmount}
+                {isAdmin ? (
+                  <div className="text-right">
+                    <div className="text-[10px] text-stone-400 font-bold uppercase">Amount</div>
+                    <div className="text-lg font-black text-amber-800">
+                      ₹{order.totalAmount}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="text-right">
+                    <div className="text-[10px] text-stone-400 font-bold uppercase">Items</div>
+                    <div className="text-sm font-bold text-stone-700">
+                      {order.items.reduce((sum, item) => sum + item.quantity, 0)} pcs
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-2">
                   {order.status === 'pending' && (
@@ -709,7 +727,7 @@ export default function OrdersPage() {
                       onClick={() => handleUpdateStatus(order._id, 'completed')}
                       className="py-2 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider shadow-2xs transition-all cursor-pointer"
                     >
-                      Settle Bill
+                      {isAdmin ? 'Settle Bill' : 'Complete Order'}
                     </button>
                   )}
                 </div>

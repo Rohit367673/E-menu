@@ -147,6 +147,19 @@ export default function MonthlyEarningsPage() {
     );
   }
 
+  const isCurrentMonthView =
+    selectedYear === today.getFullYear() &&
+    selectedMonth === today.getMonth() + 1;
+
+  const todayDay = today.getDate();
+  const todayReport = isCurrentMonthView
+    ? report?.days?.find((d) => d.day === todayDay)
+    : null;
+
+  const todaySales = todayReport?.totalSales ?? 0;
+  const todayOrders = todayReport?.ordersCount ?? 0;
+  const todayItems = todayReport?.itemsCount ?? 0;
+
   return (
     <div className="admin-page flex flex-col gap-6 py-2 max-w-7xl mx-auto">
       {/* Header Banner */}
@@ -206,7 +219,28 @@ export default function MonthlyEarningsPage() {
 
       {/* Month Summary KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Sales */}
+        {/* Today's Table Earnings (Dedicated Owner Metric) */}
+        <div className="bg-white p-5 rounded-3xl border border-amber-300 bg-gradient-to-br from-amber-500/10 via-white to-transparent shadow-2xs">
+          <div className="flex items-center justify-between">
+            <div className="text-[11px] font-bold text-amber-900 uppercase tracking-wider">
+              Today's Earnings
+            </div>
+            {isCurrentMonthView && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-200 text-amber-900 border border-amber-300">
+                Today
+              </span>
+            )}
+          </div>
+          <div className="text-3xl font-black text-amber-800 mt-1.5">
+            ₹{todaySales}
+          </div>
+          <div className="text-xs font-semibold text-amber-700 mt-1 flex items-center gap-1">
+            <ShoppingBag className="w-3.5 h-3.5 text-amber-600" />
+            <span>{todayOrders} orders today · {todayItems} dishes</span>
+          </div>
+        </div>
+
+        {/* Total Month Sales */}
         <div className="bg-white p-5 rounded-3xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/40 via-white to-transparent shadow-2xs">
           <div className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
             Total Month Earnings
@@ -216,14 +250,14 @@ export default function MonthlyEarningsPage() {
           </div>
           <div className="text-xs font-semibold text-emerald-800/80 mt-1 flex items-center gap-1">
             <TrendingUp className="w-3.5 h-3.5" />
-            <span>Entire month revenue</span>
+            <span>Entire {report?.monthName || 'month'} revenue</span>
           </div>
         </div>
 
-        {/* Total Orders */}
+        {/* Total Month Orders */}
         <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-2xs">
           <div className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
-            Total Orders
+            Month Orders
           </div>
           <div className="text-3xl font-black text-stone-900 mt-1.5">
             {report?.totalMonthOrders ?? 0}
@@ -234,7 +268,7 @@ export default function MonthlyEarningsPage() {
           </div>
         </div>
 
-        {/* Total Items Sold */}
+        {/* Dishes Sold & Top Seller */}
         <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-2xs">
           <div className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
             Dishes Sold
@@ -242,23 +276,9 @@ export default function MonthlyEarningsPage() {
           <div className="text-3xl font-black text-stone-900 mt-1.5">
             {report?.totalMonthItems ?? 0}
           </div>
-          <div className="text-xs font-semibold text-stone-500 mt-1 flex items-center gap-1">
-            <Utensils className="w-3.5 h-3.5 text-stone-400" />
-            <span>Cumulative portions served</span>
-          </div>
-        </div>
-
-        {/* Best Seller */}
-        <div className="bg-white p-5 rounded-3xl border border-amber-200/80 bg-gradient-to-br from-amber-50/40 via-white to-transparent shadow-2xs">
-          <div className="text-[11px] font-bold text-amber-800 uppercase tracking-wider">
-            Top Dish of the Month
-          </div>
-          <div className="text-xl font-black text-amber-950 mt-2 truncate" title={report?.topSellingDish}>
-            {report?.topSellingDish || 'None yet'}
-          </div>
-          <div className="text-xs font-semibold text-amber-700 mt-1 flex items-center gap-1">
-            <Award className="w-3.5 h-3.5 text-amber-600" />
-            <span>Most popular order</span>
+          <div className="text-xs font-semibold text-amber-700 mt-1 flex items-center gap-1 truncate" title={report?.topSellingDish}>
+            <Award className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+            <span className="truncate">Top: {report?.topSellingDish || 'None yet'}</span>
           </div>
         </div>
       </div>

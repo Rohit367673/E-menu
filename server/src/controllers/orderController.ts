@@ -236,10 +236,22 @@ export const getAdminOrders = async (req: AuthRequest, res: Response): Promise<v
       monthlySales = Math.round(monthOrders.reduce((sum, o) => sum + o.totalAmount, 0) * 100) / 100;
     }
 
+    // Manager financial privacy: Strip order amounts and item prices
+    const sanitizedOrders = isManager
+      ? orders.map((o) => ({
+          ...o,
+          totalAmount: 0,
+          items: o.items.map((it) => ({
+            ...it,
+            price: 0,
+          })),
+        }))
+      : orders;
+
     res.json({
       success: true,
       data: {
-        orders,
+        orders: sanitizedOrders,
         stats: {
           pendingCount,
           preparingCount,
