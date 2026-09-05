@@ -277,7 +277,7 @@ export default function OrdersPage() {
   return (
     <div className="flex flex-col gap-6 max-w-7xl mx-auto">
       {/* Top Header & Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-stone-200 shadow-2xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-3xl border border-stone-200 shadow-2xs">
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl font-black text-stone-900 tracking-tight">
@@ -429,7 +429,7 @@ export default function OrdersPage() {
 
       {/* Filter Tabs & Table selector */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-stone-200">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none touch-pan-x">
           {[
             { id: 'all', label: 'All Active' },
             { id: 'preparing', label: '1. Preparing Order' },

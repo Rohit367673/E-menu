@@ -15,6 +15,9 @@ import {
   ChefHat,
   ShieldCheck,
   UserCheck,
+  Copy,
+  Check,
+  ExternalLink,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRestaurant } from '../../contexts/RestaurantContext';
@@ -58,8 +61,19 @@ export default function DashboardHome() {
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [selectedTableForOrder, setSelectedTableForOrder] = useState('Table 1');
   const [isTableFixed, setIsTableFixed] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
 
   const isAdmin = user?.role !== 'manager';
+
+  const publicMenuUrl = `${window.location.origin}/menu/${restaurant?.slug || 'menu'}`;
+
+  const handleCopyUrl = () => {
+    navigator.clipboard.writeText(publicMenuUrl).then(() => {
+      setCopiedUrl(true);
+      toast.success('Public menu link copied!');
+      setTimeout(() => setCopiedUrl(false), 2000);
+    });
+  };
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -269,25 +283,178 @@ export default function DashboardHome() {
         },
       ];
 
+  // MANAGER VIEW: Distraction-free, big tables, rating, and public menu URL
+  if (!isAdmin) {
+    return (
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="admin-page flex flex-col gap-5 sm:gap-6 py-1 sm:py-2"
+      >
+        {/* Streamlined Manager Header — NO "Good Morning" or clutter */}
+        <motion.div variants={itemVariants} className="admin-header-card">
+          <div>
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-blue-100 text-blue-900 border border-blue-300 flex items-center gap-1 shadow-2xs">
+                <UserCheck className="w-3.5 h-3.5 text-blue-700" />
+                Store Manager Floor Control
+              </span>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight leading-tight">
+              {restaurant?.name || 'Sukoon Cafe & Bar'}
+            </h1>
+            <p className="text-xs text-stone-500 mt-1">
+              Table Floor Map & Walk-in Order Taking
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => handleOpenTakeOrder('Table 1', false)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-md shadow-amber-600/20 transition-all cursor-pointer active:scale-98"
+              id="dashboard-manager-walkin-btn"
+            >
+              <ChefHat className="w-4 h-4" />
+              <span>+ Walk-in Order (POS)</span>
+            </button>
+
+            <Link
+              to="/admin/orders"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+            >
+              <ShoppingBag className="w-4 h-4 text-amber-400" />
+              <span>Live Orders ({orderStats.preparingCount + orderStats.pendingCount})</span>
+            </Link>
+          </div>
+        </motion.div>
+
+        {/* 1. HERO: Big Table Floor Map (Enlarged & Touch-Friendly) */}
+        <motion.div variants={itemVariants}>
+          <TableOccupancyMap
+            orders={orders}
+            userRole={user?.role}
+            onTakeOrder={handleOpenTakeOrder}
+            onViewTable={(table) => navigate(`/admin/orders?table=${encodeURIComponent(table)}`)}
+          />
+        </motion.div>
+
+        {/* 2. Rating & Public Menu URL Row (Distraction-Free) */}
+        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Customer Rating Card */}
+          <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-2xs flex flex-col justify-between gap-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/15 text-amber-600 flex items-center justify-center shadow-2xs">
+                  <Star className="w-5 h-5 fill-amber-400 text-amber-500" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-stone-900 text-sm">Customer Dining Rating</h3>
+                  <p className="text-[11px] text-stone-500">Live guest review feedback</p>
+                </div>
+              </div>
+              <span className="text-2xl font-black text-stone-900">
+                {avgRating.toFixed(1)} <span className="text-amber-500 text-xl">★</span>
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1 text-amber-400 pt-1">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  className={`w-4 h-4 ${
+                    i < Math.round(avgRating) ? 'fill-amber-400 text-amber-400' : 'text-stone-300'
+                  }`}
+                />
+              ))}
+              <span className="text-xs font-bold text-stone-600 ml-2">
+                {totalReviews} verified dining reviews
+              </span>
+            </div>
+
+            <p className="text-xs text-stone-500 leading-relaxed border-t border-stone-100 pt-2.5">
+              Guests rate and submit feedback at the bottom of their digital menu.
+            </p>
+          </div>
+
+          {/* Public Menu URL Card */}
+          <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-2xs flex flex-col justify-between gap-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-500/15 text-indigo-600 flex items-center justify-center shadow-2xs">
+                  <UtensilsCrossed className="w-5 h-5 text-indigo-600" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-stone-900 text-sm">Public Menu URL</h3>
+                  <p className="text-[11px] text-stone-500">Live digital menu link</p>
+                </div>
+              </div>
+              <a
+                href={publicMenuUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 rounded-xl text-stone-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                title="Open menu in new tab"
+              >
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            </div>
+
+            <div className="flex items-center gap-2 p-2 rounded-xl bg-stone-50 border border-stone-200 text-xs text-stone-700 min-w-0">
+              <span className="font-mono text-[11px] truncate flex-1 select-all pl-1">
+                {publicMenuUrl}
+              </span>
+              <button
+                type="button"
+                onClick={handleCopyUrl}
+                className="px-2.5 py-1.5 rounded-lg bg-stone-900 text-white hover:bg-stone-800 text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer flex-shrink-0"
+              >
+                {copiedUrl ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedUrl ? 'Copied!' : 'Copy'}</span>
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between border-t border-stone-100 pt-2 text-xs">
+              <span className="text-stone-400 text-[11px]">Direct link for customers</span>
+              <a
+                href={publicMenuUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 text-[11px]"
+              >
+                <span>View Menu Page</span>
+                <ArrowRight className="w-3 h-3" />
+              </a>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Manual Walk-in POS Order Modal */}
+        <ManualOrderModal
+          isOpen={isOrderModalOpen}
+          onClose={() => setIsOrderModalOpen(false)}
+          defaultTable={selectedTableForOrder}
+          isTableFixed={isTableFixed}
+          onOrderCreated={handleOrderCreated}
+        />
+      </motion.div>
+    );
+  }
+
+  // OWNER VIEW: Full analytics & controls
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="admin-page flex flex-col gap-8 py-2">
+    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="admin-page flex flex-col gap-6 sm:gap-8 py-2">
       {/* Header Banner */}
       <motion.div variants={itemVariants} className="admin-header-card">
         <div>
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" />
             <span className="admin-breadcrumb">Dashboard</span>
-            {isAdmin ? (
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 shadow-2xs">
-                <ShieldCheck className="w-3.5 h-3.5 text-amber-700" />
-                Sukoon Owner (Full Access & Earnings)
-              </span>
-            ) : (
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-blue-100 text-blue-900 border border-blue-300 flex items-center gap-1 shadow-2xs">
-                <UserCheck className="w-3.5 h-3.5 text-blue-700" />
-                Store Manager (Orders & Kitchen)
-              </span>
-            )}
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 shadow-2xs">
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-700" />
+              Sukoon Owner (Full Access & Earnings)
+            </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-text leading-tight">
             {greeting()}, <span className="text-gradient">{user?.name || user?.email?.split('@')[0] || 'Admin'}</span>! 👋
@@ -298,16 +465,14 @@ export default function DashboardHome() {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
-          {isAdmin && (
-            <Link
-              to="/admin/earnings"
-              id="dashboard-earnings-btn"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
-            >
-              <TrendingUp className="w-4 h-4" />
-              <span>Monthly Earnings</span>
-            </Link>
-          )}
+          <Link
+            to="/admin/earnings"
+            id="dashboard-earnings-btn"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+          >
+            <TrendingUp className="w-4 h-4" />
+            <span>Monthly Earnings</span>
+          </Link>
 
           <button
             type="button"
@@ -498,24 +663,38 @@ export default function DashboardHome() {
 
       {/* Public Menu URL */}
       <motion.div variants={itemVariants}>
-        <div className="bg-gradient-to-r from-primary/8 via-indigo-500/5 to-purple-500/8 rounded-2xl border border-primary/20 p-6 shadow-sm">
+        <div className="bg-gradient-to-r from-primary/8 via-indigo-500/5 to-purple-500/8 rounded-3xl border border-primary/20 p-5 sm:p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h3 className="font-bold text-text text-base">Your Public Menu</h3>
-              <p className="text-sm text-text-secondary mt-1">Share this link with customers — or scan the QR code</p>
+              <h3 className="font-extrabold text-stone-900 text-base">Your Public Menu Link</h3>
+              <p className="text-xs text-stone-500 mt-1">Share this link with customers or scan at tableside</p>
             </div>
-            <a
-              href={`${window.location.origin}/menu/${restaurant?.slug || 'menu'}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              id="public-menu-link"
-              className="inline-flex items-center gap-2 bg-white px-5 py-2.5 rounded-xl border border-border/80 text-sm text-primary font-semibold hover:border-primary/40 hover:shadow-md transition-all cursor-pointer flex-shrink-0"
-            >
-              <span className="truncate max-w-[240px]">
-                {window.location.origin}/menu/{restaurant?.slug || 'menu'}
-              </span>
-              <ArrowRight className="w-4 h-4 flex-shrink-0" />
-            </a>
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto">
+              <div className="flex items-center gap-2 p-1.5 px-2.5 rounded-xl bg-white border border-stone-200 text-xs text-stone-700 min-w-0 flex-1 sm:flex-initial">
+                <span className="font-mono text-[11px] truncate max-w-[200px] select-all">
+                  {publicMenuUrl}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCopyUrl}
+                  className="px-2.5 py-1 rounded-lg bg-stone-900 text-white hover:bg-stone-800 text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer flex-shrink-0"
+                >
+                  {copiedUrl ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedUrl ? 'Copied!' : 'Copy'}</span>
+                </button>
+              </div>
+
+              <a
+                href={publicMenuUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                id="public-menu-link"
+                className="inline-flex items-center gap-1.5 bg-white px-4 py-2.5 rounded-xl border border-border/80 text-xs text-primary font-bold hover:border-primary/40 hover:shadow-md transition-all cursor-pointer flex-shrink-0"
+              >
+                <span>View Menu</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </a>
+            </div>
           </div>
         </div>
       </motion.div>

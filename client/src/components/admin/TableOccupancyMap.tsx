@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { motion } from 'motion/react';
 import {
   ChefHat,
@@ -7,6 +7,8 @@ import {
   ArrowUpRight,
   ChevronLeft,
   ChevronRight,
+  LayoutGrid,
+  Columns,
 } from 'lucide-react';
 import type { Order } from '../../types/menu';
 
@@ -49,14 +51,14 @@ export const normalizeTableName = (raw: string | undefined | null): string => {
 };
 
 /**
- * Top-down architectural cafe dining table SVG with 4 chairs and place setting
+ * Top-down architectural cafe dining table SVG with 4 chairs and place setting (Enlarged & Sharp)
  */
 function CafeTableSVG({ isBooked }: { isBooked: boolean }) {
   if (isBooked) {
     return (
       <svg
         viewBox="0 0 64 64"
-        className="w-11 h-11 flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
+        className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 transition-transform duration-200 group-hover:scale-105 drop-shadow-xs"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
@@ -74,7 +76,7 @@ function CafeTableSVG({ isBooked }: { isBooked: boolean }) {
         <rect x="54.5" y="25" width="2" height="14" rx="1" fill="#e11d48" />
 
         {/* Table Surface (Dining Table) */}
-        <rect x="14" y="14" width="36" height="36" rx="9" fill="#ffe4e6" stroke="#f43f5e" strokeWidth="2" />
+        <rect x="14" y="14" width="36" height="36" rx="9" fill="#ffe4e6" stroke="#f43f5e" strokeWidth="2.2" />
         <rect x="18" y="18" width="28" height="28" rx="6" fill="#fecdd3" fillOpacity="0.5" stroke="#fb7185" strokeWidth="1" strokeDasharray="2 2" />
 
         {/* Served Feast Dish Platter */}
@@ -91,7 +93,7 @@ function CafeTableSVG({ isBooked }: { isBooked: boolean }) {
   return (
     <svg
       viewBox="0 0 64 64"
-      className="w-11 h-11 flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
+      className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 transition-transform duration-200 group-hover:scale-105 drop-shadow-xs"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -109,7 +111,7 @@ function CafeTableSVG({ isBooked }: { isBooked: boolean }) {
       <rect x="54.5" y="25" width="2" height="14" rx="1" fill="#059669" />
 
       {/* Table Surface (Clean Ready Table) */}
-      <rect x="14" y="14" width="36" height="36" rx="9" fill="#d1fae5" stroke="#10b981" strokeWidth="2" />
+      <rect x="14" y="14" width="36" height="36" rx="9" fill="#d1fae5" stroke="#10b981" strokeWidth="2.2" />
       <rect x="18" y="18" width="28" height="28" rx="6" fill="#a7f3d0" fillOpacity="0.35" stroke="#34d399" strokeWidth="1" strokeDasharray="2 2" />
 
       {/* Clean Place Setting */}
@@ -128,6 +130,7 @@ export default function TableOccupancyMap({
   onViewTable,
 }: TableOccupancyMapProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [viewMode, setViewMode] = useState<'track' | 'grid'>('track');
 
   // Collect active orders (pending, preparing, served)
   const activeOrders = useMemo(() => {
@@ -207,76 +210,112 @@ export default function TableOccupancyMap({
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: -260, behavior: 'smooth' });
+      scrollContainerRef.current.scrollBy({ left: -280, behavior: 'smooth' });
     }
   };
 
   const scrollRight = () => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: 260, behavior: 'smooth' });
+      scrollContainerRef.current.scrollBy({ left: 280, behavior: 'smooth' });
     }
   };
 
   return (
-    <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-2xs flex flex-col gap-3.5">
+    <div className="bg-white p-4 sm:p-6 rounded-3xl border border-stone-200 shadow-2xs flex flex-col gap-4">
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-stone-100">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-base font-black text-stone-900 tracking-tight">
+            <h3 className="text-base sm:text-lg font-black text-stone-900 tracking-tight">
               Table Floor Map
             </h3>
-            <span className="text-xs font-bold text-stone-400">
-              ({totalCount} Tables)
+            <span className="text-xs font-extrabold px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">
+              {totalCount} Tables
             </span>
           </div>
-          <p className="text-[11px] text-stone-500 mt-0.5">
-            Side-scroll floor map · Red for Occupied, Green for Available
+          <p className="text-xs text-stone-500 mt-0.5">
+            Red for Occupied · Green for Available · Tap any table to order
           </p>
         </div>
 
-        {/* Status Indicators & Scroll Buttons */}
+        {/* Status Indicators & View Mode Switcher */}
         <div className="flex items-center gap-2 flex-wrap text-xs font-bold">
-          <span className="px-2.5 py-1 rounded-xl bg-rose-50 text-rose-800 border border-rose-200 flex items-center gap-1.5 shadow-2xs">
-            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+          <span className="px-3 py-1 rounded-xl bg-rose-50 text-rose-800 border border-rose-200 flex items-center gap-1.5 shadow-2xs">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
             <span>{bookedCount} Booked</span>
           </span>
 
-          <span className="px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1.5 shadow-2xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+          <span className="px-3 py-1 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1.5 shadow-2xs">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
             <span>{availableCount} Available</span>
           </span>
 
-          {/* Scroll arrow buttons */}
-          <div className="hidden sm:flex items-center gap-1 ml-1 bg-stone-100 p-1 rounded-xl">
+          {/* View Mode Switcher (Track vs Grid) */}
+          <div className="flex items-center bg-stone-100 p-1 rounded-xl border border-stone-200 text-xs font-bold ml-auto sm:ml-0">
             <button
               type="button"
-              onClick={scrollLeft}
-              className="p-1 rounded-lg hover:bg-white text-stone-600 transition-colors cursor-pointer"
-              title="Scroll Left"
+              onClick={() => setViewMode('track')}
+              className={`px-2.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                viewMode === 'track'
+                  ? 'bg-white text-stone-900 shadow-2xs'
+                  : 'text-stone-500 hover:text-stone-800'
+              }`}
+              title="Horizontal scroll track"
             >
-              <ChevronLeft className="w-3.5 h-3.5" />
+              <Columns className="w-3.5 h-3.5" />
+              <span className="hidden xs:inline">Track</span>
             </button>
             <button
               type="button"
-              onClick={scrollRight}
-              className="p-1 rounded-lg hover:bg-white text-stone-600 transition-colors cursor-pointer"
-              title="Scroll Right"
+              onClick={() => setViewMode('grid')}
+              className={`px-2.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                viewMode === 'grid'
+                  ? 'bg-white text-stone-900 shadow-2xs'
+                  : 'text-stone-500 hover:text-stone-800'
+              }`}
+              title="Full floor grid"
             >
-              <ChevronRight className="w-3.5 h-3.5" />
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span className="hidden xs:inline">Grid</span>
             </button>
           </div>
+
+          {/* Scroll arrow buttons (Track mode only) */}
+          {viewMode === 'track' && (
+            <div className="hidden sm:flex items-center gap-1 bg-stone-100 p-1 rounded-xl">
+              <button
+                type="button"
+                onClick={scrollLeft}
+                className="p-1 rounded-lg hover:bg-white text-stone-600 transition-colors cursor-pointer"
+                title="Scroll Left"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={scrollRight}
+                className="p-1 rounded-lg hover:bg-white text-stone-600 transition-colors cursor-pointer"
+                title="Scroll Right"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Horizontal Side-Scroll Floor Track */}
+      {/* Tables Container (Track Scroll or Full Grid) */}
       <div
         ref={scrollContainerRef}
-        className="overflow-x-auto flex items-center gap-3 pb-2 pt-1 scroll-smooth scrollbar-thin select-none"
+        className={
+          viewMode === 'track'
+            ? 'overflow-x-auto flex items-center gap-3.5 pb-3 pt-1 scroll-smooth scrollbar-thin select-none touch-pan-x'
+            : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-4.5 pt-1'
+        }
       >
         {tableOccupancyData.map((table) => {
           if (table.isBooked) {
-            // BOOKED TABLE (RED BOX WITH CAFE TABLE SVG)
+            // BOOKED TABLE (LARGE RED BOX WITH ARCHITECTURAL CAFE TABLE SVG)
             return (
               <motion.div
                 key={table.tableNumber}
@@ -289,81 +328,95 @@ export default function TableOccupancyMap({
                     onTakeOrder(table.tableNumber);
                   }
                 }}
-                className="group min-w-[136px] max-w-[136px] sm:min-w-[146px] sm:max-w-[146px] h-[158px] p-3 rounded-2xl bg-rose-500/10 border-2 border-rose-500/80 hover:border-rose-600 hover:bg-rose-500/20 transition-all flex flex-col justify-between items-center text-center cursor-pointer shadow-2xs relative flex-shrink-0"
+                className={`group p-3.5 sm:p-4 rounded-3xl bg-gradient-to-b from-rose-500/10 via-rose-500/5 to-rose-500/15 border-2 border-rose-500/80 hover:border-rose-600 hover:shadow-md transition-all flex flex-col justify-between items-center text-center cursor-pointer shadow-2xs relative ${
+                  viewMode === 'track'
+                    ? 'min-w-[170px] max-w-[170px] sm:min-w-[195px] sm:max-w-[195px] h-[225px] sm:h-[240px] flex-shrink-0'
+                    : 'w-full h-[225px] sm:h-[240px]'
+                }`}
               >
                 {/* Top: Table name & Live dot & Round */}
                 <div className="w-full flex items-center justify-between">
-                  <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse flex-shrink-0" />
-                  <span className="font-black text-xs text-rose-950 truncate max-w-[85px]">
-                    {table.tableNumber}
-                  </span>
-                  <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-rose-600 text-white flex-shrink-0">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse flex-shrink-0" />
+                    <span className="font-black text-sm sm:text-base text-rose-950 truncate">
+                      {table.tableNumber}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded-lg bg-rose-600 text-white flex-shrink-0 shadow-2xs">
                     R{table.roundsCount}
                   </span>
                 </div>
 
-                {/* Center: Cafe Table SVG Illustration & Guest Details */}
-                <div className="flex flex-col items-center my-auto w-full gap-1">
+                {/* Center: Large Cafe Table SVG Illustration & Guest Details */}
+                <div className="flex flex-col items-center my-auto w-full gap-1.5">
                   <CafeTableSVG isBooked={true} />
-                  <span className="text-xs font-bold text-rose-900 truncate max-w-[115px] leading-tight">
+                  <span className="text-xs sm:text-sm font-extrabold text-rose-950 truncate max-w-[145px] leading-tight">
                     {table.guestName}
                   </span>
 
                   <div>
                     {table.highestStatus === 'preparing' && (
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300 animate-pulse flex items-center gap-1">
-                        <ChefHat className="w-2.5 h-2.5 text-amber-700" /> Preparing
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300 animate-pulse flex items-center gap-1 shadow-2xs">
+                        <ChefHat className="w-3 h-3 text-amber-700" /> Preparing
                       </span>
                     )}
                     {table.highestStatus === 'served' && (
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
-                        <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" /> Served
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1 shadow-2xs">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Served
                       </span>
                     )}
                   </div>
                 </div>
 
                 {/* Bottom: Elapsed time & View button */}
-                <div className="w-full flex items-center justify-between pt-1.5 border-t border-rose-200/60 text-[10px] text-rose-800 font-semibold">
-                  <span>{table.elapsedMins}m</span>
-                  <span className="font-bold underline flex items-center gap-0.5 text-rose-900 hover:text-rose-700">
-                    Orders <ArrowUpRight className="w-2.5 h-2.5" />
+                <div className="w-full flex items-center justify-between pt-2 border-t border-rose-200/70 text-[11px] text-rose-800 font-semibold">
+                  <span>{table.elapsedMins}m dining</span>
+                  <span className="font-extrabold flex items-center gap-0.5 text-rose-900 hover:text-rose-700 bg-rose-200/60 px-2 py-0.5 rounded-md">
+                    Orders <ArrowUpRight className="w-3 h-3" />
                   </span>
                 </div>
               </motion.div>
             );
           }
 
-          // AVAILABLE TABLE (GREEN BOX WITH CAFE TABLE SVG)
+          // AVAILABLE TABLE (LARGE GREEN BOX WITH ARCHITECTURAL CAFE TABLE SVG)
           return (
             <motion.div
               key={table.tableNumber}
               whileHover={{ y: -3, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => onTakeOrder(table.tableNumber)}
-              className="group min-w-[136px] max-w-[136px] sm:min-w-[146px] sm:max-w-[146px] h-[158px] p-3 rounded-2xl bg-emerald-500/10 border-2 border-emerald-500/80 hover:border-emerald-600 hover:bg-emerald-500/20 transition-all flex flex-col justify-between items-center text-center cursor-pointer shadow-2xs relative flex-shrink-0"
+              className={`group p-3.5 sm:p-4 rounded-3xl bg-gradient-to-b from-emerald-500/10 via-emerald-500/5 to-emerald-500/15 border-2 border-emerald-500/80 hover:border-emerald-600 hover:shadow-md transition-all flex flex-col justify-between items-center text-center cursor-pointer shadow-2xs relative ${
+                viewMode === 'track'
+                  ? 'min-w-[170px] max-w-[170px] sm:min-w-[195px] sm:max-w-[195px] h-[225px] sm:h-[240px] flex-shrink-0'
+                  : 'w-full h-[225px] sm:h-[240px]'
+              }`}
             >
               {/* Top: Table name & Free dot */}
               <div className="w-full flex items-center justify-between">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
-                <span className="font-black text-xs text-stone-900 truncate max-w-[85px]">
-                  {table.tableNumber}
-                </span>
-                <span className="w-2" />
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                  <span className="font-black text-sm sm:text-base text-stone-900 truncate">
+                    {table.tableNumber}
+                  </span>
+                </div>
+                <span className="w-2.5" />
               </div>
 
-              {/* Center: Cafe Table SVG Illustration & Available label */}
-              <div className="flex flex-col items-center my-auto gap-1">
+              {/* Center: Large Cafe Table SVG Illustration & Available label */}
+              <div className="flex flex-col items-center my-auto gap-1.5">
                 <CafeTableSVG isBooked={false} />
-                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">
+                <span className="text-[11px] font-black text-emerald-800 uppercase tracking-wider bg-emerald-100/90 border border-emerald-300 px-2.5 py-0.5 rounded-full shadow-2xs">
                   Available
                 </span>
               </div>
 
               {/* Bottom: Book action button */}
-              <div className="w-full pt-1.5 border-t border-emerald-200/60 text-[10px] font-bold text-emerald-800 flex items-center justify-center gap-1 group-hover:text-emerald-950">
-                <Plus className="w-3 h-3" />
-                <span>Book Table</span>
+              <div className="w-full pt-2 border-t border-emerald-200/70">
+                <div className="w-full py-1.5 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all flex items-center justify-center gap-1 shadow-xs group-hover:scale-102">
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Book Table</span>
+                </div>
               </div>
             </motion.div>
           );

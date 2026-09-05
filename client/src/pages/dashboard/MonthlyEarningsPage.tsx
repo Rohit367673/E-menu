@@ -163,14 +163,14 @@ export default function MonthlyEarningsPage() {
   return (
     <div className="admin-page flex flex-col gap-6 py-2 max-w-7xl mx-auto">
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-stone-200 shadow-2xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-6 rounded-3xl border border-stone-200 shadow-2xs">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300">
               👑 Owner Financial Analytics
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-stone-900 tracking-tight">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-stone-900 tracking-tight">
             Monthly Earnings & Sales Explorer
           </h1>
           <p className="text-xs text-stone-500 mt-1">
@@ -179,7 +179,7 @@ export default function MonthlyEarningsPage() {
         </div>
 
         {/* Month Selector Controls */}
-        <div className="flex items-center gap-2 bg-stone-50 p-1.5 rounded-2xl border border-stone-200 self-start sm:self-auto">
+        <div className="flex items-center justify-between sm:justify-start gap-1 sm:gap-2 bg-stone-50 p-1 sm:p-1.5 rounded-2xl border border-stone-200 w-full sm:w-auto">
           <button
             type="button"
             onClick={handlePrevMonth}

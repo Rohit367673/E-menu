@@ -37,7 +37,7 @@ export default function DashboardLayout() {
         {!isPrintMenu && (
           <TopBar title={title} onMenuClick={() => setSidebarOpen(true)} />
         )}
-        <main className={isPrintMenu ? 'flex-1 overflow-y-auto' : 'flex-1 overflow-y-auto p-4 md:p-6 lg:p-8'}>
+        <main className={isPrintMenu ? 'flex-1 overflow-y-auto' : 'flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-8 pb-12 sm:pb-8'}>
           <Outlet />
         </main>
       </div>
