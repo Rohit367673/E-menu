@@ -26,6 +26,17 @@ interface RestaurantContextType {
   toggleItemAvailability: (id: string) => Promise<void>;
 }
 
+const clearClientMenuCache = () => {
+  try {
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith('emenu_cache_')) localStorage.removeItem(key);
+    });
+    Object.keys(sessionStorage).forEach((key) => {
+      if (key.startsWith('emenu_cache_')) sessionStorage.removeItem(key);
+    });
+  } catch {}
+};
+
 const RestaurantContext = createContext<RestaurantContextType | undefined>(undefined);
 
 export function RestaurantProvider({ children }: { children: ReactNode }) {
@@ -81,6 +92,7 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
     try {
       const { data: res } = await categoriesApi.createCategory(data);
       setCategories((prev) => [...prev, res.data.category]);
+      clearClientMenuCache();
       toast.success('Category created');
     } catch {
       toast.error('Failed to create category');
@@ -92,6 +104,7 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
     try {
       const { data: res } = await categoriesApi.updateCategory(id, data);
       setCategories((prev) => prev.map((c) => (c._id === id ? res.data.category : c)));
+      clearClientMenuCache();
       toast.success('Category updated');
     } catch {
       toast.error('Failed to update category');
@@ -104,6 +117,7 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
       await categoriesApi.deleteCategory(id);
       setCategories((prev) => prev.filter((c) => c._id !== id));
       setMenuItems((prev) => prev.filter((item) => item.category !== id));
+      clearClientMenuCache();
       toast.success('Category deleted');
     } catch {
       toast.error('Failed to delete category');
@@ -121,6 +135,7 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
     );
     try {
       await categoriesApi.reorderCategories(items);
+      clearClientMenuCache();
     } catch {
       setCategories(previous);
       toast.error('Failed to reorder categories');
@@ -140,6 +155,7 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
     try {
       const { data: res } = await menuApi.createMenuItem(data);
       setMenuItems((prev) => [...prev, res.data.menuItem]);
+      clearClientMenuCache();
       toast.success('Menu item created');
     } catch {
       toast.error('Failed to create menu item');
@@ -151,6 +167,7 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
     try {
       const { data: res } = await menuApi.updateMenuItem(id, data);
       setMenuItems((prev) => prev.map((item) => (item._id === id ? res.data.menuItem : item)));
+      clearClientMenuCache();
       toast.success('Menu item updated');
     } catch {
       toast.error('Failed to update menu item');
@@ -162,6 +179,7 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
     try {
       await menuApi.deleteMenuItem(id);
       setMenuItems((prev) => prev.filter((item) => item._id !== id));
+      clearClientMenuCache();
       toast.success('Menu item deleted');
     } catch {
       toast.error('Failed to delete menu item');
@@ -179,6 +197,7 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
     );
     try {
       await menuApi.reorderMenuItems(items);
+      clearClientMenuCache();
     } catch {
       setMenuItems(previous);
       toast.error('Failed to reorder items');
@@ -196,6 +215,7 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
     );
     try {
       await menuApi.toggleAvailability(id);
+      clearClientMenuCache();
     } catch {
       setMenuItems(previous);
       toast.error('Failed to toggle availability');

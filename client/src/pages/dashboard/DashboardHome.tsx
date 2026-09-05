@@ -57,6 +57,7 @@ export default function DashboardHome() {
   // Manual Order POS modal state
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [selectedTableForOrder, setSelectedTableForOrder] = useState('Table 1');
+  const [isTableFixed, setIsTableFixed] = useState(false);
 
   const isAdmin = user?.role !== 'manager';
 
@@ -114,8 +115,9 @@ export default function DashboardHome() {
     };
   }, [fetchDashboardData]);
 
-  const handleOpenTakeOrder = (tableName: string) => {
+  const handleOpenTakeOrder = (tableName: string, fromFloorMap = true) => {
     setSelectedTableForOrder(tableName);
+    setIsTableFixed(fromFloorMap);
     setIsOrderModalOpen(true);
   };
 
@@ -309,7 +311,7 @@ export default function DashboardHome() {
 
           <button
             type="button"
-            onClick={() => handleOpenTakeOrder('Table 1')}
+            onClick={() => handleOpenTakeOrder('Table 1', false)}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-md shadow-amber-600/20 transition-all cursor-pointer"
             id="dashboard-walkin-order-btn"
           >
@@ -523,6 +525,7 @@ export default function DashboardHome() {
         isOpen={isOrderModalOpen}
         onClose={() => setIsOrderModalOpen(false)}
         defaultTable={selectedTableForOrder}
+        isTableFixed={isTableFixed}
         onOrderCreated={handleOrderCreated}
       />
     </motion.div>

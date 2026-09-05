@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   X,
@@ -28,6 +28,7 @@ interface ManualOrderModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultTable?: string;
+  isTableFixed?: boolean;
   onOrderCreated?: () => void;
 }
 
@@ -40,12 +41,14 @@ export default function ManualOrderModal({
   isOpen,
   onClose,
   defaultTable = 'Table 1',
+  isTableFixed = false,
   onOrderCreated,
 }: ManualOrderModalProps) {
   const { menuItems, categories, restaurant } = useRestaurant();
 
   const [tableNumber, setTableNumber] = useState<string>(defaultTable);
   const [isCustomTable, setIsCustomTable] = useState<boolean>(false);
+  const [showChangeTable, setShowChangeTable] = useState<boolean>(false);
   const [customerName, setCustomerName] = useState<string>('Walk-in Guest');
   const [customerPhone, setCustomerPhone] = useState<string>('');
   const [selectedItems, setSelectedItems] = useState<OrderItemDraft[]>([]);
@@ -54,6 +57,15 @@ export default function ManualOrderModal({
   const [isDirectKitchen, setIsDirectKitchen] = useState<boolean>(true); // Direct Catering enabled by default
   const [specialInstructions, setSpecialInstructions] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  // Synchronize table selection whenever modal opens or defaultTable changes
+  useEffect(() => {
+    if (defaultTable) {
+      setTableNumber(defaultTable);
+      setIsCustomTable(!COMMON_TABLES.includes(defaultTable));
+      setShowChangeTable(false);
+    }
+  }, [defaultTable, isOpen]);
 
   // Filter available dishes
   const filteredItems = useMemo(() => {
@@ -232,52 +244,124 @@ export default function ManualOrderModal({
             <div className="flex-1 flex flex-col p-5 overflow-y-auto border-b lg:border-b-0 lg:border-r border-stone-200 gap-5">
               {/* Table & Guest Selection */}
               <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200 flex flex-col gap-3">
-                <div>
-                  <label className="text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5 block">
-                    Select Seating Table
-                  </label>
-                  <div className="flex flex-wrap gap-1.5 mb-2">
-                    {COMMON_TABLES.map((t) => (
+                {isTableFixed ? (
+                  <div>
+                    <div className="flex items-center justify-between pb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black text-stone-600 uppercase tracking-wider">
+                          Seating Table:
+                        </span>
+                        <span className="px-3 py-1 rounded-xl text-xs font-black bg-amber-600 text-white shadow-xs flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                          {tableNumber}
+                        </span>
+                      </div>
                       <button
                         type="button"
-                        key={t}
-                        onClick={() => {
-                          setTableNumber(t);
-                          setIsCustomTable(false);
-                        }}
+                        onClick={() => setShowChangeTable((prev) => !prev)}
+                        className="text-[11px] font-bold text-stone-500 hover:text-amber-700 underline cursor-pointer"
+                      >
+                        {showChangeTable ? 'Cancel' : 'Change Table'}
+                      </button>
+                    </div>
+
+                    {showChangeTable && (
+                      <div className="pt-2.5 mt-2 border-t border-stone-200/70">
+                        <label className="text-[11px] font-bold text-stone-600 uppercase tracking-wider mb-1.5 block">
+                          Switch Seating Table
+                        </label>
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                          {COMMON_TABLES.map((t) => (
+                            <button
+                              type="button"
+                              key={t}
+                              onClick={() => {
+                                setTableNumber(t);
+                                setIsCustomTable(false);
+                                setShowChangeTable(false);
+                              }}
+                              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                tableNumber === t && !isCustomTable
+                                  ? 'bg-amber-600 text-white shadow-xs'
+                                  : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-100'
+                              }`}
+                            >
+                              {t}
+                            </button>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => setIsCustomTable(true)}
+                            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                              isCustomTable
+                                ? 'bg-amber-600 text-white shadow-xs'
+                                : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-100'
+                            }`}
+                          >
+                            Custom...
+                          </button>
+                        </div>
+                        {isCustomTable && (
+                          <input
+                            type="text"
+                            value={tableNumber}
+                            onChange={(e) => setTableNumber(e.target.value)}
+                            placeholder="e.g. Table 15 or Patio 3"
+                            className="w-full text-xs px-3 py-2 rounded-xl border border-stone-300 focus:outline-none focus:border-amber-500 bg-white"
+                            required
+                          />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <label className="text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5 block">
+                      Select Seating Table
+                    </label>
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {COMMON_TABLES.map((t) => (
+                        <button
+                          type="button"
+                          key={t}
+                          onClick={() => {
+                            setTableNumber(t);
+                            setIsCustomTable(false);
+                          }}
+                          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                            tableNumber === t && !isCustomTable
+                              ? 'bg-amber-600 text-white shadow-xs'
+                              : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-100'
+                          }`}
+                        >
+                          {t}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setIsCustomTable(true)}
                         className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                          tableNumber === t && !isCustomTable
+                          isCustomTable
                             ? 'bg-amber-600 text-white shadow-xs'
                             : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-100'
                         }`}
                       >
-                        {t}
+                        Custom...
                       </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => setIsCustomTable(true)}
-                      className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                        isCustomTable
-                          ? 'bg-amber-600 text-white shadow-xs'
-                          : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-100'
-                      }`}
-                    >
-                      Custom...
-                    </button>
-                  </div>
+                    </div>
 
-                  {isCustomTable && (
-                    <input
-                      type="text"
-                      value={tableNumber}
-                      onChange={(e) => setTableNumber(e.target.value)}
-                      placeholder="e.g. Table 15 or Patio 3"
-                      className="w-full text-xs px-3 py-2 rounded-xl border border-stone-300 focus:outline-none focus:border-amber-500 bg-white"
-                      required
-                    />
-                  )}
-                </div>
+                    {isCustomTable && (
+                      <input
+                        type="text"
+                        value={tableNumber}
+                        onChange={(e) => setTableNumber(e.target.value)}
+                        placeholder="e.g. Table 15 or Patio 3"
+                        className="w-full text-xs px-3 py-2 rounded-xl border border-stone-300 focus:outline-none focus:border-amber-500 bg-white"
+                        required
+                      />
+                    )}
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                   <div>
@@ -361,15 +445,20 @@ export default function ManualOrderModal({
                   ) : (
                     filteredItems.map((dish) => {
                       const inCart = selectedItems.find((it) => it.menuItemId === dish._id);
+                      const isDishAvailable = dish.available !== false && dish.isAvailable !== false;
                       return (
                         <div
                           key={dish._id}
-                          className={`p-2.5 rounded-xl border transition-all flex items-center justify-between gap-2 cursor-pointer ${
-                            inCart
-                              ? 'border-amber-500 bg-amber-50/40'
-                              : 'border-stone-200 hover:border-stone-300 bg-white'
+                          className={`p-2.5 rounded-xl border transition-all flex items-center justify-between gap-2 ${
+                            !isDishAvailable
+                              ? 'opacity-50 bg-stone-100 border-stone-200 cursor-not-allowed'
+                              : inCart
+                              ? 'border-amber-500 bg-amber-50/40 cursor-pointer'
+                              : 'border-stone-200 hover:border-stone-300 bg-white cursor-pointer'
                           }`}
-                          onClick={() => handleAddItem(dish)}
+                          onClick={() => {
+                            if (isDishAvailable) handleAddItem(dish);
+                          }}
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
                             <span
@@ -389,22 +478,32 @@ export default function ManualOrderModal({
                               <p className="text-xs font-bold text-stone-900 truncate">
                                 {dish.name}
                               </p>
-                              <p className="text-[11px] font-extrabold text-amber-700">
-                                ₹{dish.discountPrice || dish.price}
-                              </p>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[11px] font-extrabold text-amber-700">
+                                  ₹{dish.discountPrice || dish.price}
+                                </span>
+                                {!isDishAvailable && (
+                                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-stone-200 text-stone-600">
+                                    Unavailable
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
 
                           <button
                             type="button"
+                            disabled={!isDishAvailable}
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleAddItem(dish);
+                              if (isDishAvailable) handleAddItem(dish);
                             }}
-                            className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs transition-colors flex-shrink-0 cursor-pointer ${
-                              inCart
-                                ? 'bg-amber-600 text-white'
-                                : 'bg-stone-100 text-stone-700 hover:bg-amber-600 hover:text-white'
+                            className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs transition-colors flex-shrink-0 ${
+                              !isDishAvailable
+                                ? 'bg-stone-200 text-stone-400 cursor-not-allowed'
+                                : inCart
+                                ? 'bg-amber-600 text-white cursor-pointer'
+                                : 'bg-stone-100 text-stone-700 hover:bg-amber-600 hover:text-white cursor-pointer'
                             }`}
                           >
                             <Plus className="w-3.5 h-3.5" />

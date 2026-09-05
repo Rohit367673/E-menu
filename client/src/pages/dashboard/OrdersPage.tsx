@@ -724,6 +724,7 @@ export default function OrdersPage() {
         isOpen={isPosOpen}
         onClose={() => setIsPosOpen(false)}
         defaultTable={posTable}
+        isTableFixed={false}
         onOrderCreated={() => fetchOrders(true)}
       />
     </div>
