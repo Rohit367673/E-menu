@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChefHat, CheckCircle2, ChevronRight, Sparkles, X } from 'lucide-react';
+import { ChefHat, CheckCircle2, ChevronRight, Sparkles, X, Receipt } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
+import BillReceiptModal from '../common/BillReceiptModal';
 
 interface LiveOrderStatusBannerProps {
   primaryColor?: string;
@@ -15,6 +17,7 @@ export default function LiveOrderStatusBanner({
 }: LiveOrderStatusBannerProps) {
   const {
     tableNumber,
+    customerName,
     activeOrders,
     activeTableBill,
     activeRoundsCount,
@@ -25,9 +28,12 @@ export default function LiveOrderStatusBanner({
     setIsDrawerOpen,
   } = useCart();
 
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+
   // If table has been settled by receptionist
   if (isTableSettled) {
     return (
+      <>
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -54,6 +60,15 @@ export default function LiveOrderStatusBanner({
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
               type="button"
+              onClick={() => setIsReceiptOpen(true)}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white text-emerald-800 border border-emerald-300 text-xs font-bold transition-all shadow-2xs hover:bg-emerald-50 cursor-pointer"
+              title="View settled bill receipt"
+            >
+              <Receipt className="w-3.5 h-3.5 text-emerald-700" />
+              <span>Receipt</span>
+            </button>
+            <button
+              type="button"
               onClick={() => {
                 resetTableSession();
                 dismissSettledNotification();
@@ -72,6 +87,18 @@ export default function LiveOrderStatusBanner({
           </div>
         </div>
       </motion.div>
+
+      <BillReceiptModal
+        isOpen={isReceiptOpen}
+        onClose={() => setIsReceiptOpen(false)}
+        tableNumber={tableNumber || ''}
+        customerName={customerName || 'Guest'}
+        orders={activeOrders}
+        totalBill={activeTableBill}
+        restaurantName={restaurantName}
+        isSettled={true}
+      />
+      </>
     );
   }
 
@@ -128,6 +155,7 @@ export default function LiveOrderStatusBanner({
   const Icon = cfg.icon;
 
   return (
+    <>
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0, y: -8 }}
@@ -168,6 +196,20 @@ export default function LiveOrderStatusBanner({
 
           {/* Right: Bill Total + View Details button */}
           <div className="flex items-center gap-2 flex-shrink-0">
+            {/* View Receipt Slip Button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsReceiptOpen(true);
+              }}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white/95 hover:bg-white text-stone-800 border border-black/10 text-xs font-bold transition-all shadow-2xs hover:shadow-xs cursor-pointer active:scale-95"
+              title="View & Print Itemized Bill Receipt"
+            >
+              <Receipt className="w-3.5 h-3.5 text-amber-600" />
+              <span>Bill</span>
+            </button>
+
             <div className="text-right">
               <span className="text-[10px] uppercase font-bold tracking-wider text-gray-500 block leading-none">
                 Running Bill
@@ -190,5 +232,18 @@ export default function LiveOrderStatusBanner({
         </div>
       </motion.div>
     </AnimatePresence>
+
+    {/* Customer Bill Receipt Modal */}
+    <BillReceiptModal
+      isOpen={isReceiptOpen}
+      onClose={() => setIsReceiptOpen(false)}
+      tableNumber={tableNumber || latestOrder?.tableNumber || ''}
+      customerName={customerName || latestOrder?.customerName || 'Guest'}
+      orders={activeOrders}
+      totalBill={activeTableBill}
+      restaurantName={restaurantName}
+      isSettled={overallStatus === 'completed'}
+    />
+    </>
   );
 }

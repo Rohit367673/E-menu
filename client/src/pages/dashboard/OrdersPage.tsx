@@ -8,6 +8,7 @@ import {
   VolumeX,
   RefreshCw,
   CreditCard,
+  Receipt,
 } from 'lucide-react';
 import apiClient from '../../api/client';
 import type { Order, OrderStatus, OrderDashboardStats } from '../../types/menu';
@@ -15,6 +16,7 @@ import { playOrderNotificationSound } from '../../utils/sound';
 import { useAuth } from '../../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import ManualOrderModal from '../../components/admin/ManualOrderModal';
+import BillReceiptModal from '../../components/common/BillReceiptModal';
 
 export default function OrdersPage() {
   const { user } = useAuth();
@@ -41,6 +43,40 @@ export default function OrdersPage() {
   // Manual Walk-in POS state
   const [isPosOpen, setIsPosOpen] = useState(false);
   const [posTable, setPosTable] = useState('Table 1');
+
+  // Bill Receipt modal state
+  const [receiptModal, setReceiptModal] = useState<{
+    isOpen: boolean;
+    tableNumber: string;
+    customerName: string;
+    orders: Order[];
+    totalBill: number;
+    isSettled: boolean;
+  }>({
+    isOpen: false,
+    tableNumber: '',
+    customerName: '',
+    orders: [],
+    totalBill: 0,
+    isSettled: false,
+  });
+
+  const handleOpenReceipt = (
+    tableNum: string,
+    customerName: string,
+    ordersList: Order[],
+    total: number,
+    isSettled: boolean
+  ) => {
+    setReceiptModal({
+      isOpen: true,
+      tableNumber: tableNum,
+      customerName,
+      orders: ordersList,
+      totalBill: total,
+      isSettled,
+    });
+  };
 
   const prevPendingCountRef = useRef<number>(0);
 
@@ -581,7 +617,7 @@ export default function OrdersPage() {
                 </div>
 
                 {/* Settle / Clear Entire Table Bill CTA */}
-                <div className="p-3 bg-stone-50 border-t border-stone-100 flex items-center justify-between gap-2">
+                <div className="p-3 bg-stone-50 border-t border-stone-100 flex items-center justify-between gap-2 flex-wrap">
                   <button
                     type="button"
                     onClick={() => handleResetTable(grp.tableNumber)}
@@ -591,21 +627,33 @@ export default function OrdersPage() {
                     <span>Clear Table</span>
                   </button>
 
-                  {grp.activeOrders.length > 0 ? (
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => handleSettleTable(grp.tableNumber)}
-                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                      onClick={() => handleOpenReceipt(grp.tableNumber, grp.customerName, grp.displayOrders, grp.totalBill, grp.isCompleted)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                      title="Print Itemized Bill Receipt (Thermal Machine / POS)"
                     >
-                      <CreditCard className="w-3.5 h-3.5" />
-                      <span>{isAdmin ? `Settle Bill (₹${grp.totalBill})` : 'Settle Table'}</span>
+                      <Receipt className="w-3.5 h-3.5 text-amber-700" />
+                      <span>Print Bill</span>
                     </button>
-                  ) : (
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>{isAdmin ? `Paid & Settled (₹${grp.totalBill})` : 'Paid & Settled'}</span>
-                    </div>
-                  )}
+
+                    {grp.activeOrders.length > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => handleSettleTable(grp.tableNumber)}
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                      >
+                        <CreditCard className="w-3.5 h-3.5" />
+                        <span>{isAdmin ? `Settle Bill (₹${grp.totalBill})` : 'Settle Table'}</span>
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>{isAdmin ? `Paid & Settled (₹${grp.totalBill})` : 'Paid & Settled'}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))
@@ -684,6 +732,17 @@ export default function OrdersPage() {
                 )}
 
                 <div className="flex items-center gap-2">
+                  {/* Bill Receipt for single order */}
+                  <button
+                    type="button"
+                    onClick={() => handleOpenReceipt(order.tableNumber, order.customerName, [order], order.totalAmount, order.status === 'completed')}
+                    className="p-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
+                    title="Generate and Print Receipt"
+                  >
+                    <Receipt className="w-4 h-4 text-amber-600" />
+                    <span className="hidden sm:inline">Receipt</span>
+                  </button>
+
                   {(order.status === 'preparing' || order.status === 'pending') && (
                     <button
                       type="button"
@@ -715,6 +774,17 @@ export default function OrdersPage() {
         defaultTable={posTable}
         isTableFixed={false}
         onOrderCreated={() => fetchOrders(true)}
+      />
+
+      {/* Bill & Quantity Receipt Modal (POS / Thermal Billing Machine Compatible) */}
+      <BillReceiptModal
+        isOpen={receiptModal.isOpen}
+        onClose={() => setReceiptModal((prev) => ({ ...prev, isOpen: false }))}
+        tableNumber={receiptModal.tableNumber}
+        customerName={receiptModal.customerName}
+        orders={receiptModal.orders}
+        totalBill={receiptModal.totalBill}
+        isSettled={receiptModal.isSettled}
       />
     </div>
   );

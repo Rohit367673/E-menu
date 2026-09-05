@@ -12,9 +12,11 @@ import {
   Send,
   Coffee,
   AlertCircle,
+  Receipt,
 } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
 import { playOrderNotificationSound } from '../../utils/sound';
+import BillReceiptModal from '../common/BillReceiptModal';
 
 interface OrderDrawerProps {
   primaryColor?: string;
@@ -55,6 +57,7 @@ export default function OrderDrawer({
 
   const [errorMsg, setErrorMsg] = useState('');
   const [orderSuccess, setOrderSuccess] = useState(false);
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
 
   const handlePlaceOrder = async () => {
     setErrorMsg('');
@@ -188,6 +191,15 @@ export default function OrderDrawer({
                 {/* CTA to keep ordering or close */}
                 <div className="w-full space-y-2 pt-2">
                   <button
+                    type="button"
+                    onClick={() => setIsReceiptOpen(true)}
+                    className="w-full py-2.5 px-3 rounded-xl border border-stone-300 bg-white hover:bg-stone-50 text-stone-800 font-bold text-xs flex items-center justify-center gap-2 shadow-2xs transition-colors cursor-pointer"
+                  >
+                    <Receipt className="w-4 h-4 text-amber-600" />
+                    <span>View / Print Itemized Bill Receipt</span>
+                  </button>
+
+                  <button
                     onClick={handleClose}
                     className="w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider text-white shadow-md cursor-pointer transition-all hover:brightness-110 active:scale-98"
                     style={{ background: `linear-gradient(135deg, ${primaryColor}, #a86c3d)` }}
@@ -203,17 +215,28 @@ export default function OrderDrawer({
               <>
                 {/* FLOW ORDERING ACTIVE BILL NOTIFICATION */}
                 {activeOrders.length > 0 && (
-                  <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
-                    <ChefHat className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                    <div className="text-xs space-y-1">
-                      <div className="font-bold text-[#2C1810]">
-                        Table {tableNumber}: {activeRoundsCount} Active Round{activeRoundsCount > 1 ? 's' : ''} in Kitchen
+                  <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-2.5">
+                      <ChefHat className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <div className="text-xs space-y-1">
+                        <div className="font-bold text-[#2C1810]">
+                          Table {tableNumber}: {activeRoundsCount} Active Round{activeRoundsCount > 1 ? 's' : ''} in Kitchen
+                        </div>
+                        <p className="text-[#786b5f] leading-relaxed">
+                          Running table bill: <strong>₹{activeTableBill}</strong>. This new order will be sent as{' '}
+                          <strong className="text-amber-800 font-semibold">Round {activeOrders.length + 1}</strong>!
+                        </p>
                       </div>
-                      <p className="text-[#786b5f] leading-relaxed">
-                        Running table bill: <strong>₹{activeTableBill}</strong>. This new order will be sent as{' '}
-                        <strong className="text-amber-800 font-semibold">Round {activeOrders.length + 1}</strong>!
-                      </p>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsReceiptOpen(true)}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white text-stone-800 border border-stone-200 text-xs font-bold shadow-2xs hover:bg-stone-50 transition-colors cursor-pointer flex-shrink-0"
+                      title="View itemized bill receipt"
+                    >
+                      <Receipt className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Receipt</span>
+                    </button>
                   </div>
                 )}
 
@@ -452,6 +475,18 @@ export default function OrderDrawer({
           )}
         </motion.div>
       </div>
+
+      {/* Customer Bill & Quantity Receipt Modal */}
+      <BillReceiptModal
+        isOpen={isReceiptOpen}
+        onClose={() => setIsReceiptOpen(false)}
+        tableNumber={tableNumber}
+        customerName={customerName || 'Guest'}
+        orders={activeOrders.length > 0 ? activeOrders : lastPlacedOrder ? [lastPlacedOrder] : []}
+        totalBill={activeOrders.length > 0 ? activeTableBill : lastPlacedOrder?.totalAmount}
+        restaurantName={restaurantName}
+        isSettled={false}
+      />
     </AnimatePresence>
   );
 }
