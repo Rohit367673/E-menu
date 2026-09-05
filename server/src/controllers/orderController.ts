@@ -199,16 +199,26 @@ export const getAdminOrders = async (req: AuthRequest, res: Response): Promise<v
 
     const isManager = req.user?.role === 'manager';
 
-    const [pendingCount, preparingCount, servedCount, todayOrdersCount] = await Promise.all([
+    const [pendingCount, preparingCount, servedCount, todayOrdersCount, activeTables] = await Promise.all([
       Order.countDocuments({ restaurantId: restaurant._id, status: 'pending' }),
       Order.countDocuments({ restaurantId: restaurant._id, status: 'preparing' }),
-      Order.countDocuments({ restaurantId: restaurant._id, status: 'served' }),
+      Order.countDocuments({
+        restaurantId: restaurant._id,
+        status: { $in: ['served', 'completed'] },
+        createdAt: { $gte: startOfToday },
+      }),
       Order.countDocuments({
         restaurantId: restaurant._id,
         createdAt: { $gte: startOfToday },
         status: { $ne: 'cancelled' },
       }),
+      Order.find({
+        restaurantId: restaurant._id,
+        status: { $in: ['pending', 'preparing', 'served'] },
+      }).select('tableNumber').lean(),
     ]);
+
+    const activeCount = new Set(activeTables.map((o) => o.tableNumber)).size;
 
     // Financial privacy: Only admin (owner) receives daily and monthly earnings
     let todaySales: number | null = null;
@@ -232,27 +242,15 @@ export const getAdminOrders = async (req: AuthRequest, res: Response): Promise<v
       monthlySales = Math.round(monthOrders.reduce((sum, o) => sum + o.totalAmount, 0) * 100) / 100;
     }
 
-    // Manager financial privacy: Strip order amounts and item prices
-    const sanitizedOrders = isManager
-      ? orders.map((o) => ({
-          ...o,
-          totalAmount: 0,
-          items: o.items.map((it) => ({
-            ...it,
-            price: 0,
-          })),
-        }))
-      : orders;
-
     res.json({
       success: true,
       data: {
-        orders: sanitizedOrders,
+        orders,
         stats: {
           pendingCount,
           preparingCount,
           servedCount,
-          activeCount: pendingCount + preparingCount + servedCount,
+          activeCount,
           todayOrdersCount,
           todaySales,
           monthlySales,

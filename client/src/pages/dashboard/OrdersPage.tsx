@@ -14,13 +14,14 @@ import apiClient from '../../api/client';
 import type { Order, OrderStatus, OrderDashboardStats } from '../../types/menu';
 import { playOrderNotificationSound } from '../../utils/sound';
 import { useAuth } from '../../contexts/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import ManualOrderModal from '../../components/admin/ManualOrderModal';
 import BillReceiptModal from '../../components/common/BillReceiptModal';
 
 export default function OrdersPage() {
   const { user } = useAuth();
   const isAdmin = user?.role !== 'manager';
+  const [searchParams] = useSearchParams();
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [stats, setStats] = useState<OrderDashboardStats>({
@@ -35,7 +36,7 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [statusFilter, setStatusFilter] = useState<'all' | OrderStatus>('all');
-  const [tableFilter, setTableFilter] = useState<string>('all');
+  const [tableFilter, setTableFilter] = useState<string>(searchParams.get('table') || 'all');
   const [viewMode, setViewMode] = useState<'grouped' | 'feed'>('grouped');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -204,7 +205,13 @@ export default function OrdersPage() {
 
   // Filter orders
   const filteredOrders = orders.filter((o) => {
-    if (statusFilter !== 'all' && o.status !== statusFilter) return false;
+    if (statusFilter === 'preparing') {
+      if (o.status !== 'pending' && o.status !== 'preparing') return false;
+    } else if (statusFilter === 'served') {
+      if (o.status !== 'served' && o.status !== 'completed') return false;
+    } else if (statusFilter !== 'all') {
+      if (o.status !== statusFilter) return false;
+    }
     if (tableFilter !== 'all' && o.tableNumber !== tableFilter) return false;
     return true;
   });
@@ -215,11 +222,23 @@ export default function OrdersPage() {
     const activeOrders = tableOrders.filter((o) => ['pending', 'preparing', 'served'].includes(o.status));
     const completedOrders = tableOrders.filter((o) => o.status === 'completed');
 
-    const displayOrders = statusFilter === 'completed'
-      ? completedOrders
-      : (statusFilter !== 'all' ? tableOrders.filter((o) => o.status === statusFilter) : activeOrders);
+    let displayOrders: Order[] = activeOrders;
+    if (statusFilter === 'served') {
+      displayOrders = tableOrders.filter((o) => o.status === 'served' || o.status === 'completed');
+    } else if (statusFilter === 'preparing') {
+      displayOrders = tableOrders.filter((o) => ['pending', 'preparing'].includes(o.status));
+    } else if (statusFilter === 'completed') {
+      displayOrders = completedOrders;
+    } else if (statusFilter !== 'all') {
+      displayOrders = tableOrders.filter((o) => o.status === statusFilter);
+    }
 
-    const totalBill = displayOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+    const totalBill = displayOrders.reduce((sum, o) => {
+      const orderTotal = (o.totalAmount && o.totalAmount > 0)
+        ? o.totalAmount
+        : o.items.reduce((s, it) => s + (it.price * it.quantity), 0);
+      return sum + orderTotal;
+    }, 0);
 
     return {
       tableNumber: tableNum,
@@ -516,25 +535,14 @@ export default function OrdersPage() {
                   </div>
 
                   {/* Cumulative Table Bill Badge */}
-                  {isAdmin ? (
-                    <div className="text-right">
-                      <div className="text-[10px] text-stone-400 uppercase font-bold tracking-wider">
-                        {grp.isCompleted ? 'Total Paid' : 'Running Total'}
-                      </div>
-                      <div className={`text-base font-black ${grp.isCompleted ? 'text-emerald-700' : 'text-amber-700'}`}>
-                        ₹{grp.totalBill}
-                      </div>
+                  <div className="text-right">
+                    <div className="text-[10px] text-stone-400 uppercase font-bold tracking-wider">
+                      {grp.isCompleted ? 'Total Paid' : 'Running Total'}
                     </div>
-                  ) : (
-                    <div className="text-right">
-                      <div className="text-[10px] text-stone-400 uppercase font-bold tracking-wider">
-                        Table Status
-                      </div>
-                      <div className="text-xs font-bold text-stone-700">
-                        {grp.isCompleted ? 'Completed' : `${grp.activeOrders.length} Active`}
-                      </div>
+                    <div className={`text-base font-black ${grp.isCompleted ? 'text-emerald-700' : 'text-amber-700'}`}>
+                      ₹{grp.totalBill}
                     </div>
-                  )}
+                  </div>
                 </div>
 
                 {/* Table Rounds List */}
@@ -569,11 +577,9 @@ export default function OrdersPage() {
                               <span className="font-bold text-stone-900">{it.quantity}x</span>
                               <span className="truncate">{it.name}</span>
                             </div>
-                            {isAdmin && (
-                              <span className="font-semibold text-stone-900 flex-shrink-0">
-                                ₹{it.price * it.quantity}
-                              </span>
-                            )}
+                            <span className="font-semibold text-stone-900 flex-shrink-0">
+                              ₹{it.price * it.quantity}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -604,13 +610,21 @@ export default function OrdersPage() {
                             <span>Served to Table ✓</span>
                           </div>
                         )}
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateStatus(order._id, 'cancelled')}
-                          className="px-2.5 py-1.5 rounded-lg text-stone-400 hover:text-red-500 text-[11px] font-semibold transition-colors cursor-pointer"
-                        >
-                          Cancel
-                        </button>
+                        {order.status === 'completed' && (
+                          <div className="flex-1 py-1.5 px-3 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold flex items-center justify-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Served & Settled ✓</span>
+                          </div>
+                        )}
+                        {order.status !== 'completed' && (
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateStatus(order._id, 'cancelled')}
+                            className="px-2.5 py-1.5 rounded-lg text-stone-400 hover:text-red-500 text-[11px] font-semibold transition-colors cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -645,7 +659,7 @@ export default function OrdersPage() {
                         className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
                       >
                         <CreditCard className="w-3.5 h-3.5" />
-                        <span>{isAdmin ? `Settle Bill (₹${grp.totalBill})` : 'Settle Table'}</span>
+                        <span>Settle Bill (₹{grp.totalBill})</span>
                       </button>
                     ) : (
                       <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">
@@ -715,21 +729,12 @@ export default function OrdersPage() {
 
               {/* Right Action */}
               <div className="flex items-center justify-between sm:justify-end gap-4 pt-3 sm:pt-0 border-t sm:border-t-0 border-stone-100">
-                {isAdmin ? (
-                  <div className="text-right">
-                    <div className="text-[10px] text-stone-400 font-bold uppercase">Amount</div>
-                    <div className="text-lg font-black text-amber-800">
-                      ₹{order.totalAmount}
-                    </div>
+                <div className="text-right">
+                  <div className="text-[10px] text-stone-400 font-bold uppercase">Amount</div>
+                  <div className="text-lg font-black text-amber-800">
+                    ₹{order.totalAmount}
                   </div>
-                ) : (
-                  <div className="text-right">
-                    <div className="text-[10px] text-stone-400 font-bold uppercase">Items</div>
-                    <div className="text-sm font-bold text-stone-700">
-                      {order.items.reduce((sum, item) => sum + item.quantity, 0)} pcs
-                    </div>
-                  </div>
-                )}
+                </div>
 
                 <div className="flex items-center gap-2">
                   {/* Bill Receipt for single order */}
@@ -758,6 +763,12 @@ export default function OrdersPage() {
                     <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center gap-1">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                       <span>Served to Table ✓</span>
+                    </span>
+                  )}
+                  {order.status === 'completed' && (
+                    <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Served & Settled ✓</span>
                     </span>
                   )}
                 </div>

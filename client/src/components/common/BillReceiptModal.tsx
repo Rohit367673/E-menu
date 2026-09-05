@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Printer, X, CheckCircle2, Clock, Receipt, Download, Coffee, Check } from 'lucide-react';
+import { Printer, X, CheckCircle2, Receipt, Download, Coffee, Check } from 'lucide-react';
 import type { Order, OrderItem } from '../../types/menu';
 
 interface BillReceiptModalProps {
@@ -108,8 +108,7 @@ ${combinedItems.map((it) => `${it.name} x${it.quantity} = ₹${it.price * it.qua
 ----------------------------------------
 Total Qty: ${totalItemsCount} items
 Grand Total: ₹${finalBillAmount}
-Status: ${settledStatus ? 'PAID & SETTLED' : 'PAYMENT DUE'}
-Thank you for dining with us! 🙏
+${settledStatus ? 'Status: PAID & SETTLED\n' : ''}Thank you for dining with us! 🙏
 `.trim();
 
     navigator.clipboard.writeText(textSummary).then(() => {
@@ -278,31 +277,15 @@ Thank you for dining with us! 🙏
                 </div>
               </div>
 
-              {/* Payment Settlement Status Badge */}
-              <div className="py-3 text-center space-y-1 border-b border-dashed border-stone-300">
-                <div
-                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase ${
-                    settledStatus
-                      ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                      : 'bg-amber-100 text-amber-900 border border-amber-300'
-                  }`}
-                >
-                  {settledStatus ? (
-                    <>
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
-                      <span>PAID & SETTLED</span>
-                    </>
-                  ) : (
-                    <>
-                      <Clock className="w-3.5 h-3.5 text-amber-700" />
-                      <span>PAYMENT DUE / TO PAY</span>
-                    </>
-                  )}
+              {/* Payment Settlement Status Badge (Shown only when bill is settled) */}
+              {settledStatus && (
+                <div className="py-2.5 text-center border-b border-dashed border-stone-300">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase bg-emerald-100 text-emerald-900 border border-emerald-300">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>PAID & SETTLED ✓</span>
+                  </div>
                 </div>
-                <p className="text-[10px] text-stone-400">
-                  {settledStatus ? 'Counter Settled · Receipt Valid' : 'Pay at counter or to tableside server'}
-                </p>
-              </div>
+              )}
 
               {/* Footer Greeting & Tear Line */}
               <div className="text-center pt-3 space-y-1 text-[11px] text-stone-600">
