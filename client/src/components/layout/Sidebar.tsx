@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   ShoppingBag,
   TrendingUp,
+  Printer,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../api/client';
@@ -38,6 +39,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         { to: '/admin/earnings', icon: TrendingUp, label: 'Monthly Earnings', end: false },
         { to: '/admin/add-item', icon: Plus, label: 'Add Menu Item', end: false },
         { to: '/admin/menu', icon: FolderOpen, label: 'Menu Items', end: false },
+        { to: '/admin/printer-settings', icon: Printer, label: 'Printer & KOT', end: false },
       ]
     : [
         { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard', end: true },

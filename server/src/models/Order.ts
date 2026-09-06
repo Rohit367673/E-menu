@@ -13,6 +13,7 @@ export type OrderStatus = 'pending' | 'preparing' | 'served' | 'completed' | 'ca
 
 export interface IOrder extends Document {
   restaurantId: mongoose.Types.ObjectId;
+  sessionId?: mongoose.Types.ObjectId;
   orderNumber: string;
   tableNumber: string;
   customerName: string;
@@ -23,6 +24,8 @@ export interface IOrder extends Document {
   status: OrderStatus;
   specialInstructions?: string;
   round: number;
+  kotNumber?: string;
+  kotGeneratedAt?: Date;
   billRequested?: boolean;
   billRequestedAt?: Date;
   createdAt: Date;
@@ -47,6 +50,11 @@ const orderSchema = new Schema<IOrder>(
       type: Schema.Types.ObjectId,
       ref: 'Restaurant',
       required: true,
+      index: true,
+    },
+    sessionId: {
+      type: Schema.Types.ObjectId,
+      ref: 'TableSession',
       index: true,
     },
     orderNumber: {
@@ -100,6 +108,13 @@ const orderSchema = new Schema<IOrder>(
       type: Number,
       default: 1,
     },
+    kotNumber: {
+      type: String,
+      default: '',
+    },
+    kotGeneratedAt: {
+      type: Date,
+    },
     billRequested: {
       type: Boolean,
       default: false,
@@ -115,6 +130,7 @@ const orderSchema = new Schema<IOrder>(
 orderSchema.index({ restaurantId: 1, status: 1, createdAt: -1 });
 orderSchema.index({ restaurantId: 1, tableNumber: 1, status: 1 });
 orderSchema.index({ restaurantId: 1, createdAt: -1, status: 1 });
+orderSchema.index({ restaurantId: 1, sessionId: 1 });
 
 const Order: Model<IOrder> = mongoose.model<IOrder>('Order', orderSchema);
 

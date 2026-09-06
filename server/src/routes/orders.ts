@@ -10,6 +10,7 @@ import {
   getMonthlyEarningsReport,
   requestTableBill,
   dismissBillRequest,
+  getKOTData,
 } from '../controllers/orderController.js';
 import auth from '../middleware/auth.js';
 
@@ -22,6 +23,7 @@ router.post('/public/table/:tableNumber/request-bill', requestTableBill);
 
 // Admin routes (for receptionist / kitchen management)
 router.get('/admin', auth, getAdminOrders);
+router.get('/admin/kot/:orderId', auth, getKOTData);
 router.get('/admin/earnings/monthly', auth, getMonthlyEarningsReport);
 router.patch('/admin/:id/status', auth, updateOrderStatus);
 router.patch('/admin/table/:tableNumber/settle', auth, settleTableOrders);

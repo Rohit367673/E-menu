@@ -43,6 +43,7 @@ interface CartContextType {
   setLastPlacedOrder: (order: Order | null) => void;
   placeOrder: (slug?: string) => Promise<{ success: boolean; order?: Order; message?: string }>;
   isSubmittingOrder: boolean;
+  sessionId: string | null;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -105,6 +106,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const hadActiveOrdersRef = useRef(false);
   const [lastPlacedOrder, setLastPlacedOrder] = useState<Order | null>(null);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   // Sync table from URL if changed
   useEffect(() => {
@@ -232,6 +234,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setActiveRoundsCount(res.data.data.activeRounds || 0);
         setOverallStatus(res.data.data.overallStatus || 'none');
         setBillRequested(res.data.data.billRequested === true);
+
+        if (res.data.data.sessionId) {
+          setSessionId(res.data.data.sessionId);
+        }
 
         if (fetchedOrders.length > 0) {
           hadActiveOrdersRef.current = true;
@@ -414,6 +420,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setLastPlacedOrder,
       placeOrder,
       isSubmittingOrder,
+      sessionId,
     }),
     [
       cartItems,
@@ -446,6 +453,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       lastPlacedOrder,
       placeOrder,
       isSubmittingOrder,
+      sessionId,
     ]
   );
 

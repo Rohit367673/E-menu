@@ -131,6 +131,9 @@ export interface Order {
   billRequestedAt?: string;
   createdAt: string;
   updatedAt: string;
+  sessionId?: string;
+  kotNumber?: string;
+  kotGeneratedAt?: string;
 }
 
 export interface OrderDashboardStats {
@@ -154,5 +157,32 @@ export interface ActiveTableData {
   customerName?: string;
   recentlySettled?: boolean;
   billRequested?: boolean;
+  sessionId?: string;
+  sessionNumber?: string;
+}
+
+export interface TableSession {
+  _id: string;
+  restaurantId: string;
+  sessionNumber: string;
+  tableNumber: string;
+  customerName: string;
+  customerPhone?: string;
+  status: 'active' | 'settled' | 'cleared';
+  billRequested: boolean;
+  billRequestedAt?: string;
+  startedAt: string;
+  settledAt?: string;
+}
+
+export interface KOTData {
+  kotNumber: string;
+  tableNumber: string;
+  round: number;
+  orderNumber: string;
+  customerName: string;
+  time: string;
+  items: Array<{ name: string; quantity: number; notes?: string }>;
+  specialInstructions?: string;
 }
 

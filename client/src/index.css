@@ -1377,3 +1377,56 @@ select:focus-visible {
     margin: 0mm;
   }
 }
+
+/* ─── KOT (Kitchen Order Ticket) Thermal Print Engine ─── */
+@media print {
+  body.printing-kot {
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.printing-kot * {
+    visibility: hidden !important;
+  }
+
+  body.printing-kot #kot-ticket-printable,
+  body.printing-kot #kot-ticket-printable * {
+    visibility: visible !important;
+  }
+
+  body.printing-kot #kot-ticket-printable {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 76mm !important;
+    max-width: 76mm !important;
+    margin: 0 !important;
+    padding: 2mm 3mm !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-family: 'Courier New', Courier, monospace !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    display: block !important;
+  }
+
+  body.printing-kot #kot-ticket-printable .kot-item-name {
+    font-size: 14px !important;
+    font-weight: 900 !important;
+  }
+
+  body.printing-kot #kot-ticket-printable .kot-item-qty {
+    font-size: 16px !important;
+    font-weight: 900 !important;
+  }
+
+  body.printing-kot #kot-ticket-printable hr,
+  body.printing-kot #kot-ticket-printable .border-dashed {
+    border-color: #000000 !important;
+    border-style: dashed !important;
+  }
+}

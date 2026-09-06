@@ -7,6 +7,7 @@ import DashboardLayout from './components/layout/DashboardLayout';
 import MenuPage from './pages/dashboard/MenuPage';
 import QRCodePage from './pages/dashboard/QRCodePage';
 import PrintMenuPage from './pages/dashboard/PrintMenuPage';
+import PrinterSettingsPage from './pages/dashboard/PrinterSettingsPage';
 import CustomerMenuPage from './pages/public/CustomerMenuPage';
 import AddItemPage from './pages/dashboard/AddItemPage';
 import DashboardHome from './pages/dashboard/DashboardHome';
@@ -65,6 +66,7 @@ export default function App() {
                 <Route path="qr-menu" element={<QRCodePage />} />
                 <Route path="qr" element={<Navigate to="/admin/qr-menu" replace />} />
                 <Route path="print-menu" element={<PrintMenuPage />} />
+                <Route path="printer-settings" element={<PrinterSettingsPage />} />
               {/* Legacy redirects — keep old bookmarks working */}
               <Route path="settings" element={<Navigate to="/admin/menu" replace />} />
               <Route path="export" element={<Navigate to="/admin/menu" replace />} />

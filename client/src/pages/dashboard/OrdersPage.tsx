@@ -10,6 +10,7 @@ import {
   CreditCard,
   Receipt,
   BellRing,
+  Printer,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import apiClient from '../../api/client';
@@ -19,6 +20,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Link, useSearchParams } from 'react-router-dom';
 import ManualOrderModal from '../../components/admin/ManualOrderModal';
 import BillReceiptModal from '../../components/common/BillReceiptModal';
+import KOTTicketModal from '../../components/admin/KOTTicketModal';
 
 export default function OrdersPage() {
   const { user } = useAuth();
@@ -63,6 +65,52 @@ export default function OrdersPage() {
     totalBill: 0,
     isSettled: false,
   });
+
+  // KOT Ticket modal state
+  const [kotModal, setKotModal] = useState<{
+    isOpen: boolean;
+    kotNumber: string;
+    tableNumber: string;
+    round: number;
+    orderNumber: string;
+    customerName: string;
+    time: string;
+    items: Array<{ name: string; quantity: number; notes?: string }>;
+    specialInstructions: string;
+    autoPrint: boolean;
+  }>({
+    isOpen: false,
+    kotNumber: '',
+    tableNumber: '',
+    round: 1,
+    orderNumber: '',
+    customerName: '',
+    time: '',
+    items: [],
+    specialInstructions: '',
+    autoPrint: false,
+  });
+
+  const seenKOTsRef = useRef<Set<string>>(new Set());
+
+  const handleOpenKOT = (order: Order, autoPrint = false) => {
+    const time = order.createdAt
+      ? new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+      : new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+    setKotModal({
+      isOpen: true,
+      kotNumber: order.kotNumber || `KOT-${order.orderNumber}`,
+      tableNumber: order.tableNumber,
+      round: order.round,
+      orderNumber: order.orderNumber,
+      customerName: order.customerName,
+      time,
+      items: order.items.map(it => ({ name: it.name, quantity: it.quantity, notes: it.notes })),
+      specialInstructions: order.specialInstructions || '',
+      autoPrint,
+    });
+  };
 
   const handleOpenReceipt = (
     tableNum: string,
@@ -121,6 +169,32 @@ export default function OrdersPage() {
         prevBillReqCountRef.current = currentBillReqCount;
         setOrders(fetchedOrders);
         setStats(fetchedStats);
+
+        // Auto-detect new KOTs and trigger print
+        const autoPrintKOT = localStorage.getItem('sukoon_auto_print_kot') !== 'false';
+        if (autoPrintKOT && !isManual) {
+          const newKOTOrders = fetchedOrders.filter(
+            (o) => o.kotNumber && !seenKOTsRef.current.has(o.kotNumber)
+          );
+          newKOTOrders.forEach((o) => seenKOTsRef.current.add(o.kotNumber!));
+          
+          // If there's exactly one new KOT, auto-open it for printing
+          if (newKOTOrders.length === 1 && seenKOTsRef.current.size > 1) {
+            handleOpenKOT(newKOTOrders[0], true);
+          } else if (newKOTOrders.length > 1 && seenKOTsRef.current.size > newKOTOrders.length) {
+            toast.custom((_t) => (
+              <div className="bg-stone-900 text-white px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 text-xs font-black">
+                🖨️ {newKOTOrders.length} new KOTs ready to print
+              </div>
+            ));
+          }
+        }
+        // Initialize seen KOTs on first load
+        if (seenKOTsRef.current.size === 0) {
+          fetchedOrders.forEach((o) => {
+            if (o.kotNumber) seenKOTsRef.current.add(o.kotNumber);
+          });
+        }
       }
     } catch (err) {
       console.error('Failed to fetch orders:', err);
@@ -651,6 +725,11 @@ export default function OrdersPage() {
                           <span className="text-xs font-black text-stone-900">
                             {order.orderNumber}
                           </span>
+                          {order.kotNumber && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-stone-800 text-white">
+                              {order.kotNumber}
+                            </span>
+                          )}
                           <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-stone-100 text-stone-600">
                             Round {order.round}
                           </span>
@@ -714,13 +793,26 @@ export default function OrdersPage() {
                           </div>
                         )}
                         {order.status !== 'completed' && (
-                          <button
-                            type="button"
-                            onClick={() => handleUpdateStatus(order._id, 'cancelled')}
-                            className="px-2.5 py-1.5 rounded-lg text-stone-400 hover:text-red-500 text-[11px] font-semibold transition-colors cursor-pointer"
-                          >
-                            Cancel
-                          </button>
+                          <>
+                            {order.kotNumber && (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenKOT(order)}
+                                className="px-2.5 py-1.5 rounded-lg text-stone-500 hover:text-stone-900 hover:bg-stone-100 text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 border border-stone-200"
+                                title={`Reprint KOT ${order.kotNumber}`}
+                              >
+                                <Printer className="w-3 h-3" />
+                                <span>KOT</span>
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateStatus(order._id, 'cancelled')}
+                              className="px-2.5 py-1.5 rounded-lg text-stone-400 hover:text-red-500 text-[11px] font-semibold transition-colors cursor-pointer"
+                            >
+                              Cancel
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -799,6 +891,11 @@ export default function OrdersPage() {
                     <span className="font-black text-stone-900 text-base">
                       {order.orderNumber}
                     </span>
+                    {order.kotNumber && (
+                      <span className="text-xs font-bold text-white bg-stone-800 px-2 py-0.5 rounded-md">
+                        {order.kotNumber}
+                      </span>
+                    )}
                     <span className="text-xs font-bold text-stone-600 bg-stone-100 px-2 py-0.5 rounded-md">
                       Round {order.round}
                     </span>
@@ -845,6 +942,19 @@ export default function OrdersPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  {/* KOT Print for single order */}
+                  {order.kotNumber && (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenKOT(order)}
+                      className="p-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
+                      title={`Reprint KOT ${order.kotNumber}`}
+                    >
+                      <Printer className="w-4 h-4 text-stone-700" />
+                      <span className="hidden sm:inline">KOT</span>
+                    </button>
+                  )}
+
                   {/* Bill Receipt for single order */}
                   <button
                     type="button"
@@ -904,6 +1014,21 @@ export default function OrdersPage() {
         orders={receiptModal.orders}
         totalBill={receiptModal.totalBill}
         isSettled={receiptModal.isSettled}
+      />
+
+      {/* KOT Ticket Modal */}
+      <KOTTicketModal
+        isOpen={kotModal.isOpen}
+        onClose={() => setKotModal((prev) => ({ ...prev, isOpen: false }))}
+        kotNumber={kotModal.kotNumber}
+        tableNumber={kotModal.tableNumber}
+        round={kotModal.round}
+        orderNumber={kotModal.orderNumber}
+        customerName={kotModal.customerName}
+        time={kotModal.time}
+        items={kotModal.items}
+        specialInstructions={kotModal.specialInstructions}
+        autoPrint={kotModal.autoPrint}
       />
     </div>
   );

@@ -159,9 +159,17 @@ export default function OrderDrawer({
                 </div>
 
                 <div className="space-y-1">
-                  <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300/60">
-                    Order {lastPlacedOrder.orderNumber} Confirmed
-                  </span>
+                  <div className="flex items-center justify-center gap-2 flex-wrap">
+                    <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300/60">
+                      Order {lastPlacedOrder.orderNumber} Confirmed
+                    </span>
+                    {lastPlacedOrder.kotNumber && (
+                      <span className="inline-block px-2.5 py-1 rounded-full text-xs font-black bg-stone-900 text-white shadow-xs flex items-center gap-1">
+                        <span>🍳</span>
+                        <span>{lastPlacedOrder.kotNumber}</span>
+                      </span>
+                    )}
+                  </div>
                   <h4 className="text-xl font-bold text-[#2C1810]" style={{ fontFamily: headingFont }}>
                     Sent to Kitchen & Receptionist!
                   </h4>
@@ -175,8 +183,9 @@ export default function OrderDrawer({
                 <div className="w-full bg-white rounded-2xl p-4 border border-[#e8dfd5] text-left space-y-2.5 shadow-2xs">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-[#786b5f] font-medium">Status:</span>
-                    <span className="font-bold text-amber-600 flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5 animate-spin" /> Pending Kitchen Acceptance
+                    <span className="font-bold text-amber-700 flex items-center gap-1">
+                      <ChefHat className="w-3.5 h-3.5 text-amber-600" />
+                      <span>{lastPlacedOrder.kotNumber ? `${lastPlacedOrder.kotNumber} · Preparing in Kitchen` : 'Preparing in Kitchen'}</span>
                     </span>
                   </div>
 

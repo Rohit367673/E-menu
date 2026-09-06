@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import Order, { IOrderItem, OrderStatus } from '../models/Order.js';
+import TableSession from '../models/TableSession.js';
 import Restaurant from '../models/Restaurant.js';
 import { findRestaurantBySlug, getOrCreateRestaurant } from '../utils/restaurant.js';
 import { AuthRequest } from '../middleware/auth.js';
@@ -71,9 +72,43 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
     const totalOrderCount = await Order.countDocuments({ restaurantId: restaurant._id });
     const orderNumber = `#${101 + (totalOrderCount % 899)}`;
 
+    let session = await TableSession.findOne({
+      restaurantId: restaurant._id,
+      tableNumber: cleanTable,
+      status: 'active',
+    });
+
+    if (!session) {
+      // Generate session number: S-001, S-002...
+      const totalSessions = await TableSession.countDocuments({ restaurantId: restaurant._id });
+      const sessionNumber = `S-${String(totalSessions + 1).padStart(3, '0')}`;
+      
+      session = new TableSession({
+        restaurantId: restaurant._id,
+        sessionNumber,
+        tableNumber: cleanTable,
+        customerName: cleanCustomerName,
+        customerPhone: (customerPhone || '').toString().trim(),
+        status: 'active',
+        startedAt: new Date(),
+      });
+      await session.save();
+    }
+
+    // KOT number: daily sequential KOT-001, KOT-002...
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const todayKOTCount = await Order.countDocuments({
+      restaurantId: restaurant._id,
+      createdAt: { $gte: startOfToday },
+      kotNumber: { $ne: '' },
+    });
+    const kotNumber = `KOT-${String(todayKOTCount + 1).padStart(3, '0')}`;
+
     // Direct Kitchen Workflow: Orders enter 'preparing' immediately with NO approval click required
     const order = new Order({
       restaurantId: restaurant._id,
+      sessionId: session._id,
       orderNumber,
       tableNumber: cleanTable,
       customerName: cleanCustomerName,
@@ -84,9 +119,26 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
       status: 'preparing',
       specialInstructions: (specialInstructions || '').toString().trim(),
       round,
+      kotNumber,
+      kotGeneratedAt: new Date(),
     });
 
     await order.save();
+
+    const kotData = {
+      kotNumber,
+      tableNumber: cleanTable,
+      round,
+      orderNumber,
+      customerName: cleanCustomerName,
+      time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+      items: validatedItems.map(it => ({
+        name: it.name,
+        quantity: it.quantity,
+        notes: it.notes || '',
+      })),
+      specialInstructions: (specialInstructions || '').toString().trim(),
+    };
 
     res.status(201).json({
       success: true,
@@ -97,6 +149,9 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
         order,
         round,
         tableNumber: cleanTable,
+        kotData,
+        sessionId: session._id,
+        sessionNumber: session.sessionNumber,
       },
     });
   } catch (error) {
@@ -153,7 +208,14 @@ export const getActiveTableOrders = async (req: Request, res: Response): Promise
       }
     }
 
-    const billRequested = orders.some((o: any) => o.billRequested === true);
+    const session = await TableSession.findOne({
+      restaurantId: restaurant._id,
+      tableNumber: cleanTable,
+      status: 'active',
+    }).lean();
+
+    // Use session-level billRequested if session exists, fallback to order-level
+    const billRequested = session ? session.billRequested === true : orders.some((o: any) => o.billRequested === true);
 
     res.json({
       success: true,
@@ -166,6 +228,8 @@ export const getActiveTableOrders = async (req: Request, res: Response): Promise
         overallStatus,
         customerName: orders[0]?.customerName || '',
         recentlySettled,
+        sessionId: session?._id || null,
+        sessionNumber: session?.sessionNumber || null,
         billRequested,
       },
     });
@@ -219,9 +283,9 @@ export const getAdminOrders = async (req: AuthRequest, res: Response): Promise<v
         restaurantId: restaurant._id,
         status: { $in: ['pending', 'preparing', 'served'] },
       }).select('tableNumber').lean(),
-      Order.countDocuments({
+      TableSession.countDocuments({
         restaurantId: restaurant._id,
-        status: { $in: ['pending', 'preparing', 'served'] },
+        status: 'active',
         billRequested: true,
       }),
     ]);
@@ -315,6 +379,23 @@ export const settleTableOrders = async (req: AuthRequest, res: Response): Promis
       return;
     }
 
+    // Find and update the active session
+    const session = await TableSession.findOneAndUpdate(
+      {
+        restaurantId: restaurant._id,
+        tableNumber: tableNumber.toString().trim(),
+        status: 'active',
+      },
+      {
+        $set: {
+          status: 'settled',
+          settledAt: new Date(),
+          billRequested: false,
+        },
+      },
+      { new: true }
+    );
+
     const result = await Order.updateMany(
       {
         restaurantId: restaurant._id,
@@ -380,6 +461,21 @@ export const requestTableBill = async (req: Request, res: Response): Promise<voi
       }
     );
 
+    // Also update session-level bill request
+    await TableSession.findOneAndUpdate(
+      {
+        restaurantId: restaurant._id,
+        tableNumber: cleanTable,
+        status: 'active',
+      },
+      {
+        $set: {
+          billRequested: true,
+          billRequestedAt: new Date(),
+        },
+      }
+    );
+
     res.json({
       success: true,
       message: `Bill receipt requested for Table ${cleanTable}! Waiter has been notified.`,
@@ -414,6 +510,17 @@ export const dismissBillRequest = async (req: AuthRequest, res: Response): Promi
         $set: {
           billRequested: false,
         },
+      }
+    );
+
+    await TableSession.findOneAndUpdate(
+      {
+        restaurantId: restaurant._id,
+        tableNumber: tableNumber.toString().trim(),
+        status: 'active',
+      },
+      {
+        $set: { billRequested: false },
       }
     );
 
@@ -454,6 +561,18 @@ export const resetTableSession = async (req: AuthRequest, res: Response): Promis
       restaurantId: restaurant._id,
       tableNumber: cleanTable,
     });
+
+    // Mark session as cleared
+    await TableSession.findOneAndUpdate(
+      {
+        restaurantId: restaurant._id,
+        tableNumber: cleanTable,
+        status: { $in: ['active', 'settled'] },
+      },
+      {
+        $set: { status: 'cleared' },
+      }
+    );
 
     res.json({
       success: true,
@@ -612,6 +731,41 @@ export const getMonthlyEarningsReport = async (req: AuthRequest, res: Response):
   } catch (error) {
     console.error('Get monthly earnings error:', error);
     res.status(500).json({ success: false, message: 'Failed to retrieve monthly earnings report' });
+  }
+};
+
+export const getKOTData = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findById(orderId).lean();
+
+    if (!order) {
+      res.status(404).json({ success: false, message: 'Order not found' });
+      return;
+    }
+
+    const kotData = {
+      kotNumber: order.kotNumber || 'N/A',
+      tableNumber: order.tableNumber,
+      round: order.round,
+      orderNumber: order.orderNumber,
+      customerName: order.customerName,
+      time: new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+      items: order.items.map(it => ({
+        name: it.name,
+        quantity: it.quantity,
+        notes: it.notes || '',
+      })),
+      specialInstructions: order.specialInstructions || '',
+    };
+
+    res.json({
+      success: true,
+      data: kotData,
+    });
+  } catch (error) {
+    console.error('Get KOT data error:', error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve KOT data' });
   }
 };
 
