@@ -52,7 +52,10 @@ export default function KOTTicketModal({
     window.print();
     setTimeout(() => {
       document.body.classList.remove('printing-kot');
-    }, 1000);
+      if (autoPrint) {
+        onClose();
+      }
+    }, 1200);
   };
 
   return (

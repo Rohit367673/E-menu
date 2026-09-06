@@ -14,6 +14,7 @@ import {
 import { useRestaurant } from '../../contexts/RestaurantContext';
 import apiClient from '../../api/client';
 import toast from 'react-hot-toast';
+import type { Order } from '../../types/menu';
 
 interface OrderItemDraft {
   menuItemId?: string;
@@ -29,7 +30,7 @@ interface ManualOrderModalProps {
   onClose: () => void;
   defaultTable?: string;
   isTableFixed?: boolean;
-  onOrderCreated?: () => void;
+  onOrderCreated?: (newOrder?: Order) => void;
 }
 
 const COMMON_TABLES = [
@@ -169,12 +170,13 @@ export default function ManualOrderModal({
 
       if (res.data.success) {
         toast.success(`Order for ${tableNumber} sent directly to Kitchen!`);
+        const createdOrder = res.data.data.order;
         setSelectedItems([]);
         setSearchQuery('');
         setSpecialInstructions('');
         onClose();
         if (onOrderCreated) {
-          onOrderCreated();
+          onOrderCreated(createdOrder);
         }
       }
     } catch (err: any) {

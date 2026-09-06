@@ -82,6 +82,7 @@ export default function KitchenPipelinePage() {
 
   const prevPendingCountRef = useRef<number>(0);
   const seenKOTsRef = useRef<Set<string>>(new Set());
+  const isInitializedRef = useRef(false);
 
   const handleOpenKOT = (order: Order, autoPrint = false) => {
     const time = order.createdAt
@@ -135,23 +136,29 @@ export default function KitchenPipelinePage() {
         setOrders(fetchedOrders);
         setStats(fetchedStats);
 
-        // Auto-detect and print new KOTs if enabled
-        const autoPrintKOT = localStorage.getItem('sukoon_auto_print_kot') !== 'false';
-        if (autoPrintKOT && !isManual) {
+        // Record and auto-print new incoming KOTs (kitchen thermal printing)
+        if (!isInitializedRef.current) {
+          isInitializedRef.current = true;
+          fetchedOrders.forEach((o) => {
+            if (o.kotNumber) seenKOTsRef.current.add(o.kotNumber);
+          });
+        } else {
+          const autoPrintKOT = localStorage.getItem('sukoon_auto_print_kot') !== 'false';
           const newKOTOrders = fetchedOrders.filter(
             (o) => o.kotNumber && !seenKOTsRef.current.has(o.kotNumber)
           );
           newKOTOrders.forEach((o) => seenKOTsRef.current.add(o.kotNumber!));
 
-          if (newKOTOrders.length === 1 && seenKOTsRef.current.size > 1) {
+          if (autoPrintKOT && newKOTOrders.length > 0) {
             handleOpenKOT(newKOTOrders[0], true);
+            if (newKOTOrders.length > 1) {
+              toast.custom((_t) => (
+                <div className="bg-stone-900 text-white px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 text-xs font-black">
+                  🖨️ {newKOTOrders.length} new orders received! Printing tickets...
+                </div>
+              ));
+            }
           }
-        }
-
-        if (seenKOTsRef.current.size === 0) {
-          fetchedOrders.forEach((o) => {
-            if (o.kotNumber) seenKOTsRef.current.add(o.kotNumber);
-          });
         }
       }
     } catch (err) {
@@ -748,7 +755,12 @@ export default function KitchenPipelinePage() {
         onClose={() => setIsPosOpen(false)}
         defaultTable="Table 1"
         isTableFixed={false}
-        onOrderCreated={() => fetchOrders(true)}
+        onOrderCreated={(newOrder) => {
+          fetchOrders(true);
+          if (newOrder) {
+            handleOpenKOT(newOrder, true);
+          }
+        }}
       />
 
       <KOTTicketModal
