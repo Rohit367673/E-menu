@@ -428,6 +428,14 @@ export default function OrdersPage() {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
+          <Link
+            to="/admin/kitchen"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 transition-all cursor-pointer"
+            title="Open Kitchen Qty Process & KOT Pipeline"
+          >
+            <ChefHat className="w-4 h-4 text-amber-700" />
+            <span>Kitchen Pipeline →</span>
+          </Link>
           {/* Manual Walk-in Order Button */}
           <button
             type="button"

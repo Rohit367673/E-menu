@@ -38,12 +38,14 @@ export default function PrinterSettingsPage() {
   };
 
   const handleTestKOTPrint = () => {
+    toast.success('Printing test KOT to TVS Champ RP Star (80mm)...');
     document.body.classList.add('printing-kot');
     window.print();
     setTimeout(() => document.body.classList.remove('printing-kot'), 1000);
   };
 
   const handleTestBillPrint = () => {
+    toast.success('Printing test customer bill to TVS Champ RP Star (80mm)...');
     document.body.classList.add('printing-receipt');
     window.print();
     setTimeout(() => document.body.classList.remove('printing-receipt'), 1000);
@@ -64,6 +66,56 @@ export default function PrinterSettingsPage() {
             <p className="text-xs text-stone-500 mt-0.5">
               Configure thermal printer, KOT auto-print, and paper size
             </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Configured Hardware Profile */}
+      <div className="bg-white p-5 rounded-3xl border border-emerald-500 shadow-sm bg-gradient-to-r from-emerald-50/50 via-white to-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-4 opacity-5">
+          <Printer className="w-24 h-24 text-emerald-900" />
+        </div>
+        <div className="relative z-10 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="flex w-2.5 h-2.5 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+              </span>
+              <h2 className="text-xs font-bold text-emerald-900 uppercase tracking-wider">
+                Configured Hardware Profile
+              </h2>
+            </div>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
+              Active Hardware
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
+            <div>
+              <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Device</p>
+              <p className="text-xs font-black text-stone-900">TVS Champ RP Star</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Paper Width</p>
+              <p className="text-xs font-bold text-stone-800">80mm (72mm print)</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Power</p>
+              <p className="text-xs font-bold text-stone-800">DC 24V, 1.5A</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Auto-Cutter</p>
+              <p className="text-xs font-bold text-emerald-700">Supported ✓</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Connection</p>
+              <p className="text-xs font-bold text-stone-800">USB / LAN</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Resolution</p>
+              <p className="text-xs font-bold text-stone-800">203 DPI</p>
+            </div>
           </div>
         </div>
       </div>

@@ -13,6 +13,7 @@ import AddItemPage from './pages/dashboard/AddItemPage';
 import DashboardHome from './pages/dashboard/DashboardHome';
 import OrdersPage from './pages/dashboard/OrdersPage';
 import MonthlyEarningsPage from './pages/dashboard/MonthlyEarningsPage';
+import KitchenPipelinePage from './pages/dashboard/KitchenPipelinePage';
 import { CartProvider } from './contexts/CartContext';
 import type { ReactNode } from 'react';
 import { motion } from 'motion/react';
@@ -67,6 +68,9 @@ export default function App() {
                 <Route path="qr" element={<Navigate to="/admin/qr-menu" replace />} />
                 <Route path="print-menu" element={<PrintMenuPage />} />
                 <Route path="printer-settings" element={<PrinterSettingsPage />} />
+                <Route path="kitchen" element={<KitchenPipelinePage />} />
+                <Route path="kitchen-pipeline" element={<Navigate to="/admin/kitchen" replace />} />
+                <Route path="kot" element={<Navigate to="/admin/kitchen" replace />} />
               {/* Legacy redirects — keep old bookmarks working */}
               <Route path="settings" element={<Navigate to="/admin/menu" replace />} />
               <Route path="export" element={<Navigate to="/admin/menu" replace />} />

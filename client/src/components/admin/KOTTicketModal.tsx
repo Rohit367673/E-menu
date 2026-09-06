@@ -113,6 +113,9 @@ export default function KOTTicketModal({
                 <div className="text-[10px] text-stone-500">
                   Sukoon Cafe & Bar
                 </div>
+                <div className="mt-1 inline-block border border-stone-300 px-1.5 py-0.5 text-[9px] font-bold text-stone-600 rounded uppercase tracking-wider">
+                  TVS Champ RP Star 80mm
+                </div>
               </div>
 
               {/* Order Meta */}
@@ -177,10 +180,13 @@ export default function KOTTicketModal({
               )}
 
               {/* Footer */}
-              <div className="text-center pt-3 space-y-1 text-[11px] text-stone-500">
+              <div className="text-center pt-3 space-y-2 text-[11px] text-stone-500">
                 <div className="text-xs font-black uppercase tracking-wider">*** END OF KOT ***</div>
                 <div className="text-[9px] text-stone-300 tracking-widest pt-1">
                   KITCHEN USE ONLY · NO PRICES
+                </div>
+                <div className="text-center text-[10px] tracking-[0.2em] text-stone-400 mt-4 pb-1">
+                  ──✂── TEAR / AUTO-CUT HERE ──✂──
                 </div>
               </div>
             </div>
