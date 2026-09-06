@@ -13,7 +13,9 @@ import {
   Coffee,
   AlertCircle,
   Receipt,
+  BellRing,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useCart } from '../../contexts/CartContext';
 import { playOrderNotificationSound } from '../../utils/sound';
 import BillReceiptModal from '../common/BillReceiptModal';
@@ -53,6 +55,9 @@ export default function OrderDrawer({
     lastPlacedOrder,
     placeOrder,
     isSubmittingOrder,
+    billRequested,
+    requestBill,
+    isRequestingBill,
   } = useCart();
 
   const [errorMsg, setErrorMsg] = useState('');
@@ -190,6 +195,27 @@ export default function OrderDrawer({
 
                 {/* CTA to keep ordering or close */}
                 <div className="w-full space-y-2 pt-2">
+                  {!billRequested ? (
+                    <button
+                      type="button"
+                      disabled={isRequestingBill}
+                      onClick={async () => {
+                        const res = await requestBill();
+                        if (res.success) toast.success(res.message);
+                        else toast.error(res.message);
+                      }}
+                      className="w-full py-2.5 px-3 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs flex items-center justify-center gap-2 shadow-2xs transition-colors cursor-pointer"
+                    >
+                      <BellRing className="w-4 h-4 text-amber-600" />
+                      <span>{isRequestingBill ? 'Requesting...' : 'Request Bill Receipt from Waiter'}</span>
+                    </button>
+                  ) : (
+                    <div className="w-full py-2 px-3 rounded-xl bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs">
+                      <Clock className="w-3.5 h-3.5 text-amber-700 animate-spin" />
+                      <span>Bill Receipt Requested · Waiter Notified 🕒</span>
+                    </div>
+                  )}
+
                   <button
                     type="button"
                     onClick={() => setIsReceiptOpen(true)}
@@ -228,15 +254,37 @@ export default function OrderDrawer({
                         </p>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setIsReceiptOpen(true)}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white text-stone-800 border border-stone-200 text-xs font-bold shadow-2xs hover:bg-stone-50 transition-colors cursor-pointer flex-shrink-0"
-                      title="View itemized bill receipt"
-                    >
-                      <Receipt className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Receipt</span>
-                    </button>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {!billRequested ? (
+                        <button
+                          type="button"
+                          disabled={isRequestingBill}
+                          onClick={async () => {
+                            const res = await requestBill();
+                            if (res.success) toast.success(res.message);
+                            else toast.error(res.message);
+                          }}
+                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-2xs transition-colors cursor-pointer"
+                          title="Ask waiter for bill receipt"
+                        >
+                          <BellRing className="w-3.5 h-3.5" />
+                          <span>Bill</span>
+                        </button>
+                      ) : (
+                        <span className="text-[10px] font-extrabold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-1 rounded-lg">
+                          Bill Req 🕒
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setIsReceiptOpen(true)}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white text-stone-800 border border-stone-200 text-xs font-bold shadow-2xs hover:bg-stone-50 transition-colors cursor-pointer flex-shrink-0"
+                        title="View itemized bill receipt"
+                      >
+                        <Receipt className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Slip</span>
+                      </button>
+                    </div>
                   </div>
                 )}
 

@@ -108,7 +108,7 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
 export const getActiveTableOrders = async (req: Request, res: Response): Promise<void> => {
   try {
     const { tableNumber } = req.params;
-    const { slug } = req.query;
+    const { slug } = (req.query || {}) as { slug?: string };
 
     if (!tableNumber) {
       res.status(400).json({ success: false, message: 'Table number is required' });
@@ -153,6 +153,8 @@ export const getActiveTableOrders = async (req: Request, res: Response): Promise
       }
     }
 
+    const billRequested = orders.some((o: any) => o.billRequested === true);
+
     res.json({
       success: true,
       data: {
@@ -164,6 +166,7 @@ export const getActiveTableOrders = async (req: Request, res: Response): Promise
         overallStatus,
         customerName: orders[0]?.customerName || '',
         recentlySettled,
+        billRequested,
       },
     });
   } catch (error) {
@@ -199,7 +202,7 @@ export const getAdminOrders = async (req: AuthRequest, res: Response): Promise<v
 
     const isManager = req.user?.role === 'manager';
 
-    const [pendingCount, preparingCount, servedCount, todayOrdersCount, activeTables] = await Promise.all([
+    const [pendingCount, preparingCount, servedCount, todayOrdersCount, activeTables, billRequestedCount] = await Promise.all([
       Order.countDocuments({ restaurantId: restaurant._id, status: 'pending' }),
       Order.countDocuments({ restaurantId: restaurant._id, status: 'preparing' }),
       Order.countDocuments({
@@ -216,6 +219,11 @@ export const getAdminOrders = async (req: AuthRequest, res: Response): Promise<v
         restaurantId: restaurant._id,
         status: { $in: ['pending', 'preparing', 'served'] },
       }).select('tableNumber').lean(),
+      Order.countDocuments({
+        restaurantId: restaurant._id,
+        status: { $in: ['pending', 'preparing', 'served'] },
+        billRequested: true,
+      }),
     ]);
 
     const activeCount = new Set(activeTables.map((o) => o.tableNumber)).size;
@@ -252,6 +260,7 @@ export const getAdminOrders = async (req: AuthRequest, res: Response): Promise<v
           servedCount,
           activeCount,
           todayOrdersCount,
+          billRequestedCount,
           todaySales,
           monthlySales,
         },
@@ -312,7 +321,7 @@ export const settleTableOrders = async (req: AuthRequest, res: Response): Promis
         tableNumber: tableNumber.toString().trim(),
         status: { $in: ['pending', 'preparing', 'served'] },
       },
-      { $set: { status: 'completed' } }
+      { $set: { status: 'completed', billRequested: false } }
     );
 
     res.json({
@@ -323,6 +332,98 @@ export const settleTableOrders = async (req: AuthRequest, res: Response): Promis
   } catch (error) {
     console.error('Settle table orders error:', error);
     res.status(500).json({ success: false, message: 'Failed to settle table orders' });
+  }
+};
+
+/**
+ * Public endpoint: Customer at table requests bill receipt after food delivery / while dining
+ */
+export const requestTableBill = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { tableNumber } = req.params;
+    const restaurant = await getOrCreateRestaurant();
+
+    if (!tableNumber) {
+      res.status(400).json({ success: false, message: 'Table number is required' });
+      return;
+    }
+
+    const cleanTable = tableNumber.toString().trim();
+
+    // Check if table has active dining orders
+    const activeOrders = await Order.find({
+      restaurantId: restaurant._id,
+      tableNumber: cleanTable,
+      status: { $in: ['pending', 'preparing', 'served'] },
+    });
+
+    if (activeOrders.length === 0) {
+      res.status(404).json({
+        success: false,
+        message: `No active dining orders found for Table ${cleanTable}`,
+      });
+      return;
+    }
+
+    // Mark all active orders for this table as billRequested
+    await Order.updateMany(
+      {
+        restaurantId: restaurant._id,
+        tableNumber: cleanTable,
+        status: { $in: ['pending', 'preparing', 'served'] },
+      },
+      {
+        $set: {
+          billRequested: true,
+          billRequestedAt: new Date(),
+        },
+      }
+    );
+
+    res.json({
+      success: true,
+      message: `Bill receipt requested for Table ${cleanTable}! Waiter has been notified.`,
+      data: { tableNumber: cleanTable, billRequested: true },
+    });
+  } catch (error) {
+    console.error('Request table bill error:', error);
+    res.status(500).json({ success: false, message: 'Failed to request bill receipt' });
+  }
+};
+
+/**
+ * Admin endpoint: Manager dismisses / acknowledges bill request without settling yet
+ */
+export const dismissBillRequest = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { tableNumber } = req.params;
+    const restaurant = await getOrCreateRestaurant();
+
+    if (!tableNumber) {
+      res.status(400).json({ success: false, message: 'Table number is required' });
+      return;
+    }
+
+    await Order.updateMany(
+      {
+        restaurantId: restaurant._id,
+        tableNumber: tableNumber.toString().trim(),
+        status: { $in: ['pending', 'preparing', 'served'] },
+      },
+      {
+        $set: {
+          billRequested: false,
+        },
+      }
+    );
+
+    res.json({
+      success: true,
+      message: `Bill request alert dismissed for Table ${tableNumber}`,
+    });
+  } catch (error) {
+    console.error('Dismiss bill request error:', error);
+    res.status(500).json({ success: false, message: 'Failed to dismiss bill request' });
   }
 };
 

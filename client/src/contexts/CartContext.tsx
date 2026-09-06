@@ -36,6 +36,9 @@ interface CartContextType {
   dismissSettledNotification: () => void;
   resetTableSession: () => void;
   fetchActiveOrders: () => Promise<void>;
+  billRequested: boolean;
+  requestBill: () => Promise<{ success: boolean; message: string }>;
+  isRequestingBill: boolean;
   lastPlacedOrder: Order | null;
   setLastPlacedOrder: (order: Order | null) => void;
   placeOrder: (slug?: string) => Promise<{ success: boolean; order?: Order; message?: string }>;
@@ -97,6 +100,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [activeRoundsCount, setActiveRoundsCount] = useState(0);
   const [overallStatus, setOverallStatus] = useState<'none' | OrderStatus>('none');
   const [isTableSettled, setIsTableSettled] = useState(false);
+  const [billRequested, setBillRequested] = useState(false);
+  const [isRequestingBill, setIsRequestingBill] = useState(false);
   const hadActiveOrdersRef = useRef(false);
   const [lastPlacedOrder, setLastPlacedOrder] = useState<Order | null>(null);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
@@ -226,6 +231,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setActiveTableBill(res.data.data.totalBill || 0);
         setActiveRoundsCount(res.data.data.activeRounds || 0);
         setOverallStatus(res.data.data.overallStatus || 'none');
+        setBillRequested(res.data.data.billRequested === true);
 
         if (fetchedOrders.length > 0) {
           hadActiveOrdersRef.current = true;
@@ -235,6 +241,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         } else if (wasActive && fetchedOrders.length === 0) {
           // Table was settled by receptionist!
           setIsTableSettled(true);
+          setBillRequested(false);
           hadActiveOrdersRef.current = false;
         }
       }
@@ -279,9 +286,38 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setActiveRoundsCount(0);
     setOverallStatus('none');
     setIsTableSettled(false);
+    setBillRequested(false);
     hadActiveOrdersRef.current = false;
     clearCart();
   }, [clearCart]);
+
+  // Request bill receipt from waiter/manager
+  const requestBill = useCallback(async (): Promise<{ success: boolean; message: string }> => {
+    if (!tableNumber.trim()) {
+      return { success: false, message: 'Table number not found' };
+    }
+
+    setIsRequestingBill(true);
+    try {
+      const res = await apiClient.post<{ success: boolean; message: string }>(
+        `/orders/public/table/${encodeURIComponent(tableNumber.trim())}/request-bill`
+      );
+
+      if (res.data.success) {
+        setBillRequested(true);
+        return { success: true, message: res.data.message || 'Bill receipt requested!' };
+      }
+      return { success: false, message: res.data.message || 'Failed to request bill receipt' };
+    } catch (err: any) {
+      console.error('Request bill receipt failed:', err);
+      return {
+        success: false,
+        message: err?.response?.data?.message || 'Failed to request bill receipt. Please try again.',
+      };
+    } finally {
+      setIsRequestingBill(false);
+    }
+  }, [tableNumber]);
 
   // Place order
   const placeOrder = useCallback(
@@ -371,6 +407,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       dismissSettledNotification,
       resetTableSession,
       fetchActiveOrders,
+      billRequested,
+      requestBill,
+      isRequestingBill,
       lastPlacedOrder,
       setLastPlacedOrder,
       placeOrder,
@@ -401,6 +440,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       dismissSettledNotification,
       resetTableSession,
       fetchActiveOrders,
+      billRequested,
+      requestBill,
+      isRequestingBill,
       lastPlacedOrder,
       placeOrder,
       isSubmittingOrder,

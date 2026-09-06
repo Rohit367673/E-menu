@@ -127,6 +127,8 @@ export interface Order {
   status: OrderStatus;
   specialInstructions?: string;
   round: number;
+  billRequested?: boolean;
+  billRequestedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -137,6 +139,7 @@ export interface OrderDashboardStats {
   servedCount: number;
   activeCount: number;
   todayOrdersCount: number;
+  billRequestedCount?: number;
   todaySales?: number | null;
   monthlySales?: number | null;
 }
@@ -150,5 +153,6 @@ export interface ActiveTableData {
   overallStatus?: 'none' | OrderStatus;
   customerName?: string;
   recentlySettled?: boolean;
+  billRequested?: boolean;
 }
 

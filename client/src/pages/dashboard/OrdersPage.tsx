@@ -9,7 +9,9 @@ import {
   RefreshCw,
   CreditCard,
   Receipt,
+  BellRing,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import apiClient from '../../api/client';
 import type { Order, OrderStatus, OrderDashboardStats } from '../../types/menu';
 import { playOrderNotificationSound } from '../../utils/sound';
@@ -80,6 +82,7 @@ export default function OrdersPage() {
   };
 
   const prevPendingCountRef = useRef<number>(0);
+  const prevBillReqCountRef = useRef<number>(0);
 
   const fetchOrders = useCallback(async (isManual = false) => {
     if (isManual) setIsRefreshing(true);
@@ -93,18 +96,29 @@ export default function OrdersPage() {
         const fetchedOrders = res.data.data.orders;
         const fetchedStats = res.data.data.stats;
 
-        // Play chime if new order arrived for kitchen
+        // Play chime if new order arrived for kitchen OR if guest requested bill receipt
         const currentKitchenCount = (fetchedStats.preparingCount || 0) + (fetchedStats.pendingCount || 0);
+        const currentBillReqCount = fetchedStats.billRequestedCount || 0;
+
         if (
           soundEnabled &&
-          currentKitchenCount > prevPendingCountRef.current &&
+          (currentKitchenCount > prevPendingCountRef.current || currentBillReqCount > prevBillReqCountRef.current) &&
           !isManual &&
-          prevPendingCountRef.current !== 0
+          (prevPendingCountRef.current !== 0 || prevBillReqCountRef.current !== 0)
         ) {
           playOrderNotificationSound();
+          if (currentBillReqCount > prevBillReqCountRef.current) {
+            toast.custom((_t) => (
+              <div className="bg-red-600 text-white px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 text-xs font-black animate-bounce">
+                <BellRing className="w-4 h-4 text-white" />
+                <span>🔔 Guest requested bill receipt at table!</span>
+              </div>
+            ));
+          }
         }
 
         prevPendingCountRef.current = currentKitchenCount;
+        prevBillReqCountRef.current = currentBillReqCount;
         setOrders(fetchedOrders);
         setStats(fetchedStats);
       }
@@ -198,9 +212,32 @@ export default function OrdersPage() {
     }
   };
 
+  const handleDismissBillRequest = async (tableNum: string) => {
+    try {
+      const res = await apiClient.patch<{ success: boolean; message: string }>(
+        `/orders/admin/table/${encodeURIComponent(tableNum)}/dismiss-bill-request`
+      );
+      if (res.data.success) {
+        toast.success(`Bill request alert cleared for Table ${tableNum}`);
+        fetchOrders(true);
+      }
+    } catch (err) {
+      console.error('Failed to dismiss bill request:', err);
+    }
+  };
+
   // Extract unique table numbers
   const uniqueTables = Array.from(
     new Set(orders.map((o) => o.tableNumber))
+  ).sort();
+
+  // Tables currently requesting bill receipt
+  const tablesWithBillRequest = Array.from(
+    new Set(
+      orders
+        .filter((o) => o.billRequested && ['pending', 'preparing', 'served'].includes(o.status))
+        .map((o) => o.tableNumber)
+    )
   ).sort();
 
   // Filter orders
@@ -240,6 +277,8 @@ export default function OrdersPage() {
       return sum + orderTotal;
     }, 0);
 
+    const hasBillRequested = activeOrders.some((o) => o.billRequested === true);
+
     return {
       tableNumber: tableNum,
       activeOrders,
@@ -248,6 +287,7 @@ export default function OrdersPage() {
       totalBill,
       hasPending: activeOrders.some((o) => o.status === 'pending'),
       hasPreparing: activeOrders.some((o) => o.status === 'preparing'),
+      hasBillRequested,
       isCompleted: activeOrders.length === 0 && completedOrders.length > 0,
       customerName: activeOrders[0]?.customerName || completedOrders[0]?.customerName || tableOrders[0]?.customerName || 'Guest',
     };
@@ -382,6 +422,43 @@ export default function OrdersPage() {
         </div>
       </div>
 
+      {/* Top Global Alert Banner for Tableside Bill Requests */}
+      {tablesWithBillRequest.length > 0 && (
+        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-white shadow-lg flex items-center justify-between gap-4 flex-wrap animate-pulse">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center flex-shrink-0">
+              <BellRing className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="font-black text-sm sm:text-base tracking-wide">
+                🔔 Bill Receipt Requested by {tablesWithBillRequest.length === 1 ? `Table ${tablesWithBillRequest[0]}` : `${tablesWithBillRequest.length} Tables (${tablesWithBillRequest.map(t => `T-${t}`).join(', ')})`}!
+              </h3>
+              <p className="text-xs text-white/90">
+                Guests have finished dining and requested their bill receipt tableside. Please print and deliver the bill.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {tablesWithBillRequest.map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => {
+                  const grp = tableGroups.find(g => g.tableNumber === t);
+                  if (grp) {
+                    handleOpenReceipt(grp.tableNumber, grp.customerName, grp.displayOrders, grp.totalBill, grp.isCompleted);
+                  }
+                }}
+                className="px-3 py-1.5 rounded-xl bg-white text-stone-900 hover:bg-stone-100 font-extrabold text-xs shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <Receipt className="w-3.5 h-3.5 text-amber-700" />
+                <span>Print Table {t} Bill</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Metrics Row: 2 Primary States (Preparing & Served) + Table Count */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
         <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-2xs">
@@ -512,11 +589,31 @@ export default function OrdersPage() {
               <div
                 key={grp.tableNumber}
                 className={`bg-white rounded-2xl border transition-all shadow-2xs flex flex-col overflow-hidden ${
-                  grp.hasPending
+                  grp.hasBillRequested
+                    ? 'border-red-500 ring-4 ring-red-500/20 shadow-lg shadow-red-500/10'
+                    : grp.hasPending
                     ? 'border-amber-400 ring-2 ring-amber-400/20 shadow-amber-500/10'
                     : 'border-stone-200'
                 }`}
               >
+                {/* Tableside Bill Requested Banner */}
+                {grp.hasBillRequested && (
+                  <div className="px-4 py-2 bg-gradient-to-r from-red-600 to-rose-600 text-white text-xs font-black flex items-center justify-between gap-2 animate-pulse">
+                    <div className="flex items-center gap-1.5">
+                      <BellRing className="w-4 h-4 text-amber-300" />
+                      <span>BILL RECEIPT REQUESTED BY GUEST!</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDismissBillRequest(grp.tableNumber)}
+                      className="px-2 py-0.5 rounded-md bg-black/30 hover:bg-black/50 text-[10px] uppercase font-bold text-white transition-colors cursor-pointer"
+                      title="Clear bill requested notification"
+                    >
+                      Dismiss Alert
+                    </button>
+                  </div>
+                )}
+
                 {/* Table Card Header */}
                 <div className="p-4 bg-stone-50/80 border-b border-stone-100 flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
@@ -645,11 +742,15 @@ export default function OrdersPage() {
                     <button
                       type="button"
                       onClick={() => handleOpenReceipt(grp.tableNumber, grp.customerName, grp.displayOrders, grp.totalBill, grp.isCompleted)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs ${
+                        grp.hasBillRequested
+                          ? 'bg-amber-600 hover:bg-amber-700 text-white animate-pulse shadow-md shadow-amber-600/30 font-extrabold'
+                          : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300'
+                      }`}
                       title="Print Itemized Bill Receipt (Thermal Machine / POS)"
                     >
-                      <Receipt className="w-3.5 h-3.5 text-amber-700" />
-                      <span>Print Bill</span>
+                      <Receipt className="w-3.5 h-3.5" />
+                      <span>{grp.hasBillRequested ? 'Print & Deliver Bill' : 'Print Bill'}</span>
                     </button>
 
                     {grp.activeOrders.length > 0 ? (
@@ -680,7 +781,9 @@ export default function OrdersPage() {
             <div
               key={order._id}
               className={`bg-white rounded-2xl p-4 sm:p-5 border transition-all shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
-                order.status === 'pending'
+                order.billRequested
+                  ? 'border-red-500 ring-2 ring-red-500/20 bg-red-50/10'
+                  : order.status === 'pending'
                   ? 'border-amber-400 ring-2 ring-amber-400/20 bg-amber-50/10'
                   : 'border-stone-200'
               }`}
@@ -699,6 +802,11 @@ export default function OrdersPage() {
                     <span className="text-xs font-bold text-stone-600 bg-stone-100 px-2 py-0.5 rounded-md">
                       Round {order.round}
                     </span>
+                    {order.billRequested && (
+                      <span className="px-2 py-0.5 rounded-full text-xs font-black bg-red-100 text-red-800 border border-red-300 animate-pulse flex items-center gap-1">
+                        <BellRing className="w-3 h-3 text-red-600" /> Bill Requested
+                      </span>
+                    )}
                     {getStatusBadge(order.status)}
                     <span className="text-xs text-stone-400">
                       {formatTime(order.createdAt)}

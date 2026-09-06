@@ -23,6 +23,8 @@ export interface IOrder extends Document {
   status: OrderStatus;
   specialInstructions?: string;
   round: number;
+  billRequested?: boolean;
+  billRequestedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -97,6 +99,14 @@ const orderSchema = new Schema<IOrder>(
     round: {
       type: Number,
       default: 1,
+    },
+    billRequested: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    billRequestedAt: {
+      type: Date,
     },
   },
   { timestamps: true }

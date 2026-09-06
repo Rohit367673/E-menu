@@ -9,6 +9,7 @@ import {
   ChevronRight,
   LayoutGrid,
   Columns,
+  BellRing,
 } from 'lucide-react';
 import type { Order } from '../../types/menu';
 
@@ -193,6 +194,8 @@ export default function TableOccupancyMap({
         );
       }
 
+      const billRequested = tableOrders.some((o) => o.billRequested === true);
+
       return {
         tableNumber: tableName,
         isBooked,
@@ -200,6 +203,7 @@ export default function TableOccupancyMap({
         guestName,
         roundsCount,
         elapsedMins,
+        billRequested,
       };
     });
   }, [activeOrders]);
@@ -328,7 +332,11 @@ export default function TableOccupancyMap({
                     onTakeOrder(table.tableNumber);
                   }
                 }}
-                className={`group p-3.5 sm:p-4 rounded-3xl bg-gradient-to-b from-rose-500/10 via-rose-500/5 to-rose-500/15 border-2 border-rose-500/80 hover:border-rose-600 hover:shadow-md transition-all flex flex-col justify-between items-center text-center cursor-pointer shadow-2xs relative ${
+                className={`group p-3.5 sm:p-4 rounded-3xl transition-all flex flex-col justify-between items-center text-center cursor-pointer shadow-2xs relative ${
+                  table.billRequested
+                    ? 'bg-gradient-to-b from-red-500/20 via-red-500/10 to-amber-500/20 border-2 border-red-500 ring-4 ring-red-400/30 shadow-md shadow-red-500/20'
+                    : 'bg-gradient-to-b from-rose-500/10 via-rose-500/5 to-rose-500/15 border-2 border-rose-500/80 hover:border-rose-600 hover:shadow-md'
+                } ${
                   viewMode === 'track'
                     ? 'min-w-[170px] max-w-[170px] sm:min-w-[195px] sm:max-w-[195px] h-[225px] sm:h-[240px] flex-shrink-0'
                     : 'w-full h-[225px] sm:h-[240px]'
@@ -355,16 +363,19 @@ export default function TableOccupancyMap({
                   </span>
 
                   <div>
-                    {table.highestStatus === 'preparing' && (
+                    {table.billRequested ? (
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-red-600 text-white animate-bounce flex items-center gap-1 shadow-xs">
+                        <BellRing className="w-3 h-3 text-white" /> Bill Requested!
+                      </span>
+                    ) : table.highestStatus === 'preparing' ? (
                       <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300 animate-pulse flex items-center gap-1 shadow-2xs">
                         <ChefHat className="w-3 h-3 text-amber-700" /> Preparing
                       </span>
-                    )}
-                    {table.highestStatus === 'served' && (
+                    ) : table.highestStatus === 'served' ? (
                       <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1 shadow-2xs">
                         <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Served
                       </span>
-                    )}
+                    ) : null}
                   </div>
                 </div>
 

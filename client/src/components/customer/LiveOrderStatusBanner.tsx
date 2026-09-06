@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChefHat, CheckCircle2, ChevronRight, Sparkles, X, Receipt } from 'lucide-react';
+import { ChefHat, CheckCircle2, ChevronRight, Sparkles, X, Receipt, BellRing, Clock } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useCart } from '../../contexts/CartContext';
 import BillReceiptModal from '../common/BillReceiptModal';
 
@@ -26,6 +27,9 @@ export default function LiveOrderStatusBanner({
     dismissSettledNotification,
     resetTableSession,
     setIsDrawerOpen,
+    billRequested,
+    requestBill,
+    isRequestingBill,
   } = useCart();
 
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
@@ -150,8 +154,20 @@ export default function LiveOrderStatusBanner({
     },
   };
 
+  const isBillReq = billRequested || activeOrders.some((o) => o.billRequested);
   const status = overallStatus !== 'none' ? overallStatus : (latestOrder?.status || 'pending');
-  const cfg = statusConfig[status] || statusConfig.pending;
+  const baseCfg = statusConfig[status] || statusConfig.pending;
+  const cfg = isBillReq
+    ? {
+        ...baseCfg,
+        label: 'Bill Requested',
+        subtext: 'Waiter has been notified · Bringing your bill to Table ' + (tableNumber || ''),
+        badgeBg: 'bg-amber-100 text-amber-900 border-amber-300',
+        pillBg: 'from-amber-500/15 via-orange-500/10 to-amber-500/15 border-amber-400',
+        accentColor: '#d97706',
+        icon: BellRing,
+      }
+    : baseCfg;
   const Icon = cfg.icon;
 
   return (
@@ -173,7 +189,7 @@ export default function LiveOrderStatusBanner({
               className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-white shadow-xs"
               style={{ backgroundColor: cfg.accentColor }}
             >
-              <Icon className={`w-5 h-5 ${status === 'preparing' ? 'animate-bounce' : status === 'pending' ? 'animate-pulse' : ''}`} />
+              <Icon className={`w-5 h-5 ${status === 'preparing' ? 'animate-bounce' : status === 'pending' ? 'animate-pulse' : isBillReq ? 'animate-bounce' : ''}`} />
             </div>
 
             <div className="min-w-0">
@@ -194,8 +210,41 @@ export default function LiveOrderStatusBanner({
             </div>
           </div>
 
-          {/* Right: Bill Total + View Details button */}
+          {/* Right: Bill Total + Actions + View Details button */}
           <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Request Bill Button (Prominent after delivery / dishes served) */}
+            {status === 'served' && (
+              !isBillReq ? (
+                <button
+                  type="button"
+                  disabled={isRequestingBill}
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const res = await requestBill();
+                    if (res.success) {
+                      toast.success(res.message);
+                    } else {
+                      toast.error(res.message);
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all shadow-xs hover:shadow-md cursor-pointer active:scale-95 animate-pulse"
+                  title="Request bill receipt from waiter"
+                >
+                  <BellRing className="w-3.5 h-3.5" />
+                  <span>{isRequestingBill ? 'Requesting...' : 'Request Bill'}</span>
+                </button>
+              ) : (
+                <div
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold shadow-2xs"
+                  title="Waiter has been notified to bring your bill receipt"
+                >
+                  <Clock className="w-3.5 h-3.5 text-amber-700 animate-spin" />
+                  <span className="hidden sm:inline">Bill Requested</span>
+                  <span className="sm:hidden">Requested</span>
+                </div>
+              )
+            )}
+
             {/* View Receipt Slip Button */}
             <button
               type="button"
