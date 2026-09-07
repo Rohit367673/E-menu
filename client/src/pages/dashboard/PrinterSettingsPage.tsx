@@ -263,6 +263,25 @@ export default function PrinterSettingsPage() {
             <span>Test Print</span>
           </button>
         </div>
+
+        {/* Pairing Tips Guide */}
+        <div className="p-3.5 rounded-2xl bg-amber-50/60 border border-amber-200/80 text-[11px] text-stone-600 space-y-2">
+          <div className="font-bold text-amber-900 flex items-center gap-1.5">
+            <Info className="w-3.5 h-3.5 text-amber-700 flex-shrink-0" />
+            <span>What to select in the Chrome popup:</span>
+          </div>
+          <ul className="space-y-1.5 pl-5 list-disc text-stone-700 leading-relaxed">
+            <li>
+              <strong>On Cafe Windows PC:</strong> Look for <strong>USB Serial Port (COM3 / COM4)</strong> or <strong>TVS Device</strong>. Select it and click <em>Connect</em>.
+            </li>
+            <li>
+              <strong>On Mac (testing):</strong> Look for <strong>cu.usbserial-XXXX</strong> or <strong>cu.usbmodem-XXXX</strong>.
+            </li>
+            <li className="text-amber-900 font-medium">
+              ⚠️ <em>If you only see Bluetooth devices (like "cu.BLTH" or your JBL speaker)</em>: The TVS printer is not physically plugged into this computer's USB port yet, or its power is turned off. Once plugged in via USB and powered ON, it will immediately appear in the list.
+            </li>
+          </ul>
+        </div>
       </div>
 
       {/* KOT Settings */}
