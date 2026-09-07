@@ -21,6 +21,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import ManualOrderModal from '../../components/admin/ManualOrderModal';
 import BillReceiptModal from '../../components/common/BillReceiptModal';
 import KOTTicketModal from '../../components/admin/KOTTicketModal';
+import { checkBridgeHealth, printKOTViaBridge, isWebSerialConnected, printKOTViaWebSerial } from '../../services/printBridge';
 
 export default function OrdersPage() {
   const { user } = useAuth();
@@ -44,6 +45,7 @@ export default function OrdersPage() {
   const [viewMode, setViewMode] = useState<'grouped' | 'feed'>('grouped');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isBridgeOnline, setIsBridgeOnline] = useState(false);
 
   // Manual Walk-in POS state
   const [isPosOpen, setIsPosOpen] = useState(false);
@@ -94,13 +96,22 @@ export default function OrdersPage() {
   const seenKOTsRef = useRef<Set<string>>(new Set());
   const isInitializedRef = useRef(false);
 
-  const handleOpenKOT = (order: Order, autoPrint = false) => {
+  useEffect(() => {
+    const checkBridge = async () => {
+      const health = await checkBridgeHealth();
+      setIsBridgeOnline(health.online);
+    };
+    checkBridge();
+    const interval = setInterval(checkBridge, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleOpenKOT = async (order: Order, autoPrint = false) => {
     const time = order.createdAt
       ? new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
       : new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
-    setKotModal({
-      isOpen: true,
+    const kotPayload = {
       kotNumber: order.kotNumber || `KOT-${order.orderNumber}`,
       tableNumber: order.tableNumber,
       round: order.round,
@@ -110,6 +121,37 @@ export default function OrdersPage() {
       items: order.items.map(it => ({ name: it.name, quantity: it.quantity, notes: it.notes })),
       specialInstructions: order.specialInstructions || '',
       autoPrint,
+    };
+
+    // 1. Direct Chrome USB Serial (Zero-installation direct to TVS printer)
+    if (autoPrint && isWebSerialConnected()) {
+      const res = await printKOTViaWebSerial(kotPayload);
+      if (res.success) {
+        toast.custom((_t) => (
+          <div className="bg-stone-900 text-white px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 text-xs font-black">
+            🖨️ {kotPayload.kotNumber} printed to TVS Champ RP Star (USB)!
+          </div>
+        ));
+        return; // Silent, hands-free!
+      }
+    }
+
+    // 2. Local Bridge (if running)
+    if (autoPrint && isBridgeOnline) {
+      const res = await printKOTViaBridge(kotPayload);
+      if (res.success) {
+        toast.custom((_t) => (
+          <div className="bg-stone-900 text-white px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 text-xs font-black">
+            🖨️ {kotPayload.kotNumber} sent to TVS Champ RP Star!
+          </div>
+        ));
+        return; // Silent, hands-free! Do not open modal.
+      }
+    }
+
+    setKotModal({
+      isOpen: true,
+      ...kotPayload
     });
   };
 
@@ -435,6 +477,26 @@ export default function OrdersPage() {
           >
             <ChefHat className="w-4 h-4 text-amber-700" />
             <span>Kitchen Pipeline →</span>
+          </Link>
+          <Link
+            to="/admin/printer-settings"
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+              isBridgeOnline
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
+                : 'bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100'
+            }`}
+          >
+            {isBridgeOnline ? (
+              <>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>🟢 TVS Bridge Active</span>
+              </>
+            ) : (
+              <>
+                <Printer className="w-3.5 h-3.5" />
+                <span>⚪ TVS Printer (Manual)</span>
+              </>
+            )}
           </Link>
           {/* Manual Walk-in Order Button */}
           <button

@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Printer, Settings, FileText, TestTube2, Info, CheckCircle2 } from 'lucide-react';
+import { Printer, Settings, FileText, TestTube2, Info, CheckCircle2, Usb } from 'lucide-react';
 import toast from 'react-hot-toast';
+import {
+  checkBridgeHealth,
+  testBridgePrint,
+  isWebSerialConnected,
+  connectWebSerialPrinter,
+  disconnectWebSerialPrinter,
+  printKOTViaWebSerial,
+} from '../../services/printBridge';
 
 const STORAGE_KEYS = {
   paperSize: 'sukoon_paper_size',
@@ -23,6 +31,11 @@ export default function PrinterSettingsPage() {
     localStorage.getItem(STORAGE_KEYS.showRestaurantOnKOT) !== 'false'
   );
   const [saved, setSaved] = useState(false);
+  
+  const [bridgeOnline, setBridgeOnline] = useState(false);
+
+  const [isSerialConnected, setIsSerialConnected] = useState(isWebSerialConnected());
+  const [isConnectingSerial, setIsConnectingSerial] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.paperSize, paperSize);
@@ -31,17 +44,77 @@ export default function PrinterSettingsPage() {
     localStorage.setItem(STORAGE_KEYS.showRestaurantOnKOT, String(showRestaurantOnKOT));
   }, [paperSize, autoPrintKOT, kotSound, showRestaurantOnKOT]);
 
+  useEffect(() => {
+    const checkBridge = async () => {
+      const health = await checkBridgeHealth();
+      setBridgeOnline(health.online);
+    };
+    checkBridge();
+    const interval = setInterval(checkBridge, 6000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleConnectSerial = async () => {
+    setIsConnectingSerial(true);
+    const res = await connectWebSerialPrinter();
+    setIsConnectingSerial(false);
+    setIsSerialConnected(isWebSerialConnected());
+    if (res.success) {
+      toast.success(res.message);
+    } else {
+      toast.error(res.message);
+    }
+  };
+
+  const handleDisconnectSerial = async () => {
+    await disconnectWebSerialPrinter();
+    setIsSerialConnected(false);
+    toast.success('Disconnected USB printer');
+  };
+
   const handleSave = () => {
     setSaved(true);
     toast.success('Printer settings saved!');
     setTimeout(() => setSaved(false), 2000);
   };
 
-  const handleTestKOTPrint = () => {
-    toast.success('Printing test KOT to TVS Champ RP Star (80mm)...');
-    document.body.classList.add('printing-kot');
-    window.print();
-    setTimeout(() => document.body.classList.remove('printing-kot'), 1000);
+  const handleTestKOTPrint = async () => {
+    if (isSerialConnected) {
+      const sampleKOT = {
+        kotNumber: 'KOT-TEST',
+        tableNumber: 'TEST',
+        round: 1,
+        orderNumber: '#000',
+        customerName: 'TVS Champ RP Star Test',
+        time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+        items: [
+          { name: 'Cold Brew (USB Test)', quantity: 2, notes: 'Less ice' },
+          { name: 'Avocado Toast', quantity: 1, notes: 'Extra crispy' },
+        ],
+        specialInstructions: 'TVS Auto-Cutter and 80mm Roll Test OK',
+      };
+      const res = await printKOTViaWebSerial(sampleKOT);
+      if (res.success) {
+        toast.success('Printed test KOT directly via Chrome USB!');
+      } else {
+        toast.error(`Print failed: ${res.message}`);
+      }
+      return;
+    }
+
+    if (bridgeOnline) {
+      const res = await testBridgePrint();
+      if (res.success) {
+        toast.success('Test KOT printed successfully via Bridge!');
+      } else {
+        toast.error(`Bridge print failed: ${res.message}`);
+      }
+    } else {
+      toast.success('Printing test KOT to TVS Champ RP Star (80mm)...');
+      document.body.classList.add('printing-kot');
+      window.print();
+      setTimeout(() => document.body.classList.remove('printing-kot'), 1000);
+    }
   };
 
   const handleTestBillPrint = () => {
@@ -117,6 +190,72 @@ export default function PrinterSettingsPage() {
               <p className="text-xs font-bold text-stone-800">203 DPI</p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Chrome Direct USB Connection (Zero Installation) */}
+      <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-2xs space-y-4">
+        <div className="flex items-center justify-between gap-3 pb-3 border-b border-stone-100">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-700 flex items-center justify-center font-black text-xs">
+              <Usb className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-stone-900">Chrome In-Browser USB Bridge</h2>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300">
+                  Zero Installation
+                </span>
+              </div>
+              <p className="text-[11px] text-stone-500">
+                No terminal commands or software installation required on the client machine
+              </p>
+            </div>
+          </div>
+          {isSerialConnected ? (
+            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Connected
+            </span>
+          ) : (
+            <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-stone-100 text-stone-600 border border-stone-200">
+              Not Connected
+            </span>
+          )}
+        </div>
+
+        <p className="text-xs text-stone-600 leading-relaxed">
+          Plug your <strong>TVS CHAMP RP STAR</strong> USB cable into this computer. Click the button below to pair it directly with Google Chrome. The browser will remember permission and send tickets directly down the USB cable when orders arrive.
+        </p>
+
+        <div className="flex items-center gap-3">
+          {!isSerialConnected ? (
+            <button
+              type="button"
+              disabled={isConnectingSerial}
+              onClick={handleConnectSerial}
+              className="flex-1 py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider text-white bg-stone-900 hover:bg-stone-800 shadow-md cursor-pointer transition-all flex items-center justify-center gap-2 active:scale-98"
+            >
+              <Printer className="w-4 h-4 text-white" />
+              <span>{isConnectingSerial ? 'Connecting...' : '🔌 Connect TVS USB Printer in Chrome'}</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleDisconnectSerial}
+              className="py-2.5 px-4 rounded-xl font-bold text-xs text-red-600 border border-red-200 hover:bg-red-50 transition-all cursor-pointer"
+            >
+              Disconnect USB
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={handleTestKOTPrint}
+            className="py-3 px-4 rounded-xl font-bold text-xs text-stone-700 bg-stone-100 hover:bg-stone-200 border border-stone-200 transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            <TestTube2 className="w-4 h-4 text-emerald-600" />
+            <span>Test Print</span>
+          </button>
         </div>
       </div>
 

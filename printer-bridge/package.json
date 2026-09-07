@@ -1,0 +1,13 @@
+{
+  "name": "tvs-thermal-print-bridge",
+  "version": "1.0.0",
+  "description": "TVS Electronics CHAMP RP STAR (80mm) Thermal Print Bridge for Sukoon Cafe E-Menu",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["thermal-printer", "tvs-champ-rp-star", "escpos", "pos", "print-bridge"],
+  "author": "Sukoon Cafe",
+  "license": "MIT",
+  "dependencies": {}
+}
