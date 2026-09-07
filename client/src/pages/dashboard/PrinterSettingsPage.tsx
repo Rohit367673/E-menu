@@ -8,6 +8,7 @@ import {
   connectWebSerialPrinter,
   disconnectWebSerialPrinter,
   printKOTViaWebSerial,
+  autoReconnectWebSerial,
 } from '../../services/printBridge';
 
 const STORAGE_KEYS = {
@@ -45,9 +46,14 @@ export default function PrinterSettingsPage() {
   }, [paperSize, autoPrintKOT, kotSound, showRestaurantOnKOT]);
 
   useEffect(() => {
+    autoReconnectWebSerial().then((connected) => {
+      setIsSerialConnected(connected);
+    });
+
     const checkBridge = async () => {
       const health = await checkBridgeHealth();
       setBridgeOnline(health.online);
+      setIsSerialConnected(isWebSerialConnected());
     };
     checkBridge();
     const interval = setInterval(checkBridge, 6000);

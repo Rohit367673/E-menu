@@ -21,7 +21,14 @@ import { Link, useSearchParams } from 'react-router-dom';
 import ManualOrderModal from '../../components/admin/ManualOrderModal';
 import BillReceiptModal from '../../components/common/BillReceiptModal';
 import KOTTicketModal from '../../components/admin/KOTTicketModal';
-import { checkBridgeHealth, printKOTViaBridge, isWebSerialConnected, printKOTViaWebSerial } from '../../services/printBridge';
+import {
+  checkBridgeHealth,
+  printKOTViaBridge,
+  isWebSerialConnected,
+  printKOTViaWebSerial,
+  autoReconnectWebSerial,
+  connectWebSerialPrinter,
+} from '../../services/printBridge';
 
 export default function OrdersPage() {
   const { user } = useAuth();
@@ -96,13 +103,21 @@ export default function OrdersPage() {
   const seenKOTsRef = useRef<Set<string>>(new Set());
   const isInitializedRef = useRef(false);
 
+  const [isSerialConnected, setIsSerialConnected] = useState(isWebSerialConnected());
+
   useEffect(() => {
+    // Auto-reconnect previously paired TVS USB printer in Chrome without popups
+    autoReconnectWebSerial().then((connected) => {
+      setIsSerialConnected(connected);
+    });
+
     const checkBridge = async () => {
       const health = await checkBridgeHealth();
       setIsBridgeOnline(health.online);
+      setIsSerialConnected(isWebSerialConnected());
     };
     checkBridge();
-    const interval = setInterval(checkBridge, 10000);
+    const interval = setInterval(checkBridge, 6000);
     return () => clearInterval(interval);
   }, []);
 
@@ -478,26 +493,39 @@ export default function OrdersPage() {
             <ChefHat className="w-4 h-4 text-amber-700" />
             <span>Kitchen Pipeline →</span>
           </Link>
-          <Link
-            to="/admin/printer-settings"
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
-              isBridgeOnline
-                ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-                : 'bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100'
-            }`}
-          >
-            {isBridgeOnline ? (
-              <>
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>🟢 TVS Bridge Active</span>
-              </>
-            ) : (
-              <>
-                <Printer className="w-3.5 h-3.5" />
-                <span>⚪ TVS Printer (Manual)</span>
-              </>
-            )}
-          </Link>
+          {isSerialConnected ? (
+            <Link
+              to="/admin/printer-settings"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 shadow-2xs transition-all cursor-pointer"
+              title="TVS Champ RP Star USB Connected (Direct Automatic Printing Active)"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>🟢 TVS USB: Auto-Print Active</span>
+            </Link>
+          ) : isBridgeOnline ? (
+            <Link
+              to="/admin/printer-settings"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition-all cursor-pointer"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>🟢 TVS Bridge Active</span>
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={async () => {
+                const res = await connectWebSerialPrinter();
+                setIsSerialConnected(isWebSerialConnected());
+                if (res.success) toast.success(res.message);
+                else toast.error(res.message);
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 transition-all cursor-pointer"
+              title="Click to pair TVS USB Printer directly in Chrome"
+            >
+              <Printer className="w-3.5 h-3.5 text-amber-700" />
+              <span>🔌 Connect TVS USB</span>
+            </button>
+          )}
           {/* Manual Walk-in Order Button */}
           <button
             type="button"

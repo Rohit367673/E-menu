@@ -41,6 +41,29 @@ export async function connectWebSerialPrinter(): Promise<{ success: boolean; mes
   }
 }
 
+export async function autoReconnectWebSerial(): Promise<boolean> {
+  if (!isWebSerialSupported()) return false;
+  if (activeSerialPort && activeSerialPort.writable) return true;
+
+  const wasPaired = localStorage.getItem('sukoon_web_serial_paired') === 'true';
+  if (!wasPaired) return false;
+
+  try {
+    const ports = await (navigator as any).serial.getPorts();
+    if (ports.length > 0) {
+      const port = ports[0];
+      if (!port.readable) {
+        await port.open({ baudRate: 9600 });
+      }
+      activeSerialPort = port;
+      return true;
+    }
+  } catch (err) {
+    console.warn('Auto-reconnect to TVS USB printer failed:', err);
+  }
+  return false;
+}
+
 export async function disconnectWebSerialPrinter(): Promise<void> {
   if (activeSerialPort) {
     try {
