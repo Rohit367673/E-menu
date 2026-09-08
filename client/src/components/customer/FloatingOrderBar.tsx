@@ -18,12 +18,32 @@ export default function FloatingOrderBar({
     activeOrders,
     activeTableBill,
     tableNumber,
+    overallStatus,
+    billRequested,
   } = useCart();
+
+  const cleanTableNumber = (tbl?: string) => {
+    if (!tbl) return '';
+    return tbl.replace(/^table\s*/i, '').trim();
+  };
 
   const hasCartItems = totalItems > 0;
   const hasActiveOrders = activeOrders.length > 0;
 
   if (!hasCartItems && !hasActiveOrders) return null;
+
+  const isBillReq = billRequested || activeOrders.some((o) => o.billRequested);
+  const cleanedTable = cleanTableNumber(tableNumber);
+  const tableLabel = cleanedTable ? `Table ${cleanedTable}` : 'Your Table';
+
+  let statusLabel = `${activeOrders.length} Round${activeOrders.length > 1 ? 's' : ''} in Kitchen`;
+  if (isBillReq) {
+    statusLabel = 'Bill Requested';
+  } else if (overallStatus === 'served' || overallStatus === 'completed') {
+    statusLabel = 'Dishes Served ✓';
+  } else if (overallStatus === 'preparing') {
+    statusLabel = 'Cooking in Kitchen';
+  }
 
   return (
     <div className="fixed bottom-4 inset-x-0 z-40 px-4 pointer-events-none flex flex-col items-center gap-2 max-w-lg mx-auto">
@@ -38,14 +58,14 @@ export default function FloatingOrderBar({
             onClick={() => setIsDrawerOpen(true)}
             className="pointer-events-auto flex items-center justify-between gap-3 px-4 py-2.5 rounded-full bg-[#2C1810]/95 text-white shadow-xl backdrop-blur-md border border-amber-500/30 text-xs w-full max-w-sm cursor-pointer hover:bg-[#2C1810] transition-colors"
           >
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-              <ChefHat className="w-4 h-4 text-amber-400 flex-shrink-0" />
-              <span className="font-semibold">
-                Table {tableNumber || 'Order'}: {activeOrders.length} Round{activeOrders.length > 1 ? 's' : ''} in Kitchen
+            <div className="flex items-center gap-2 min-w-0">
+              <div className={`w-2 h-2 rounded-full ${overallStatus === 'served' ? 'bg-emerald-400' : 'bg-amber-400'} animate-ping flex-shrink-0`} />
+              <ChefHat className={`w-4 h-4 ${overallStatus === 'served' ? 'text-emerald-400' : 'text-amber-400'} flex-shrink-0`} />
+              <span className="font-semibold truncate">
+                {tableLabel}: {statusLabel}
               </span>
             </div>
-            <div className="flex items-center gap-1.5 font-bold text-amber-400">
+            <div className="flex items-center gap-1.5 font-bold text-amber-400 flex-shrink-0">
               <span>₹{activeTableBill}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </div>
@@ -78,7 +98,7 @@ export default function FloatingOrderBar({
 
                 <div className="flex flex-col text-left">
                   <span className="text-[11px] text-amber-200/75 uppercase tracking-wider font-semibold">
-                    {tableNumber ? `Table ${tableNumber} Order` : 'Tableside Order'}
+                    {cleanedTable ? `Table ${cleanedTable} Order` : 'Tableside Order'}
                   </span>
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-white text-base font-extrabold tracking-tight" style={{ fontFamily: headingFont }}>

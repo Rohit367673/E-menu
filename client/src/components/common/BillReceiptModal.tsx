@@ -36,6 +36,8 @@ export default function BillReceiptModal({
 
   if (!isOpen) return null;
 
+  const cleanTable = (tableNumber || '').replace(/^table\s*/i, '').trim();
+
   // Aggregate items from all orders/rounds so duplicate items are combined with total quantity
   const itemMap = new Map<string, { name: string; quantity: number; price: number; vegType?: 'veg' | 'nonveg' }>();
   let calculatedTotal = 0;
@@ -147,7 +149,7 @@ ${settledStatus ? 'Status: PAID & SETTLED\n' : ''}Thank you for dining with us! 
                   Itemized Bill Receipt
                 </h3>
                 <p className="text-[11px] text-stone-500 font-medium">
-                  Table {tableNumber} · {orders.length} round{orders.length > 1 ? 's' : ''}
+                  Table {cleanTable} · {orders.length} round{orders.length > 1 ? 's' : ''}
                 </p>
               </div>
             </div>
@@ -207,7 +209,7 @@ ${settledStatus ? 'Status: PAID & SETTLED\n' : ''}Thank you for dining with us! 
                   <span>{formattedDate} · {formattedTime}</span>
                 </div>
                 <div className="flex justify-between font-bold text-stone-900 pt-0.5">
-                  <span className="bg-stone-100 px-1.5 py-0.5 rounded">TABLE: {tableNumber}</span>
+                  <span className="bg-stone-100 px-1.5 py-0.5 rounded">TABLE: {cleanTable}</span>
                   <span>GUEST: {customerName}</span>
                 </div>
                 {orders.length > 1 && (

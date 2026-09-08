@@ -60,6 +60,12 @@ export default function OrderDrawer({
     isRequestingBill,
   } = useCart();
 
+  const cleanTableNumber = (tbl?: string) => {
+    if (!tbl) return '';
+    return tbl.replace(/^table\s*/i, '').trim();
+  };
+  const cleanTable = cleanTableNumber(tableNumber);
+
   const [errorMsg, setErrorMsg] = useState('');
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
@@ -131,7 +137,7 @@ export default function OrderDrawer({
                   {orderSuccess
                     ? 'Order Placed • Sent to Kitchen'
                     : activeOrders.length > 0
-                    ? `Table ${tableNumber} • Round ${activeOrders.length + 1} (Flow Order)`
+                    ? `Table ${cleanTable} • Round ${activeOrders.length + 1} (Flow Order)`
                     : 'Digital Tableside Ordering'}
                 </p>
               </div>
@@ -175,7 +181,7 @@ export default function OrderDrawer({
                   </h4>
                   <p className="text-xs text-[#786b5f] max-w-xs mx-auto">
                     Thank you <strong>{lastPlacedOrder.customerName}</strong>. Our chef is preparing your dishes for{' '}
-                    <strong>Table {lastPlacedOrder.tableNumber}</strong>.
+                    <strong>Table {cleanTableNumber(lastPlacedOrder.tableNumber)}</strong>.
                   </p>
                 </div>
 
@@ -255,7 +261,7 @@ export default function OrderDrawer({
                       <ChefHat className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                       <div className="text-xs space-y-1">
                         <div className="font-bold text-[#2C1810]">
-                          Table {tableNumber}: {activeRoundsCount} Active Round{activeRoundsCount > 1 ? 's' : ''} in Kitchen
+                          Table {cleanTable}: {activeRoundsCount} Active Round{activeRoundsCount > 1 ? 's' : ''} in Kitchen
                         </div>
                         <p className="text-[#786b5f] leading-relaxed">
                           Running table bill: <strong>₹{activeTableBill}</strong>. This new order will be sent as{' '}
@@ -312,7 +318,7 @@ export default function OrderDrawer({
                         </div>
                         <div>
                           <div className="text-xs font-black text-stone-900">
-                            Table {tableNumber}
+                            Table {cleanTable}
                           </div>
                           <div className="text-[10px] text-stone-500 font-medium">
                             Auto-detected from QR Code
