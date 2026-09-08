@@ -34,10 +34,44 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
-// CORS configuration
+// CORS configuration — supports localhost, mobile LAN devices (192.168.x.x), and cloud tunnels
+const allowedOrigins = [
+  env.CLIENT_URL,
+  env.APP_URL,
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: env.CLIENT_URL,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. mobile apps, curl, Postman)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      // Allow local network IP addresses (192.168.x.x, 10.x.x.x, 172.x.x.x, localhost)
+      if (
+        /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$/.test(
+          origin
+        )
+      ) {
+        return callback(null, true);
+      }
+      // Allow cloud tunnel/deployment domains (ngrok, localtunnel, vercel, render)
+      if (
+        origin.endsWith('.ngrok-free.app') ||
+        origin.endsWith('.loca.lt') ||
+        origin.endsWith('.vercel.app') ||
+        origin.endsWith('.onrender.com')
+      ) {
+        return callback(null, true);
+      }
+      // In development or demo mode, permit origin
+      if (env.NODE_ENV === 'development') {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

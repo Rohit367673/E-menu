@@ -1,4 +1,16 @@
-const API_BASE = import.meta.env.VITE_API_URL || '';
+const getApiBase = () => {
+  const envUrl = import.meta.env.VITE_API_URL || '';
+  if (
+    typeof window !== 'undefined' &&
+    window.location.hostname !== 'localhost' &&
+    window.location.hostname !== '127.0.0.1' &&
+    envUrl.includes('localhost')
+  ) {
+    return '';
+  }
+  return envUrl;
+};
+const API_BASE = getApiBase();
 
 export const getImageUrl = (path: string | undefined | null): string => {
   if (!path) return '';
