@@ -256,13 +256,14 @@ export const getAdminOrders = async (req: AuthRequest, res: Response): Promise<v
 
     const orders = await Order.find(query).sort({ createdAt: -1 }).limit(100).lean();
 
-    // Calculate live summary stats
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
+    // Calculate live summary stats (IST timezone UTC+5:30)
+    const now = new Date();
+    const istOffsetMs = 5.5 * 60 * 60 * 1000;
+    const istDate = new Date(now.getTime() + istOffsetMs);
+    istDate.setUTCHours(0, 0, 0, 0);
+    const startOfToday = new Date(istDate.getTime() - istOffsetMs);
 
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     const isManager = req.user?.role === 'manager';
 
@@ -271,8 +272,7 @@ export const getAdminOrders = async (req: AuthRequest, res: Response): Promise<v
       Order.countDocuments({ restaurantId: restaurant._id, status: 'preparing' }),
       Order.countDocuments({
         restaurantId: restaurant._id,
-        status: { $in: ['served', 'completed'] },
-        createdAt: { $gte: startOfToday },
+        status: 'served',
       }),
       Order.countDocuments({
         restaurantId: restaurant._id,

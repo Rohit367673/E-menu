@@ -15,7 +15,6 @@ import {
   ShoppingBag,
   TrendingUp,
   Printer,
-  ChefHat,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../api/client';
@@ -37,7 +36,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     ? [
         { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard', end: true },
         { to: '/admin/orders', icon: ShoppingBag, label: 'Live Orders', end: false, hasBadge: true },
-        { to: '/admin/kitchen', icon: ChefHat, label: 'Kitchen (KOT)', end: false, hasBadge: true },
         { to: '/admin/earnings', icon: TrendingUp, label: 'Monthly Earnings', end: false },
         { to: '/admin/add-item', icon: Plus, label: 'Add Menu Item', end: false },
         { to: '/admin/menu', icon: FolderOpen, label: 'Menu Items', end: false },
@@ -46,7 +44,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     : [
         { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard', end: true },
         { to: '/admin/orders', icon: ShoppingBag, label: 'Live Orders', end: false, hasBadge: true },
-        { to: '/admin/kitchen', icon: ChefHat, label: 'Kitchen (KOT)', end: false, hasBadge: true },
         { to: '/admin/add-item', icon: Plus, label: 'Add Menu Item', end: false },
         { to: '/admin/menu', icon: FolderOpen, label: 'Menu Items', end: false },
         { to: '/admin/qr-menu', icon: QrCode, label: 'QR Menu', end: false },

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   ShoppingBag,
   ChefHat,
@@ -30,6 +30,11 @@ import {
   connectWebSerialPrinter,
 } from '../../services/printBridge';
 
+const cleanTableNumber = (raw: string): string => {
+  if (!raw) return '';
+  return raw.replace(/^table\s*/i, '').trim() || raw;
+};
+
 export default function OrdersPage() {
   const { user } = useAuth();
   const isAdmin = user?.role !== 'manager';
@@ -47,12 +52,31 @@ export default function OrdersPage() {
   });
   const [loading, setLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<'all' | OrderStatus>('all');
+  const [statusFilter, setStatusFilter] = useState<'preparing' | 'served' | 'all'>(
+    (searchParams.get('status') as any) || 'preparing'
+  );
   const [tableFilter, setTableFilter] = useState<string>(searchParams.get('table') || 'all');
   const [viewMode, setViewMode] = useState<'grouped' | 'feed'>('grouped');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isBridgeOnline, setIsBridgeOnline] = useState(false);
+
+  // Live order counts directly from local state for instant responsiveness
+  const livePreparingCount = useMemo(() => {
+    return orders.filter((o) => ['pending', 'preparing'].includes(o.status)).length;
+  }, [orders]);
+
+  const liveServedCount = useMemo(() => {
+    return orders.filter((o) => o.status === 'served').length;
+  }, [orders]);
+
+  const liveActiveTablesCount = useMemo(() => {
+    return new Set(
+      orders
+        .filter((o) => ['pending', 'preparing', 'served'].includes(o.status))
+        .map((o) => cleanTableNumber(o.tableNumber))
+    ).size;
+  }, [orders]);
 
   // Manual Walk-in POS state
   const [isPosOpen, setIsPosOpen] = useState(false);
@@ -295,16 +319,22 @@ export default function OrdersPage() {
           prev.map((o) => (o._id === orderId ? { ...o, status: newStatus } : o))
         );
         fetchOrders();
+        if (newStatus === 'served') {
+          toast.success('Order served & moved to Served tab ✓');
+        } else {
+          toast.success(`Order status updated to ${newStatus}`);
+        }
       }
     } catch (err) {
       console.error('Failed to update status:', err);
+      toast.error('Failed to update order status');
     } finally {
       setUpdatingId(null);
     }
   };
 
   const handleSettleTable = async (tableNum: string) => {
-    if (!window.confirm(`Settle and close all active orders for Table ${tableNum}?`)) {
+    if (!window.confirm(`Settle and close all active orders for Table ${cleanTableNumber(tableNum)}?`)) {
       return;
     }
 
@@ -322,7 +352,7 @@ export default function OrdersPage() {
   };
 
   const handleResetTable = async (tableNum: string) => {
-    if (!window.confirm(`Clear Table ${tableNum}? This will remove all orders for Table ${tableNum} from the dashboard.`)) {
+    if (!window.confirm(`Clear Table ${cleanTableNumber(tableNum)}? This will remove all orders for Table ${cleanTableNumber(tableNum)} from the dashboard.`)) {
       return;
     }
 
@@ -377,8 +407,6 @@ export default function OrdersPage() {
       if (o.status !== 'pending' && o.status !== 'preparing') return false;
     } else if (statusFilter === 'served') {
       if (o.status !== 'served' && o.status !== 'completed') return false;
-    } else if (statusFilter !== 'all') {
-      if (o.status !== statusFilter) return false;
     }
     if (tableFilter !== 'all' && o.tableNumber !== tableFilter) return false;
     return true;
@@ -395,10 +423,6 @@ export default function OrdersPage() {
       displayOrders = tableOrders.filter((o) => o.status === 'served' || o.status === 'completed');
     } else if (statusFilter === 'preparing') {
       displayOrders = tableOrders.filter((o) => ['pending', 'preparing'].includes(o.status));
-    } else if (statusFilter === 'completed') {
-      displayOrders = completedOrders;
-    } else if (statusFilter !== 'all') {
-      displayOrders = tableOrders.filter((o) => o.status === statusFilter);
     }
 
     const totalBill = displayOrders.reduce((sum, o) => {
@@ -473,9 +497,9 @@ export default function OrdersPage() {
             <h1 className="text-2xl font-black text-stone-900 tracking-tight">
               Live Tableside Orders
             </h1>
-            {(stats.preparingCount + stats.pendingCount) > 0 && (
+            {livePreparingCount > 0 && (
               <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-amber-500 text-white animate-pulse shadow-xs">
-                {stats.preparingCount + stats.pendingCount} In Kitchen
+                {livePreparingCount} In Kitchen
               </span>
             )}
           </div>
@@ -485,14 +509,6 @@ export default function OrdersPage() {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
-          <Link
-            to="/admin/kitchen"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 transition-all cursor-pointer"
-            title="Open Kitchen Qty Process & KOT Pipeline"
-          >
-            <ChefHat className="w-4 h-4 text-amber-700" />
-            <span>Kitchen Pipeline →</span>
-          </Link>
           {isSerialConnected ? (
             <Link
               to="/admin/printer-settings"
@@ -603,7 +619,7 @@ export default function OrdersPage() {
             </div>
             <div>
               <h3 className="font-black text-sm sm:text-base tracking-wide">
-                🔔 Bill Receipt Requested by {tablesWithBillRequest.length === 1 ? `Table ${tablesWithBillRequest[0]}` : `${tablesWithBillRequest.length} Tables (${tablesWithBillRequest.map(t => `T-${t}`).join(', ')})`}!
+                🔔 Bill Receipt Requested by {tablesWithBillRequest.length === 1 ? `Table ${cleanTableNumber(tablesWithBillRequest[0])}` : `${tablesWithBillRequest.length} Tables (${tablesWithBillRequest.map(t => `T-${cleanTableNumber(t)}`).join(', ')})`}!
               </h3>
               <p className="text-xs text-white/90">
                 Guests have finished dining and requested their bill receipt tableside. Please print and deliver the bill.
@@ -624,7 +640,7 @@ export default function OrdersPage() {
                 className="px-3 py-1.5 rounded-xl bg-white text-stone-900 hover:bg-stone-100 font-extrabold text-xs shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
               >
                 <Receipt className="w-3.5 h-3.5 text-amber-700" />
-                <span>Print Table {t} Bill</span>
+                <span>Print Table {cleanTableNumber(t)} Bill</span>
               </button>
             ))}
           </div>
@@ -638,7 +654,7 @@ export default function OrdersPage() {
             Active Tables
           </div>
           <div className="text-2xl font-black text-stone-900 mt-1">
-            {stats.activeCount}
+            {liveActiveTablesCount}
           </div>
           <div className="text-[11px] text-amber-600 font-semibold mt-0.5">
             Tables dining now
@@ -652,7 +668,7 @@ export default function OrdersPage() {
             <span>Preparing Order</span>
           </div>
           <div className="text-2xl font-black text-amber-700 mt-1">
-            {stats.preparingCount + stats.pendingCount}
+            {livePreparingCount}
           </div>
           <div className="text-[11px] text-amber-600 font-semibold mt-0.5">
             Cooking in kitchen
@@ -663,13 +679,13 @@ export default function OrdersPage() {
         <div className="bg-white p-4 rounded-2xl border border-emerald-200 shadow-2xs bg-emerald-50/10">
           <div className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Served (Complete)</span>
+            <span>Served to Tables</span>
           </div>
           <div className="text-2xl font-black text-emerald-700 mt-1">
-            {stats.servedCount}
+            {liveServedCount}
           </div>
           <div className="text-[11px] text-emerald-600 font-semibold mt-0.5">
-            Served to tables
+            Delivered to guests
           </div>
         </div>
 
@@ -678,7 +694,7 @@ export default function OrdersPage() {
             Total Orders Today
           </div>
           <div className="text-2xl font-black text-stone-900 mt-1">
-            {stats.todayOrdersCount}
+            {stats.todayOrdersCount > 0 ? stats.todayOrdersCount : orders.length}
           </div>
           <div className="text-[11px] text-stone-500 font-semibold mt-0.5 flex items-center justify-between flex-wrap gap-1">
             <span>Orders placed today</span>
@@ -688,7 +704,7 @@ export default function OrdersPage() {
                 className="text-[11px] font-bold text-amber-700 hover:text-amber-900 underline transition-colors"
                 title="Only Owner can view Today's & Monthly Earnings"
               >
-                Owner: Today's Earnings →
+                Owner: Earnings →
               </Link>
             )}
           </div>
@@ -699,20 +715,30 @@ export default function OrdersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-stone-200">
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none touch-pan-x">
           {[
-            { id: 'all', label: 'All Active' },
-            { id: 'preparing', label: '1. Preparing Order' },
-            { id: 'served', label: '2. Served (Complete)' },
+            { id: 'preparing', label: '1. Preparing / Cooking', count: livePreparingCount, icon: ChefHat },
+            { id: 'served', label: '2. Served to Table', count: liveServedCount, icon: CheckCircle2 },
+            { id: 'all', label: 'All Tables', count: liveActiveTablesCount, icon: null },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setStatusFilter(tab.id as any)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
                 statusFilter === tab.id
                   ? 'bg-stone-900 text-white shadow-2xs'
                   : 'text-stone-500 hover:bg-stone-100'
               }`}
             >
-              {tab.label}
+              {tab.icon && <tab.icon className="w-3.5 h-3.5" />}
+              <span>{tab.label}</span>
+              {tab.count > 0 && (
+                <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
+                  statusFilter === tab.id
+                    ? tab.id === 'preparing' ? 'bg-amber-500 text-white' : 'bg-emerald-600 text-white'
+                    : 'bg-stone-200 text-stone-700'
+                }`}>
+                  {tab.count}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -728,7 +754,7 @@ export default function OrdersPage() {
             <option value="all">All Tables</option>
             {uniqueTables.map((t) => (
               <option key={t} value={t}>
-                Table {t}
+                Table {cleanTableNumber(t)}
               </option>
             ))}
           </select>
@@ -753,8 +779,32 @@ export default function OrdersPage() {
         /* FLOW ORDERING: TABLE GROUPED VIEW */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {tableGroups.length === 0 ? (
-            <div className="col-span-full py-12 text-center text-stone-400 bg-white rounded-2xl border border-stone-200">
-              No active tables matching filter.
+            <div className="col-span-full py-14 text-center bg-white rounded-3xl border border-stone-200 p-8 shadow-2xs space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto shadow-xs">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-bold text-stone-900">
+                {statusFilter === 'preparing'
+                  ? 'All Orders Cooked & Served!'
+                  : statusFilter === 'served'
+                  ? 'No Served Tables Waiting for Settlement'
+                  : 'No Active Tables Matching Filter'}
+              </h3>
+              <p className="text-xs text-stone-400 max-w-sm mx-auto">
+                {statusFilter === 'preparing'
+                  ? 'All food has been prepared and handed to tables. When new customer orders arrive, they will appear here.'
+                  : 'New orders will appear automatically.'}
+              </p>
+              {statusFilter === 'preparing' && liveServedCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('served')}
+                  className="mt-2 px-4 py-2 rounded-xl text-xs font-bold bg-stone-900 text-white hover:bg-stone-800 transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                >
+                  <span>View {liveServedCount} Served Table{liveServedCount > 1 ? 's' : ''}</span>
+                  <span>→</span>
+                </button>
+              )}
             </div>
           ) : (
             tableGroups.map((grp) => (
@@ -790,15 +840,15 @@ export default function OrdersPage() {
                 <div className="p-4 bg-stone-50/80 border-b border-stone-100 flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <div className="w-10 h-10 rounded-xl bg-stone-900 text-white font-black text-sm flex items-center justify-center shadow-xs">
-                      T-{grp.tableNumber}
+                      T-{cleanTableNumber(grp.tableNumber)}
                     </div>
                     <div>
                       <h4 className="font-extrabold text-stone-900 text-sm">
-                        Table {grp.tableNumber}
+                        Table {cleanTableNumber(grp.tableNumber)}
                       </h4>
                       <p className="text-[11px] text-stone-400 font-medium">
                         Guest: <strong className="text-stone-700">{grp.customerName}</strong> ·{' '}
-                        {grp.displayOrders.length} {grp.isCompleted ? 'completed' : 'active'} round{grp.displayOrders.length > 1 ? 's' : ''}
+                        {grp.displayOrders.length} {grp.isCompleted ? 'completed' : 'round'}{grp.displayOrders.length > 1 ? 's' : ''}
                       </p>
                     </div>
                   </div>
@@ -868,30 +918,16 @@ export default function OrdersPage() {
                       {/* Order status actions: 1-click transition from Preparing -> Served (Complete) */}
                       <div className="flex items-center gap-2 pt-1">
                         {(order.status === 'preparing' || order.status === 'pending') && (
-                          <button
-                            type="button"
-                            disabled={updatingId === order._id}
-                            onClick={() => handleUpdateStatus(order._id, 'served')}
-                            className="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider shadow-2xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Mark as Served (Complete)</span>
-                          </button>
-                        )}
-                        {order.status === 'served' && (
-                          <div className="flex-1 py-1.5 px-3 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold flex items-center justify-center gap-1.5">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                            <span>Served to Table ✓</span>
-                          </div>
-                        )}
-                        {order.status === 'completed' && (
-                          <div className="flex-1 py-1.5 px-3 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold flex items-center justify-center gap-1.5">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                            <span>Served & Settled ✓</span>
-                          </div>
-                        )}
-                        {order.status !== 'completed' && (
                           <>
+                            <button
+                              type="button"
+                              disabled={updatingId === order._id}
+                              onClick={() => handleUpdateStatus(order._id, 'served')}
+                              className="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider shadow-2xs transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-98"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Mark as Served (Complete)</span>
+                            </button>
                             {order.kotNumber && (
                               <button
                                 type="button"
@@ -912,54 +948,69 @@ export default function OrdersPage() {
                             </button>
                           </>
                         )}
+                        {order.status === 'served' && order.kotNumber && (
+                          <div className="flex items-center justify-end w-full">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenKOT(order)}
+                              className="px-2.5 py-1 rounded-lg text-stone-500 hover:text-stone-900 hover:bg-stone-100 text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 border border-stone-200"
+                              title={`Reprint KOT ${order.kotNumber}`}
+                            >
+                              <Printer className="w-3 h-3" />
+                              <span>Reprint KOT</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
                 </div>
 
-                {/* Settle / Clear Entire Table Bill CTA */}
-                <div className="p-3 bg-stone-50 border-t border-stone-100 flex items-center justify-between gap-2 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => handleResetTable(grp.tableNumber)}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-stone-600 hover:text-red-700 hover:bg-red-50 text-xs font-semibold transition-colors cursor-pointer border border-stone-200 hover:border-red-300 shadow-2xs"
-                    title="Clear table and remove from dashboard"
-                  >
-                    <span>Clear Table</span>
-                  </button>
-
-                  <div className="flex items-center gap-2">
+                {/* Settle / Clear Entire Table Bill CTA (shown in Served tab or All Tables, or if bill is requested) */}
+                {(statusFilter !== 'preparing' || grp.hasBillRequested) && (
+                  <div className="p-3 bg-stone-50 border-t border-stone-100 flex items-center justify-between gap-2 flex-wrap">
                     <button
                       type="button"
-                      onClick={() => handleOpenReceipt(grp.tableNumber, grp.customerName, grp.displayOrders, grp.totalBill, grp.isCompleted)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs ${
-                        grp.hasBillRequested
-                          ? 'bg-amber-600 hover:bg-amber-700 text-white animate-pulse shadow-md shadow-amber-600/30 font-extrabold'
-                          : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300'
-                      }`}
-                      title="Print Itemized Bill Receipt (Thermal Machine / POS)"
+                      onClick={() => handleResetTable(grp.tableNumber)}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-stone-600 hover:text-red-700 hover:bg-red-50 text-xs font-semibold transition-colors cursor-pointer border border-stone-200 hover:border-red-300 shadow-2xs"
+                      title="Clear table and remove from dashboard"
                     >
-                      <Receipt className="w-3.5 h-3.5" />
-                      <span>{grp.hasBillRequested ? 'Print & Deliver Bill' : 'Print Bill'}</span>
+                      <span>Clear Table</span>
                     </button>
 
-                    {grp.activeOrders.length > 0 ? (
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => handleSettleTable(grp.tableNumber)}
-                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                        onClick={() => handleOpenReceipt(grp.tableNumber, grp.customerName, grp.displayOrders, grp.totalBill, grp.isCompleted)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs ${
+                          grp.hasBillRequested
+                            ? 'bg-amber-600 hover:bg-amber-700 text-white animate-pulse shadow-md shadow-amber-600/30 font-extrabold'
+                            : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300'
+                        }`}
+                        title="Print Itemized Bill Receipt (Thermal Machine / POS)"
                       >
-                        <CreditCard className="w-3.5 h-3.5" />
-                        <span>Settle Bill (₹{grp.totalBill})</span>
+                        <Receipt className="w-3.5 h-3.5" />
+                        <span>{grp.hasBillRequested ? 'Print & Deliver Bill' : 'Print Bill'}</span>
                       </button>
-                    ) : (
-                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>{isAdmin ? `Paid & Settled (₹${grp.totalBill})` : 'Paid & Settled'}</span>
-                      </div>
-                    )}
+
+                      {grp.activeOrders.length > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => handleSettleTable(grp.tableNumber)}
+                          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                        >
+                          <CreditCard className="w-3.5 h-3.5" />
+                          <span>Settle Bill (₹{grp.totalBill})</span>
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>{isAdmin ? `Paid & Settled (₹${grp.totalBill})` : 'Paid & Settled'}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             ))
           )}

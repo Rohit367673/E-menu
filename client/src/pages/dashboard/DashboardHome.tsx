@@ -18,6 +18,7 @@ import {
   Copy,
   Check,
   ExternalLink,
+  Printer,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRestaurant } from '../../contexts/RestaurantContext';
@@ -176,7 +177,7 @@ export default function DashboardHome() {
       bg: 'from-blue-500/10 to-indigo-500/10',
       iconBg: 'bg-blue-600',
       trend: `${orderStats.servedCount} served (complete)`,
-      link: '/admin/kitchen',
+      link: '/admin/orders?status=preparing',
     },
     {
       label: 'Total Menu Items',
@@ -210,11 +211,11 @@ export default function DashboardHome() {
           iconColor: 'text-amber-600',
         },
         {
-          id: 'qa-kitchen',
-          label: 'Kitchen Qty Pipeline',
-          description: 'Live KOT queue, batch cooking quantities & TVS printer stream',
-          icon: ChefHat,
-          to: '/admin/kitchen',
+          id: 'qa-printer',
+          label: 'Printer & KOT',
+          description: 'Configure TVS thermal printer and auto-print',
+          icon: Printer,
+          to: '/admin/printer-settings',
           gradient: 'from-amber-600 to-red-600',
           lightBg: 'bg-amber-50',
           iconColor: 'text-amber-600',
@@ -262,11 +263,11 @@ export default function DashboardHome() {
           iconColor: 'text-amber-600',
         },
         {
-          id: 'qa-kitchen',
-          label: 'Kitchen Qty Pipeline',
-          description: 'Live KOT queue, batch cooking quantities & TVS printer stream',
-          icon: ChefHat,
-          to: '/admin/kitchen',
+          id: 'qa-printer',
+          label: 'Printer & KOT',
+          description: 'Configure TVS thermal printer and auto-print',
+          icon: Printer,
+          to: '/admin/printer-settings',
           gradient: 'from-amber-600 to-red-600',
           lightBg: 'bg-amber-50',
           iconColor: 'text-amber-600',
