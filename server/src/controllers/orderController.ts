@@ -106,6 +106,8 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
     const kotNumber = `KOT-${String(todayKOTCount + 1).padStart(3, '0')}`;
 
     // Direct Kitchen Workflow: Orders enter 'preparing' immediately with NO approval click required
+    const kotPrintJobId = `PJ-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
     const order = new Order({
       restaurantId: restaurant._id,
       sessionId: session._id,
@@ -121,11 +123,15 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
       round,
       kotNumber,
       kotGeneratedAt: new Date(),
+      kotPrintJobId,
+      kotPrintStatus: 'PENDING',
+      kotPrintAttempts: 0,
     });
 
     await order.save();
 
     const kotData = {
+      printJobId: kotPrintJobId,
       kotNumber,
       tableNumber: cleanTable,
       round,
@@ -768,4 +774,121 @@ export const getKOTData = async (req: AuthRequest, res: Response): Promise<void>
     res.status(500).json({ success: false, message: 'Failed to retrieve KOT data' });
   }
 };
+
+/**
+ * Atomically claim a KOT print job to guarantee single-consumer execution across tabs/sessions
+ */
+export const claimPrintJob = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { orderId } = req.params;
+    const { printingBy } = req.body || {};
+
+    const sixtySecondsAgo = new Date(Date.now() - 60000);
+
+    // Atomically claim the order if it's PENDING, FAILED, or PRINTING for > 60s (stale recovery)
+    const order = await Order.findOneAndUpdate(
+      {
+        _id: orderId,
+        $or: [
+          { kotPrintStatus: 'PENDING' },
+          { kotPrintStatus: 'FAILED' },
+          { kotPrintStatus: 'PRINTING', printingStartedAt: { $lt: sixtySecondsAgo } },
+        ],
+      },
+      {
+        $set: {
+          kotPrintStatus: 'PRINTING',
+          printingStartedAt: new Date(),
+          printingBy: (printingBy || 'counter-pos').toString(),
+        },
+        $inc: { kotPrintAttempts: 1 },
+      },
+      { new: true }
+    );
+
+    if (!order) {
+      res.status(409).json({
+        success: false,
+        message: 'Print job is already claimed or already printed',
+        alreadyClaimed: true,
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      message: `Print job ${order.kotPrintJobId || order.orderNumber} claimed successfully`,
+      data: order,
+    });
+  } catch (error) {
+    console.error('Claim print job error:', error);
+    res.status(500).json({ success: false, message: 'Failed to claim print job' });
+  }
+};
+
+/**
+ * Mark a KOT print job as PRINTED once physical transmission to printer succeeds
+ */
+export const markKOTPrinted = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findByIdAndUpdate(
+      orderId,
+      {
+        $set: {
+          kotPrintStatus: 'PRINTED',
+          kotPrintedAt: new Date(),
+        },
+      },
+      { new: true }
+    );
+
+    if (!order) {
+      res.status(404).json({ success: false, message: 'Order not found' });
+      return;
+    }
+
+    res.json({
+      success: true,
+      message: `KOT for order ${order.orderNumber} marked as PRINTED`,
+      data: order,
+    });
+  } catch (error) {
+    console.error('Mark KOT printed error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update KOT print status' });
+  }
+};
+
+/**
+ * Mark a KOT print job as FAILED when transmission or hardware error occurs
+ */
+export const markKOTFailed = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findByIdAndUpdate(
+      orderId,
+      {
+        $set: {
+          kotPrintStatus: 'FAILED',
+        },
+      },
+      { new: true }
+    );
+
+    if (!order) {
+      res.status(404).json({ success: false, message: 'Order not found' });
+      return;
+    }
+
+    res.json({
+      success: true,
+      message: `KOT for order ${order.orderNumber} marked as FAILED for retry`,
+      data: order,
+    });
+  } catch (error) {
+    console.error('Mark KOT failed error:', error);
+    res.status(500).json({ success: false, message: 'Failed to mark KOT as failed' });
+  }
+};
+
 

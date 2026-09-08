@@ -1,3 +1,5 @@
+import type { PrintJob } from '../types/menu';
+
 const BRIDGE_URL = 'http://127.0.0.1:18080';
 
 export interface BridgeHealth {
@@ -74,9 +76,12 @@ export async function disconnectWebSerialPrinter(): Promise<void> {
   }
 }
 
+export const POST_PRINT_COOLDOWN_MS = 800; // Post-print pause for TVS cutter motor
+
 /**
  * Builds standard ESC/POS binary buffer for TVS Champ RP Star (80mm roll).
- * Features bold items, clear kitchen quantities, special notes, and auto-cutter command.
+ * Uses strictly standard ASCII characters to avoid CP437 corruption.
+ * Supports isReprint flag to label duplicate reprints clearly for the kitchen.
  * Strictly 0 prices.
  */
 export function buildKOTEscPosBytes(kotData: any): Uint8Array {
@@ -84,74 +89,93 @@ export function buildKOTEscPosBytes(kotData: any): Uint8Array {
   const parts: Uint8Array[] = [];
 
   const add = (...bytes: number[]) => parts.push(new Uint8Array(bytes));
-  const addText = (text: string) => parts.push(encoder.encode(text));
+  // Clean string to strictly safe ASCII (replacing non-ASCII characters)
+  const addSafeAscii = (text: string) => {
+    const clean = text
+      .replace(/[₹]/g, 'Rs.')
+      .replace(/[^\x00-\x7F]/g, ' '); // Strip non-ASCII to prevent CP437 corrupt bytes
+    parts.push(encoder.encode(clean));
+  };
 
-  // Initialize printer
+  // 1. Initialize printer (ESC @)
   add(0x1b, 0x40);
 
-  // Header (Center, Double Size, Bold)
+  // 2. Header (Center, Double Height & Width, Bold)
   add(0x1b, 0x61, 0x01); // Center
   add(0x1b, 0x45, 0x01); // Bold On
   add(0x1d, 0x21, 0x11); // Double height & width
-  addText('★ K O T ★\n');
-  add(0x1d, 0x21, 0x00); // Normal size
-  addText('KITCHEN ORDER TICKET\n');
-  addText('Sukoon Cafe & Bar\n');
-  add(0x1b, 0x45, 0x00); // Bold Off
-  addText('------------------------------------------------\n');
 
-  // Meta (Left align)
+  if (kotData.isReprint) {
+    addSafeAscii('*** REPRINT ***\n');
+  } else {
+    addSafeAscii('*** K O T ***\n');
+  }
+
+  add(0x1d, 0x21, 0x00); // Normal size
+  if (kotData.isReprint) {
+    addSafeAscii('DUPLICATE TICKET - ALREADY IN KITCHEN\n');
+  } else {
+    addSafeAscii('KITCHEN ORDER TICKET\n');
+  }
+  addSafeAscii('Sukoon Cafe & Bar\n');
+  add(0x1b, 0x45, 0x00); // Bold Off
+  addSafeAscii('------------------------------------------------\n');
+
+  // 3. Meta (Left align)
   add(0x1b, 0x61, 0x00);
   add(0x1b, 0x45, 0x01);
-  add(0x1d, 0x21, 0x01); // Double height
-  addText(`TABLE: ${kotData.tableNumber}     ROUND: ${kotData.round}\n`);
+  add(0x1d, 0x21, 0x01); // Double height for table & round
+  addSafeAscii(`TABLE: ${kotData.tableNumber}     ROUND: ${kotData.round}\n`);
   add(0x1d, 0x21, 0x00); // Normal size
   add(0x1b, 0x45, 0x00);
-  addText(`KOT #: ${kotData.kotNumber}     Time: ${kotData.time}\n`);
-  addText(`Order: ${kotData.orderNumber}     Guest: ${kotData.customerName || 'Guest'}\n`);
-  addText('------------------------------------------------\n');
+  addSafeAscii(`KOT #: ${kotData.kotNumber}     Time: ${kotData.time}\n`);
+  addSafeAscii(`Order: ${kotData.orderNumber}     Guest: ${kotData.customerName || 'Guest'}\n`);
+  if (kotData.printJobId) {
+    addSafeAscii(`Job ID: ${kotData.printJobId}\n`);
+  }
+  addSafeAscii('------------------------------------------------\n');
 
-  // Items Header
+  // 4. Items Header (Bold)
   add(0x1b, 0x45, 0x01);
-  addText('ITEM                                         QTY\n');
+  addSafeAscii('ITEM                                         QTY\n');
   add(0x1b, 0x45, 0x00);
-  addText('------------------------------------------------\n');
+  addSafeAscii('------------------------------------------------\n');
 
-  // Items (NO PRICES)
+  // 5. Items (NO PRICES)
   if (Array.isArray(kotData.items)) {
     kotData.items.forEach((it: any) => {
       add(0x1b, 0x45, 0x01);
-      add(0x1d, 0x21, 0x01); // Large readable size for kitchen
+      add(0x1d, 0x21, 0x01); // Large readable font for cooks
       const qtyStr = `${it.quantity}x`;
-      const name = it.name || 'Item';
-      const spaceCount = Math.max(1, 38 - name.length - qtyStr.length);
-      addText(`${name}${' '.repeat(spaceCount)}${qtyStr}\n`);
-      add(0x1d, 0x21, 0x00);
+      const name = (it.name || 'Item').substring(0, 36);
+      const spaceCount = Math.max(1, 40 - name.length - qtyStr.length);
+      addSafeAscii(`${name}${' '.repeat(spaceCount)}${qtyStr}\n`);
+      add(0x1d, 0x21, 0x00); // Normal font
       add(0x1b, 0x45, 0x00);
       if (it.notes) {
-        addText(`  -> Note: ${it.notes}\n`);
+        addSafeAscii(`  -> Note: ${it.notes}\n`);
       }
     });
   }
 
-  addText('------------------------------------------------\n');
+  addSafeAscii('------------------------------------------------\n');
 
-  // Special Instructions
+  // 6. Special Instructions
   if (kotData.specialInstructions) {
     add(0x1b, 0x45, 0x01);
-    addText(`SPECIAL INSTRUCTIONS:\n${kotData.specialInstructions}\n`);
+    addSafeAscii(`SPECIAL INSTRUCTIONS:\n${kotData.specialInstructions}\n`);
     add(0x1b, 0x45, 0x00);
-    addText('------------------------------------------------\n');
+    addSafeAscii('------------------------------------------------\n');
   }
 
-  // Footer
+  // 7. Footer
   add(0x1b, 0x61, 0x01); // Center
-  addText('*** END OF KOT ***\n');
-  addText('KITCHEN USE ONLY - NO PRICES\n\n');
+  addSafeAscii('*** END OF KOT ***\n');
+  addSafeAscii('KITCHEN USE ONLY - NO PRICES\n\n');
 
-  // Feed 4 lines & Auto-Cut
+  // 8. Feed 4 lines & Auto-Cut
   add(0x1b, 0x64, 0x04);
-  add(0x1d, 0x56, 0x42, 0x00); // GS V 'B' 0 (Feed and cut for TVS auto-cutter)
+  add(0x1d, 0x56, 0x42, 0x00); // GS V 'B' 0 (Feed and full/partial cut for TVS)
 
   // Merge bytes
   const totalLength = parts.reduce((sum, p) => sum + p.length, 0);
@@ -164,6 +188,9 @@ export function buildKOTEscPosBytes(kotData: any): Uint8Array {
   return result;
 }
 
+/**
+ * Direct low-level transmission to the Web Serial port
+ */
 export async function printKOTViaWebSerial(kotData: any): Promise<{ success: boolean; message: string }> {
   if (!activeSerialPort || !activeSerialPort.writable) {
     return { success: false, message: 'USB printer not connected in browser' };
@@ -177,6 +204,94 @@ export async function printKOTViaWebSerial(kotData: any): Promise<{ success: boo
     return { success: true, message: 'Printed directly via Chrome USB Serial!' };
   } catch (err: any) {
     return { success: false, message: err.message || 'Direct USB print failed' };
+  }
+}
+
+// ─── FIFO Sequential Mutex Print Queue ─────────────────────────────────────
+export interface PrintJobTask {
+  job: PrintJob;
+  resolve: (res: { success: boolean; message: string }) => void;
+  reject: (err: any) => void;
+}
+
+const printQueue: PrintJobTask[] = [];
+let isQueueProcessing = false;
+
+/**
+ * Enqueue a PrintJob into the FIFO queue.
+ * Guarantees strict sequential printing with cooldown between tickets to prevent stream locking.
+ */
+export function queueKOTPrint(job: PrintJob): Promise<{ success: boolean; message: string }> {
+  return new Promise((resolve, reject) => {
+    printQueue.push({ job, resolve, reject });
+    processPrintQueue();
+  });
+}
+
+export function getPendingQueueLength(): number {
+  return printQueue.length;
+}
+
+async function processPrintQueue(): Promise<void> {
+  if (isQueueProcessing) return;
+  if (printQueue.length === 0) return;
+
+  isQueueProcessing = true;
+  const currentTask = printQueue.shift()!;
+
+  try {
+    if (isWebSerialConnected()) {
+      const res = await printKOTViaWebSerial(currentTask.job);
+      currentTask.resolve(res);
+    } else {
+      const bridgeHealth = await checkBridgeHealth();
+      if (bridgeHealth.online) {
+        const res = await printKOTViaBridge(currentTask.job);
+        currentTask.resolve(res);
+      } else {
+        currentTask.resolve({
+          success: false,
+          message: 'TVS Thermal printer is offline. Please connect USB cable.',
+        });
+      }
+    }
+  } catch (err: any) {
+    currentTask.resolve({
+      success: false,
+      message: err?.message || 'Print execution error',
+    });
+  } finally {
+    // Post-print cooldown between sequential prints to allow TVS auto-cutter to cycle
+    await new Promise((resolve) => setTimeout(resolve, POST_PRINT_COOLDOWN_MS));
+    isQueueProcessing = false;
+    processPrintQueue();
+  }
+}
+
+// ─── Screen Wake Lock API (Keep POS Awake During Cafe Hours) ───────────────
+let wakeLockSentinel: any = null;
+
+export async function requestScreenWakeLock(): Promise<boolean> {
+  if (typeof navigator !== 'undefined' && 'wakeLock' in navigator) {
+    try {
+      wakeLockSentinel = await (navigator as any).wakeLock.request('screen');
+      wakeLockSentinel.addEventListener('release', () => {
+        wakeLockSentinel = null;
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
+
+export function releaseScreenWakeLock(): void {
+  if (wakeLockSentinel) {
+    try {
+      wakeLockSentinel.release();
+    } catch {}
+    wakeLockSentinel = null;
   }
 }
 

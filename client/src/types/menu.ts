@@ -134,6 +134,12 @@ export interface Order {
   sessionId?: string;
   kotNumber?: string;
   kotGeneratedAt?: string;
+  kotPrintJobId?: string;
+  kotPrintStatus?: 'PENDING' | 'PRINTING' | 'PRINTED' | 'FAILED';
+  kotPrintAttempts?: number;
+  kotPrintedAt?: string;
+  printingStartedAt?: string;
+  printingBy?: string;
 }
 
 export interface OrderDashboardStats {
@@ -185,4 +191,18 @@ export interface KOTData {
   items: Array<{ name: string; quantity: number; notes?: string }>;
   specialInstructions?: string;
 }
+
+export interface PrintJob {
+  printJobId: string;
+  orderId: string;
+  kotNumber: string;
+  tableNumber: string;
+  round: number;
+  customerName: string;
+  time: string;
+  items: Array<{ name: string; quantity: number; notes?: string }>;
+  specialInstructions?: string;
+  isReprint?: boolean;
+}
+
 

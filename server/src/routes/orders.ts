@@ -11,6 +11,9 @@ import {
   requestTableBill,
   dismissBillRequest,
   getKOTData,
+  claimPrintJob,
+  markKOTPrinted,
+  markKOTFailed,
 } from '../controllers/orderController.js';
 import auth from '../middleware/auth.js';
 
@@ -24,6 +27,9 @@ router.post('/public/table/:tableNumber/request-bill', requestTableBill);
 // Admin routes (for receptionist / kitchen management)
 router.get('/admin', auth, getAdminOrders);
 router.get('/admin/kot/:orderId', auth, getKOTData);
+router.post('/admin/kot/:orderId/claim', auth, claimPrintJob);
+router.patch('/admin/kot/:orderId/printed', auth, markKOTPrinted);
+router.patch('/admin/kot/:orderId/failed', auth, markKOTFailed);
 router.get('/admin/earnings/monthly', auth, getMonthlyEarningsReport);
 router.patch('/admin/:id/status', auth, updateOrderStatus);
 router.patch('/admin/table/:tableNumber/settle', auth, settleTableOrders);

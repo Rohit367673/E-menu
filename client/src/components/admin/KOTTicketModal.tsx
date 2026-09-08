@@ -14,6 +14,7 @@ interface KOTTicketModalProps {
   items: Array<{ name: string; quantity: number; notes?: string }>;
   specialInstructions?: string;
   autoPrint?: boolean;
+  isReprint?: boolean;
 }
 
 export default function KOTTicketModal({
@@ -28,6 +29,7 @@ export default function KOTTicketModal({
   items,
   specialInstructions,
   autoPrint = false,
+  isReprint = false,
 }: KOTTicketModalProps) {
   const hasPrintedRef = useRef(false);
 
@@ -108,10 +110,10 @@ export default function KOTTicketModal({
               {/* KOT Header */}
               <div className="text-center space-y-1 pb-3 border-b-2 border-dashed border-stone-300">
                 <div className="text-lg font-black uppercase tracking-[0.2em] text-stone-900">
-                  ★ K O T ★
+                  {isReprint ? '*** REPRINT ***' : '*** K O T ***'}
                 </div>
                 <div className="text-xs font-bold uppercase tracking-wider text-stone-600">
-                  Kitchen Order Ticket
+                  {isReprint ? 'Duplicate Ticket (Already in Kitchen)' : 'Kitchen Order Ticket'}
                 </div>
                 <div className="text-[10px] text-stone-500">
                   Sukoon Cafe & Bar

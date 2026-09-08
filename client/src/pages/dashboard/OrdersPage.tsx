@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import apiClient from '../../api/client';
-import type { Order, OrderStatus, OrderDashboardStats } from '../../types/menu';
+import type { Order, OrderStatus, OrderDashboardStats, PrintJob } from '../../types/menu';
 import { playOrderNotificationSound } from '../../utils/sound';
 import { useAuth } from '../../contexts/AuthContext';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -23,11 +23,12 @@ import BillReceiptModal from '../../components/common/BillReceiptModal';
 import KOTTicketModal from '../../components/admin/KOTTicketModal';
 import {
   checkBridgeHealth,
-  printKOTViaBridge,
   isWebSerialConnected,
-  printKOTViaWebSerial,
   autoReconnectWebSerial,
   connectWebSerialPrinter,
+  queueKOTPrint,
+  requestScreenWakeLock,
+  releaseScreenWakeLock,
 } from '../../services/printBridge';
 
 const cleanTableNumber = (raw: string): string => {
@@ -78,6 +79,15 @@ export default function OrdersPage() {
     ).size;
   }, [orders]);
 
+  const pendingPrintCount = useMemo(() => {
+    return orders.filter(
+      (o) =>
+        o.kotNumber &&
+        (o.kotPrintStatus === 'PENDING' || o.kotPrintStatus === 'FAILED' || !o.kotPrintStatus) &&
+        (o.status === 'pending' || o.status === 'preparing')
+    ).length;
+  }, [orders]);
+
   // Manual Walk-in POS state
   const [isPosOpen, setIsPosOpen] = useState(false);
   const [posTable, setPosTable] = useState('Table 1');
@@ -111,6 +121,7 @@ export default function OrdersPage() {
     items: Array<{ name: string; quantity: number; notes?: string }>;
     specialInstructions: string;
     autoPrint: boolean;
+    isReprint: boolean;
   }>({
     isOpen: false,
     kotNumber: '',
@@ -122,75 +133,152 @@ export default function OrdersPage() {
     items: [],
     specialInstructions: '',
     autoPrint: false,
+    isReprint: false,
   });
 
-  const seenKOTsRef = useRef<Set<string>>(new Set());
-  const isInitializedRef = useRef(false);
+  const tabClientIdRef = useRef('pos-' + Math.random().toString(36).substring(2, 9));
+  const isProcessingQueueRef = useRef(false);
 
   const [isSerialConnected, setIsSerialConnected] = useState(isWebSerialConnected());
+
+  // Mutex-locked Sequential Print Queue Processor (FIFO, Atomic Claim on Server)
+  const processPendingKOTQueue = useCallback(async (ordersList?: Order[]) => {
+    if (isProcessingQueueRef.current) return;
+
+    const autoPrintKOT = localStorage.getItem('sukoon_auto_print_kot') !== 'false';
+    if (!autoPrintKOT) return;
+
+    const isPrinterReady = isWebSerialConnected() || isBridgeOnline;
+    if (!isPrinterReady) return;
+
+    const sourceOrders = ordersList || orders;
+    // Find active orders with pending or failed KOT print jobs (FIFO order by creation time)
+    const pendingOrders = sourceOrders
+      .filter(
+        (o) =>
+          o.kotNumber &&
+          (o.kotPrintStatus === 'PENDING' || o.kotPrintStatus === 'FAILED' || !o.kotPrintStatus) &&
+          (o.status === 'pending' || o.status === 'preparing')
+      )
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+    if (pendingOrders.length === 0) return;
+
+    isProcessingQueueRef.current = true;
+
+    try {
+      for (const order of pendingOrders) {
+        // Step 1: Atomic Claim on server (eliminates multi-tab double-print race conditions)
+        try {
+          const claimRes = await apiClient.post<{ success: boolean; data?: Order; alreadyClaimed?: boolean }>(
+            `/orders/admin/kot/${order._id}/claim`,
+            { printingBy: tabClientIdRef.current }
+          );
+          if (!claimRes.data.success) {
+            // Already claimed by another active tab/session
+            continue;
+          }
+        } catch {
+          // Conflict (409) or network issue, safely skip
+          continue;
+        }
+
+        // Step 2: Build PrintJob
+        const time = order.createdAt
+          ? new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+          : new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+        const printJob: PrintJob = {
+          printJobId: order.kotPrintJobId || `PJ-${order.orderNumber}`,
+          orderId: order._id,
+          kotNumber: order.kotNumber || `KOT-${order.orderNumber}`,
+          tableNumber: order.tableNumber,
+          round: order.round,
+          customerName: order.customerName,
+          time,
+          items: order.items.map((it) => ({ name: it.name, quantity: it.quantity, notes: it.notes })),
+          specialInstructions: order.specialInstructions || '',
+          isReprint: false,
+        };
+
+        // Step 3: Enqueue in Mutex FIFO Queue (Sequentially written to TVS thermal printer)
+        const printRes = await queueKOTPrint(printJob);
+
+        if (printRes.success) {
+          // Step 4: Mark PRINTED on server
+          await apiClient.patch(`/orders/admin/kot/${order._id}/printed`);
+          setOrders((prev) =>
+            prev.map((o) =>
+              o._id === order._id
+                ? { ...o, kotPrintStatus: 'PRINTED', kotPrintedAt: new Date().toISOString() }
+                : o
+            )
+          );
+          toast.custom((_t) => (
+            <div className="bg-stone-900 text-white px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 text-xs font-black">
+              🖨️ {printJob.kotNumber} printed to TVS Champ RP Star!
+            </div>
+          ));
+        } else {
+          // Step 4b: Mark FAILED on server for retry
+          await apiClient.patch(`/orders/admin/kot/${order._id}/failed`);
+          setOrders((prev) =>
+            prev.map((o) => (o._id === order._id ? { ...o, kotPrintStatus: 'FAILED' } : o))
+          );
+          toast.error(`KOT print failed for ${printJob.kotNumber}: ${printRes.message}`);
+          break; // Stop sequential loop on hardware disconnection
+        }
+      }
+    } finally {
+      isProcessingQueueRef.current = false;
+    }
+  }, [orders, isBridgeOnline]);
 
   useEffect(() => {
     // Auto-reconnect previously paired TVS USB printer in Chrome without popups
     autoReconnectWebSerial().then((connected) => {
       setIsSerialConnected(connected);
+      if (connected) {
+        processPendingKOTQueue();
+      }
     });
+
+    requestScreenWakeLock();
 
     const checkBridge = async () => {
       const health = await checkBridgeHealth();
       setIsBridgeOnline(health.online);
-      setIsSerialConnected(isWebSerialConnected());
+      const connected = isWebSerialConnected();
+      setIsSerialConnected(connected);
+      if (connected || health.online) {
+        processPendingKOTQueue();
+      }
     };
     checkBridge();
     const interval = setInterval(checkBridge, 6000);
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      clearInterval(interval);
+      releaseScreenWakeLock();
+    };
+  }, [processPendingKOTQueue]);
 
-  const handleOpenKOT = async (order: Order, autoPrint = false) => {
+  const handleOpenKOT = (order: Order, isReprint = false) => {
     const time = order.createdAt
       ? new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
       : new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
-    const kotPayload = {
+    setKotModal({
+      isOpen: true,
       kotNumber: order.kotNumber || `KOT-${order.orderNumber}`,
       tableNumber: order.tableNumber,
       round: order.round,
       orderNumber: order.orderNumber,
       customerName: order.customerName,
       time,
-      items: order.items.map(it => ({ name: it.name, quantity: it.quantity, notes: it.notes })),
+      items: order.items.map((it) => ({ name: it.name, quantity: it.quantity, notes: it.notes })),
       specialInstructions: order.specialInstructions || '',
-      autoPrint,
-    };
-
-    // 1. Direct Chrome USB Serial (Zero-installation direct to TVS printer)
-    if (autoPrint && isWebSerialConnected()) {
-      const res = await printKOTViaWebSerial(kotPayload);
-      if (res.success) {
-        toast.custom((_t) => (
-          <div className="bg-stone-900 text-white px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 text-xs font-black">
-            🖨️ {kotPayload.kotNumber} printed to TVS Champ RP Star (USB)!
-          </div>
-        ));
-        return; // Silent, hands-free!
-      }
-    }
-
-    // 2. Local Bridge (if running)
-    if (autoPrint && isBridgeOnline) {
-      const res = await printKOTViaBridge(kotPayload);
-      if (res.success) {
-        toast.custom((_t) => (
-          <div className="bg-stone-900 text-white px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 text-xs font-black">
-            🖨️ {kotPayload.kotNumber} sent to TVS Champ RP Star!
-          </div>
-        ));
-        return; // Silent, hands-free! Do not open modal.
-      }
-    }
-
-    setKotModal({
-      isOpen: true,
-      ...kotPayload
+      autoPrint: false,
+      isReprint,
     });
   };
 
@@ -252,30 +340,8 @@ export default function OrdersPage() {
         setOrders(fetchedOrders);
         setStats(fetchedStats);
 
-        // Record and auto-print new incoming KOTs (kitchen thermal printing)
-        if (!isInitializedRef.current) {
-          isInitializedRef.current = true;
-          fetchedOrders.forEach((o) => {
-            if (o.kotNumber) seenKOTsRef.current.add(o.kotNumber);
-          });
-        } else {
-          const autoPrintKOT = localStorage.getItem('sukoon_auto_print_kot') !== 'false';
-          const newKOTOrders = fetchedOrders.filter(
-            (o) => o.kotNumber && !seenKOTsRef.current.has(o.kotNumber)
-          );
-          newKOTOrders.forEach((o) => seenKOTsRef.current.add(o.kotNumber!));
-
-          if (autoPrintKOT && newKOTOrders.length > 0) {
-            handleOpenKOT(newKOTOrders[0], true);
-            if (newKOTOrders.length > 1) {
-              toast.custom((_t) => (
-                <div className="bg-stone-900 text-white px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 text-xs font-black">
-                  🖨️ {newKOTOrders.length} new orders received! Printing tickets...
-                </div>
-              ));
-            }
-          }
-        }
+        // Automatically process FIFO print queue for any unprinted KOTs
+        processPendingKOTQueue(fetchedOrders);
       }
     } catch (err) {
       console.error('Failed to fetch orders:', err);
@@ -283,7 +349,7 @@ export default function OrdersPage() {
       setLoading(false);
       setIsRefreshing(false);
     }
-  }, [soundEnabled]);
+  }, [soundEnabled, processPendingKOTQueue]);
 
   // Initial fetch and auto-polling every 6 seconds with Page Visibility guard (rush hour optimization)
   useEffect(() => {
@@ -542,6 +608,20 @@ export default function OrdersPage() {
               <span>🔌 Connect TVS USB</span>
             </button>
           )}
+
+          {/* Pending KOTs Manual Print / Recovery Button */}
+          {pendingPrintCount > 0 && (
+            <button
+              type="button"
+              onClick={() => processPendingKOTQueue()}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition-all cursor-pointer animate-pulse"
+              title="Print all pending KOT tickets sequentially"
+            >
+              <Printer className="w-3.5 h-3.5 text-white" />
+              <span>🖨️ Print {pendingPrintCount} Pending KOT{pendingPrintCount > 1 ? 's' : ''}</span>
+            </button>
+          )}
+
           {/* Manual Walk-in Order Button */}
           <button
             type="button"
@@ -931,7 +1011,7 @@ export default function OrdersPage() {
                             {order.kotNumber && (
                               <button
                                 type="button"
-                                onClick={() => handleOpenKOT(order)}
+                                onClick={() => handleOpenKOT(order, true)}
                                 className="px-2.5 py-1.5 rounded-lg text-stone-500 hover:text-stone-900 hover:bg-stone-100 text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 border border-stone-200"
                                 title={`Reprint KOT ${order.kotNumber}`}
                               >
@@ -952,7 +1032,7 @@ export default function OrdersPage() {
                           <div className="flex items-center justify-end w-full">
                             <button
                               type="button"
-                              onClick={() => handleOpenKOT(order)}
+                              onClick={() => handleOpenKOT(order, true)}
                               className="px-2.5 py-1 rounded-lg text-stone-500 hover:text-stone-900 hover:bg-stone-100 text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 border border-stone-200"
                               title={`Reprint KOT ${order.kotNumber}`}
                             >
@@ -1095,7 +1175,7 @@ export default function OrdersPage() {
                   {order.kotNumber && (
                     <button
                       type="button"
-                      onClick={() => handleOpenKOT(order)}
+                      onClick={() => handleOpenKOT(order, true)}
                       className="p-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
                       title={`Reprint KOT ${order.kotNumber}`}
                     >
@@ -1183,6 +1263,7 @@ export default function OrdersPage() {
         items={kotModal.items}
         specialInstructions={kotModal.specialInstructions}
         autoPrint={kotModal.autoPrint}
+        isReprint={kotModal.isReprint}
       />
     </div>
   );

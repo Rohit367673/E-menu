@@ -26,6 +26,12 @@ export interface IOrder extends Document {
   round: number;
   kotNumber?: string;
   kotGeneratedAt?: Date;
+  kotPrintJobId?: string;
+  kotPrintStatus?: 'PENDING' | 'PRINTING' | 'PRINTED' | 'FAILED';
+  kotPrintAttempts?: number;
+  kotPrintedAt?: Date;
+  printingStartedAt?: Date;
+  printingBy?: string;
   billRequested?: boolean;
   billRequestedAt?: Date;
   createdAt: Date;
@@ -115,6 +121,31 @@ const orderSchema = new Schema<IOrder>(
     kotGeneratedAt: {
       type: Date,
     },
+    kotPrintJobId: {
+      type: String,
+      default: '',
+      index: true,
+    },
+    kotPrintStatus: {
+      type: String,
+      enum: ['PENDING', 'PRINTING', 'PRINTED', 'FAILED'],
+      default: 'PENDING',
+      index: true,
+    },
+    kotPrintAttempts: {
+      type: Number,
+      default: 0,
+    },
+    kotPrintedAt: {
+      type: Date,
+    },
+    printingStartedAt: {
+      type: Date,
+    },
+    printingBy: {
+      type: String,
+      default: '',
+    },
     billRequested: {
       type: Boolean,
       default: false,
@@ -131,6 +162,7 @@ orderSchema.index({ restaurantId: 1, status: 1, createdAt: -1 });
 orderSchema.index({ restaurantId: 1, tableNumber: 1, status: 1 });
 orderSchema.index({ restaurantId: 1, createdAt: -1, status: 1 });
 orderSchema.index({ restaurantId: 1, sessionId: 1 });
+orderSchema.index({ restaurantId: 1, kotPrintStatus: 1 });
 
 const Order: Model<IOrder> = mongoose.model<IOrder>('Order', orderSchema);
 
