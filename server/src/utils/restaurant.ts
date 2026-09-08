@@ -22,7 +22,7 @@ export const formatAsRestaurant = (restaurant: {
   name: restaurant.name || "Sukoon Cafe & Bar",
   slug: restaurant.slug || 'menu',
   description: restaurant.description || 'Welcome to our menu!',
-  logo: restaurant.logo || '',
+  logo: restaurant.logo || '/sukoon-logo.jpg',
   coverImage: restaurant.coverImage || '',
   googleReviewUrl: restaurant.googleReviewUrl || '',
   googleRating: restaurant.googleRating || 4.9,
@@ -42,14 +42,20 @@ export const formatAsRestaurant = (restaurant: {
 
 export const getOrCreateRestaurant = async () => {
   let restaurant = await Restaurant.findOne();
-  if (restaurant) return restaurant;
+  if (restaurant) {
+    if (!restaurant.logo) {
+      restaurant.logo = '/sukoon-logo.jpg';
+      await restaurant.save();
+    }
+    return restaurant;
+  }
 
   const legacyDesign = await MenuDesign.findOne();
   if (legacyDesign) {
     restaurant = new Restaurant({
       name: legacyDesign.name,
       slug: 'menu',
-      logo: legacyDesign.logo,
+      logo: legacyDesign.logo || '/sukoon-logo.jpg',
       description: legacyDesign.description,
       coverImage: legacyDesign.coverImage,
       theme: legacyDesign.theme === 'custom-canvas' ? 'modern-cafe' : legacyDesign.theme,
@@ -67,6 +73,7 @@ export const getOrCreateRestaurant = async () => {
     name: "Sukoon Cafe & Bar",
     slug: 'menu',
     theme: 'modern-cafe',
+    logo: '/sukoon-logo.jpg',
   });
   await restaurant.save();
   return restaurant;

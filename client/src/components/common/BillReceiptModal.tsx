@@ -63,7 +63,7 @@ export default function BillReceiptModal({
   });
 
   const combinedItems = Array.from(itemMap.values());
-  const finalBillAmount = totalBill ?? calculatedTotal;
+  const finalBillAmount = (totalBill !== undefined && totalBill > 0) ? totalBill : calculatedTotal;
 
   // Derive Invoice / Receipt Number & Date
   const firstOrder = orders[0];

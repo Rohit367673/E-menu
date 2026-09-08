@@ -33,6 +33,8 @@ interface CartContextType {
   activeRoundsCount: number;
   overallStatus: 'none' | OrderStatus;
   isTableSettled: boolean;
+  settledOrders: Order[];
+  settledTableBill: number;
   dismissSettledNotification: () => void;
   resetTableSession: () => void;
   fetchActiveOrders: () => Promise<void>;
@@ -101,6 +103,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [activeRoundsCount, setActiveRoundsCount] = useState(0);
   const [overallStatus, setOverallStatus] = useState<'none' | OrderStatus>('none');
   const [isTableSettled, setIsTableSettled] = useState(false);
+  const [settledOrders, setSettledOrders] = useState<Order[]>([]);
+  const [settledTableBill, setSettledTableBill] = useState(0);
   const [billRequested, setBillRequested] = useState(false);
   const [isRequestingBill, setIsRequestingBill] = useState(false);
   const hadActiveOrdersRef = useRef(false);
@@ -241,14 +245,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
         if (fetchedOrders.length > 0) {
           hadActiveOrdersRef.current = true;
+          // Keep active orders as candidate settled orders so receipt is preserved when completed
+          setSettledOrders(fetchedOrders);
+          setSettledTableBill(res.data.data.totalBill || 0);
           if (res.data.data.customerName && !customerName) {
             setCustomerNameState(res.data.data.customerName);
           }
-        } else if (wasActive && fetchedOrders.length === 0) {
-          // Table was settled by receptionist!
-          setIsTableSettled(true);
-          setBillRequested(false);
-          hadActiveOrdersRef.current = false;
+        } else {
+          // If server returned historical settledOrders for this table, adopt them
+          if (res.data.data.settledOrders && res.data.data.settledOrders.length > 0) {
+            setSettledOrders(res.data.data.settledOrders);
+            setSettledTableBill(res.data.data.settledTotalBill || 0);
+          }
+          if (wasActive || res.data.data.recentlySettled) {
+            // Table was settled by receptionist/staff!
+            setIsTableSettled(true);
+            setBillRequested(false);
+            hadActiveOrdersRef.current = false;
+          }
         }
       }
     } catch {
@@ -292,6 +306,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setActiveRoundsCount(0);
     setOverallStatus('none');
     setIsTableSettled(false);
+    setSettledOrders([]);
+    setSettledTableBill(0);
     setBillRequested(false);
     hadActiveOrdersRef.current = false;
     clearCart();
@@ -410,6 +426,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       activeRoundsCount,
       overallStatus,
       isTableSettled,
+      settledOrders,
+      settledTableBill,
       dismissSettledNotification,
       resetTableSession,
       fetchActiveOrders,
@@ -444,6 +462,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       activeRoundsCount,
       overallStatus,
       isTableSettled,
+      settledOrders,
+      settledTableBill,
       dismissSettledNotification,
       resetTableSession,
       fetchActiveOrders,

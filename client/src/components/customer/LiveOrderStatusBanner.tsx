@@ -24,6 +24,8 @@ export default function LiveOrderStatusBanner({
     activeRoundsCount,
     overallStatus,
     isTableSettled,
+    settledOrders,
+    settledTableBill,
     dismissSettledNotification,
     resetTableSession,
     setIsDrawerOpen,
@@ -116,9 +118,9 @@ const cleanTableNumber = (tbl?: string) => {
         isOpen={isReceiptOpen}
         onClose={() => setIsReceiptOpen(false)}
         tableNumber={cleanedTable}
-        customerName={customerName || 'Guest'}
-        orders={activeOrders}
-        totalBill={activeTableBill}
+        customerName={customerName || settledOrders[0]?.customerName || 'Guest'}
+        orders={settledOrders.length > 0 ? settledOrders : activeOrders}
+        totalBill={settledTableBill > 0 ? settledTableBill : activeTableBill}
         restaurantName={restaurantName}
         isSettled={true}
       />
@@ -328,11 +330,11 @@ const cleanTableNumber = (tbl?: string) => {
       isOpen={isReceiptOpen}
       onClose={() => setIsReceiptOpen(false)}
       tableNumber={cleanedTable}
-      customerName={customerName || latestOrder?.customerName || 'Guest'}
-      orders={activeOrders}
-      totalBill={activeTableBill}
+      customerName={customerName || latestOrder?.customerName || settledOrders[0]?.customerName || 'Guest'}
+      orders={activeOrders.length > 0 ? activeOrders : settledOrders}
+      totalBill={activeTableBill > 0 ? activeTableBill : settledTableBill}
       restaurantName={restaurantName}
-      isSettled={overallStatus === 'completed'}
+      isSettled={overallStatus === 'completed' || isTableSettled}
     />
     </>
   );

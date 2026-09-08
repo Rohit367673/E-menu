@@ -51,6 +51,8 @@ export default function OrderDrawer({
     setIsDrawerOpen,
     activeOrders,
     activeTableBill,
+    settledOrders,
+    settledTableBill,
     activeRoundsCount,
     lastPlacedOrder,
     placeOrder,
@@ -545,10 +547,24 @@ export default function OrderDrawer({
         onClose={() => setIsReceiptOpen(false)}
         tableNumber={tableNumber}
         customerName={customerName || 'Guest'}
-        orders={activeOrders.length > 0 ? activeOrders : lastPlacedOrder ? [lastPlacedOrder] : []}
-        totalBill={activeOrders.length > 0 ? activeTableBill : lastPlacedOrder?.totalAmount}
+        orders={
+          activeOrders.length > 0
+            ? activeOrders
+            : settledOrders.length > 0
+            ? settledOrders
+            : lastPlacedOrder
+            ? [lastPlacedOrder]
+            : []
+        }
+        totalBill={
+          activeOrders.length > 0
+            ? activeTableBill
+            : settledOrders.length > 0
+            ? settledTableBill
+            : lastPlacedOrder?.totalAmount
+        }
         restaurantName={restaurantName}
-        isSettled={false}
+        isSettled={activeOrders.length === 0 && settledOrders.length > 0}
       />
     </AnimatePresence>
   );

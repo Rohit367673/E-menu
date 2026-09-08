@@ -162,6 +162,8 @@ export interface ActiveTableData {
   overallStatus?: 'none' | OrderStatus;
   customerName?: string;
   recentlySettled?: boolean;
+  settledOrders?: Order[];
+  settledTotalBill?: number;
   billRequested?: boolean;
   sessionId?: string;
   sessionNumber?: string;

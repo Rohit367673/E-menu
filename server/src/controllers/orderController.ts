@@ -202,15 +202,37 @@ export const getActiveTableOrders = async (req: Request, res: Response): Promise
 
     // Check if table was recently completed
     let recentlySettled = false;
+    let settledOrders: any[] = [];
+    let settledTotalBill = 0;
+
     if (orders.length === 0) {
       const lastCompleted = await Order.findOne({
         restaurantId: restaurant._id,
         tableNumber: cleanTable,
         status: 'completed',
-      }).sort({ updatedAt: -1 }).select('_id updatedAt').lean();
+      }).sort({ updatedAt: -1 }).lean();
 
-      if (lastCompleted && (Date.now() - new Date(lastCompleted.updatedAt).getTime()) < 30 * 60 * 1000) {
+      if (lastCompleted && (Date.now() - new Date(lastCompleted.updatedAt).getTime()) < 60 * 60 * 1000) {
         recentlySettled = true;
+
+        if (lastCompleted.sessionId) {
+          settledOrders = await Order.find({
+            restaurantId: restaurant._id,
+            sessionId: lastCompleted.sessionId,
+            status: 'completed',
+          }).sort({ createdAt: 1 }).lean();
+        } else {
+          const windowStart = new Date(new Date(lastCompleted.updatedAt).getTime() - 30 * 60 * 1000);
+          const windowEnd = new Date(new Date(lastCompleted.updatedAt).getTime() + 5 * 60 * 1000);
+          settledOrders = await Order.find({
+            restaurantId: restaurant._id,
+            tableNumber: cleanTable,
+            status: 'completed',
+            updatedAt: { $gte: windowStart, $lte: windowEnd },
+          }).sort({ createdAt: 1 }).lean();
+        }
+
+        settledTotalBill = settledOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
       }
     }
 
@@ -232,8 +254,10 @@ export const getActiveTableOrders = async (req: Request, res: Response): Promise
         totalItems,
         activeRounds: orders.length,
         overallStatus,
-        customerName: orders[0]?.customerName || '',
+        customerName: orders[0]?.customerName || settledOrders[0]?.customerName || '',
         recentlySettled,
+        settledOrders,
+        settledTotalBill: Math.round(settledTotalBill * 100) / 100,
         sessionId: session?._id || null,
         sessionNumber: session?.sessionNumber || null,
         billRequested,

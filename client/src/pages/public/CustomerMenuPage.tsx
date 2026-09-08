@@ -1152,19 +1152,19 @@ export default function CustomerMenuPage() {
             transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
             className="mb-2 flex items-center justify-center w-full mx-auto text-center"
           >
-            {rest.logo ? (
-              <div className="w-12 h-12 rounded-full overflow-hidden shadow-md mx-auto"
-                style={{ border: `2px solid ${primary}18` }}
-              >
-                <img src={getImageUrl(rest.logo)} alt={rest.name} className="w-full h-full object-cover" />
-              </div>
-            ) : (
-              <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-md mx-auto"
-                style={{ background: `linear-gradient(135deg, ${primary}18, ${primary}08)`, border: `2px solid ${primary}10` }}
-              >
-                <UtensilsCrossed className="w-6 h-6" style={{ color: primary }} />
-              </div>
-            )}
+            <div
+              className="w-16 h-16 rounded-full overflow-hidden shadow-md mx-auto bg-white p-1 flex items-center justify-center"
+              style={{ border: `2px solid ${primary}25` }}
+            >
+              <img
+                src={rest.logo ? getImageUrl(rest.logo) : '/sukoon-logo.jpg'}
+                alt={rest.name}
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = '/sukoon-logo.jpg';
+                }}
+              />
+            </div>
           </motion.div>
           {/* Name */}
           <motion.h1
@@ -1195,21 +1195,21 @@ export default function CustomerMenuPage() {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-            className="mb-2.5 flex items-center justify-center w-full mx-auto text-center"
+            className="mb-3 flex items-center justify-center w-full mx-auto text-center"
           >
-            {rest.logo ? (
-              <div className="w-16 h-16 rounded-full overflow-hidden shadow-lg mx-auto"
-                style={{ border: `3px solid ${primary}18` }}
-              >
-                <img src={getImageUrl(rest.logo)} alt={rest.name} className="w-full h-full object-cover" />
-              </div>
-            ) : (
-              <div className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg mx-auto"
-                style={{ background: `linear-gradient(135deg, ${primary}18, ${primary}08)`, border: `2px solid ${primary}10` }}
-              >
-                <UtensilsCrossed className="w-8 h-8" style={{ color: primary }} />
-              </div>
-            )}
+            <div
+              className="w-20 h-20 rounded-full overflow-hidden shadow-lg mx-auto bg-white p-1.5 flex items-center justify-center"
+              style={{ border: `3px solid ${primary}25` }}
+            >
+              <img
+                src={rest.logo ? getImageUrl(rest.logo) : '/sukoon-logo.jpg'}
+                alt={rest.name}
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = '/sukoon-logo.jpg';
+                }}
+              />
+            </div>
           </motion.div>
 
           {/* Restaurant Name + Tagline */}
