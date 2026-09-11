@@ -379,13 +379,40 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
 
     const order = await Order.findByIdAndUpdate(
       id,
-      { $set: { status } },
+      { $set: { status, ...(status === 'completed' ? { billRequested: false } : {}) } },
       { new: true }
     );
 
     if (!order) {
       res.status(404).json({ success: false, message: 'Order not found' });
       return;
+    }
+
+    // Auto-clear table for next round: If this was the last active order on the table, settle the session
+    if (status === 'completed' || status === 'cancelled') {
+      const remainingActive = await Order.countDocuments({
+        restaurantId: order.restaurantId,
+        tableNumber: order.tableNumber,
+        status: { $in: ['pending', 'preparing', 'served'] },
+        _id: { $ne: order._id },
+      });
+
+      if (remainingActive === 0) {
+        await TableSession.findOneAndUpdate(
+          {
+            restaurantId: order.restaurantId,
+            tableNumber: order.tableNumber,
+            status: 'active',
+          },
+          {
+            $set: {
+              status: 'settled',
+              settledAt: new Date(),
+              billRequested: false,
+            },
+          }
+        );
+      }
     }
 
     res.json({

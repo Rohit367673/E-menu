@@ -257,8 +257,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
             setSettledOrders(res.data.data.settledOrders);
             setSettledTableBill(res.data.data.settledTotalBill || 0);
           }
-          if (wasActive || res.data.data.recentlySettled) {
-            // Table was settled by receptionist/staff!
+          if (wasActive) {
+            // Table was completed/settled by receptionist/staff for this dining session
             setIsTableSettled(true);
             setBillRequested(false);
             hadActiveOrdersRef.current = false;
