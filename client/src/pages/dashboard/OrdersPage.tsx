@@ -112,6 +112,7 @@ export default function OrdersPage() {
   // KOT Ticket modal state
   const [kotModal, setKotModal] = useState<{
     isOpen: boolean;
+    orderId?: string;
     kotNumber: string;
     tableNumber: string;
     round: number;
@@ -124,6 +125,7 @@ export default function OrdersPage() {
     isReprint: boolean;
   }>({
     isOpen: false,
+    orderId: '',
     kotNumber: '',
     tableNumber: '',
     round: 1,
@@ -138,6 +140,8 @@ export default function OrdersPage() {
 
   const tabClientIdRef = useRef('pos-' + Math.random().toString(36).substring(2, 9));
   const isProcessingQueueRef = useRef(false);
+  const seenKOTsRef = useRef<Set<string>>(new Set());
+  const isInitializedRef = useRef(false);
 
   const [isSerialConnected, setIsSerialConnected] = useState(isWebSerialConnected());
 
@@ -147,9 +151,6 @@ export default function OrdersPage() {
 
     const autoPrintKOT = localStorage.getItem('sukoon_auto_print_kot') !== 'false';
     if (!autoPrintKOT) return;
-
-    const isPrinterReady = isWebSerialConnected() || isBridgeOnline;
-    if (!isPrinterReady) return;
 
     const sourceOrders = ordersList || orders;
     // Find active orders with pending or failed KOT print jobs (FIFO order by creation time)
@@ -163,6 +164,21 @@ export default function OrdersPage() {
       .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
     if (pendingOrders.length === 0) return;
+
+    const isPrinterReady = isWebSerialConnected() || isBridgeOnline;
+    if (!isPrinterReady) {
+      // If modal is currently open, wait until user finishes current ticket
+      if (kotModal.isOpen) return;
+
+      // DUAL PIPELINE: If Web Serial is not active (e.g. printer driver is in use via OS/Chrome print),
+      // automatically pop the KOT print modal for the newest pending order!
+      const nextPending = pendingOrders.find((o) => !seenKOTsRef.current.has(o._id));
+      if (nextPending) {
+        seenKOTsRef.current.add(nextPending._id);
+        handleOpenKOT(nextPending, true, false);
+      }
+      return;
+    }
 
     isProcessingQueueRef.current = true;
 
@@ -232,7 +248,7 @@ export default function OrdersPage() {
     } finally {
       isProcessingQueueRef.current = false;
     }
-  }, [orders, isBridgeOnline]);
+  }, [orders, isBridgeOnline, kotModal.isOpen]);
 
   useEffect(() => {
     // Auto-reconnect previously paired TVS USB printer in Chrome without popups
@@ -262,13 +278,14 @@ export default function OrdersPage() {
     };
   }, [processPendingKOTQueue]);
 
-  const handleOpenKOT = (order: Order, isReprint = false) => {
+  const handleOpenKOT = (order: Order, autoPrint = false, isReprint = false) => {
     const time = order.createdAt
       ? new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
       : new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
     setKotModal({
       isOpen: true,
+      orderId: order._id,
       kotNumber: order.kotNumber || `KOT-${order.orderNumber}`,
       tableNumber: order.tableNumber,
       round: order.round,
@@ -277,7 +294,7 @@ export default function OrdersPage() {
       time,
       items: order.items.map((it) => ({ name: it.name, quantity: it.quantity, notes: it.notes })),
       specialInstructions: order.specialInstructions || '',
-      autoPrint: false,
+      autoPrint,
       isReprint,
     });
   };
@@ -337,6 +354,17 @@ export default function OrdersPage() {
 
         prevPendingCountRef.current = currentKitchenCount;
         prevBillReqCountRef.current = currentBillReqCount;
+
+        // On initial page load, record already-printed or finished orders to seen set
+        if (!isInitializedRef.current) {
+          fetchedOrders.forEach((o) => {
+            if (o.kotPrintStatus === 'PRINTED' || ['served', 'completed', 'cancelled'].includes(o.status)) {
+              seenKOTsRef.current.add(o._id);
+            }
+          });
+          isInitializedRef.current = true;
+        }
+
         setOrders(fetchedOrders);
         setStats(fetchedStats);
 
@@ -1011,7 +1039,7 @@ export default function OrdersPage() {
                             {order.kotNumber && (
                               <button
                                 type="button"
-                                onClick={() => handleOpenKOT(order, true)}
+                                onClick={() => handleOpenKOT(order, false, true)}
                                 className="px-2.5 py-1.5 rounded-lg text-stone-500 hover:text-stone-900 hover:bg-stone-100 text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 border border-stone-200"
                                 title={`Reprint KOT ${order.kotNumber}`}
                               >
@@ -1032,7 +1060,7 @@ export default function OrdersPage() {
                           <div className="flex items-center justify-end w-full">
                             <button
                               type="button"
-                              onClick={() => handleOpenKOT(order, true)}
+                              onClick={() => handleOpenKOT(order, false, true)}
                               className="px-2.5 py-1 rounded-lg text-stone-500 hover:text-stone-900 hover:bg-stone-100 text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 border border-stone-200"
                               title={`Reprint KOT ${order.kotNumber}`}
                             >
@@ -1175,7 +1203,7 @@ export default function OrdersPage() {
                   {order.kotNumber && (
                     <button
                       type="button"
-                      onClick={() => handleOpenKOT(order, true)}
+                      onClick={() => handleOpenKOT(order, false, true)}
                       className="p-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
                       title={`Reprint KOT ${order.kotNumber}`}
                     >
@@ -1234,7 +1262,7 @@ export default function OrdersPage() {
         onOrderCreated={(newOrder) => {
           fetchOrders(true);
           if (newOrder) {
-            handleOpenKOT(newOrder, true);
+            handleOpenKOT(newOrder, true, false);
           }
         }}
       />
@@ -1253,7 +1281,28 @@ export default function OrdersPage() {
       {/* KOT Ticket Modal */}
       <KOTTicketModal
         isOpen={kotModal.isOpen}
-        onClose={() => setKotModal((prev) => ({ ...prev, isOpen: false }))}
+        onClose={() => {
+          setKotModal((prev) => ({ ...prev, isOpen: false }));
+          setTimeout(() => {
+            processPendingKOTQueue();
+          }, 600);
+        }}
+        onPrinted={async () => {
+          if (kotModal.orderId) {
+            try {
+              await apiClient.patch(`/orders/admin/kot/${kotModal.orderId}/printed`);
+              setOrders((prev) =>
+                prev.map((o) =>
+                  o._id === kotModal.orderId
+                    ? { ...o, kotPrintStatus: 'PRINTED', kotPrintedAt: new Date().toISOString() }
+                    : o
+                )
+              );
+            } catch (err) {
+              console.error('Failed to update KOT print status to PRINTED:', err);
+            }
+          }
+        }}
         kotNumber={kotModal.kotNumber}
         tableNumber={kotModal.tableNumber}
         round={kotModal.round}

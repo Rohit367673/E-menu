@@ -15,6 +15,7 @@ interface KOTTicketModalProps {
   specialInstructions?: string;
   autoPrint?: boolean;
   isReprint?: boolean;
+  onPrinted?: () => void;
 }
 
 export default function KOTTicketModal({
@@ -30,6 +31,7 @@ export default function KOTTicketModal({
   specialInstructions,
   autoPrint = false,
   isReprint = false,
+  onPrinted,
 }: KOTTicketModalProps) {
   const hasPrintedRef = useRef(false);
 
@@ -51,13 +53,24 @@ export default function KOTTicketModal({
 
   const handlePrint = () => {
     document.body.classList.add('printing-kot');
-    window.print();
-    setTimeout(() => {
+    let finished = false;
+
+    const cleanup = () => {
+      if (finished) return;
+      finished = true;
       document.body.classList.remove('printing-kot');
+      window.removeEventListener('afterprint', cleanup);
+      if (onPrinted) {
+        onPrinted();
+      }
       if (autoPrint) {
         onClose();
       }
-    }, 1200);
+    };
+
+    window.addEventListener('afterprint', cleanup, { once: true });
+    window.print();
+    setTimeout(cleanup, 1200);
   };
 
   return (
@@ -185,13 +198,10 @@ export default function KOTTicketModal({
               )}
 
               {/* Footer */}
-              <div className="text-center pt-3 space-y-2 text-[11px] text-stone-500">
+              <div className="text-center pt-2 space-y-1 text-[11px] text-stone-500">
                 <div className="text-xs font-black uppercase tracking-wider">*** END OF KOT ***</div>
-                <div className="text-[9px] text-stone-300 tracking-widest pt-1">
+                <div className="text-[9px] text-stone-400 tracking-widest">
                   KITCHEN USE ONLY · NO PRICES
-                </div>
-                <div className="text-center text-[10px] tracking-[0.2em] text-stone-400 mt-4 pb-1">
-                  ──✂── TEAR / AUTO-CUT HERE ──✂──
                 </div>
               </div>
             </div>

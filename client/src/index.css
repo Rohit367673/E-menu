@@ -1332,10 +1332,19 @@ select:focus-visible {
 
 /* ─── Thermal Receipt Print Engine (80mm / 58mm Billing Machine) ─── */
 @media print {
-  body.printing-receipt {
+  @page {
+    size: 80mm auto !important;
+    margin: 0mm !important;
+  }
+
+  html, body.printing-receipt {
     background: #ffffff !important;
     margin: 0 !important;
     padding: 0 !important;
+    width: 80mm !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
   }
 
   body.printing-receipt * {
@@ -1348,13 +1357,14 @@ select:focus-visible {
   }
 
   body.printing-receipt #thermal-receipt-printable {
-    position: absolute !important;
+    box-sizing: border-box !important;
+    position: relative !important;
     left: 0 !important;
     top: 0 !important;
-    width: 76mm !important;
-    max-width: 76mm !important;
-    margin: 0 !important;
-    padding: 2mm 3mm !important;
+    width: 72mm !important;
+    max-width: 72mm !important;
+    margin: 0 auto !important;
+    padding: 2mm 2mm 3mm 2mm !important;
     background: #ffffff !important;
     color: #000000 !important;
     font-family: 'Courier New', Courier, monospace !important;
@@ -1364,6 +1374,12 @@ select:focus-visible {
     border-radius: 0 !important;
     box-shadow: none !important;
     display: block !important;
+    page-break-inside: avoid !important;
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
+    height: auto !important;
+    max-height: max-content !important;
+    overflow: hidden !important;
   }
 
   body.printing-receipt #thermal-receipt-printable hr,
@@ -1371,19 +1387,23 @@ select:focus-visible {
     border-color: #000000 !important;
     border-style: dashed !important;
   }
-
-  @page {
-    size: 80mm auto;
-    margin: 0mm;
-  }
 }
 
 /* ─── KOT (Kitchen Order Ticket) Thermal Print Engine ─── */
 @media print {
-  body.printing-kot {
+  @page {
+    size: 80mm auto !important;
+    margin: 0mm !important;
+  }
+
+  html, body.printing-kot {
     background: #ffffff !important;
     margin: 0 !important;
     padding: 0 !important;
+    width: 80mm !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
   }
 
   body.printing-kot * {
@@ -1396,22 +1416,29 @@ select:focus-visible {
   }
 
   body.printing-kot #kot-ticket-printable {
-    position: absolute !important;
+    box-sizing: border-box !important;
+    position: relative !important;
     left: 0 !important;
     top: 0 !important;
-    width: 76mm !important;
-    max-width: 76mm !important;
-    margin: 0 !important;
-    padding: 2mm 3mm !important;
+    width: 72mm !important;
+    max-width: 72mm !important;
+    margin: 0 auto !important;
+    padding: 2mm 2mm 3mm 2mm !important;
     background: #ffffff !important;
     color: #000000 !important;
     font-family: 'Courier New', Courier, monospace !important;
     font-size: 12px !important;
-    line-height: 1.4 !important;
+    line-height: 1.35 !important;
     border: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
     display: block !important;
+    page-break-inside: avoid !important;
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
+    height: auto !important;
+    max-height: max-content !important;
+    overflow: hidden !important;
   }
 
   body.printing-kot #kot-ticket-printable .kot-item-name {

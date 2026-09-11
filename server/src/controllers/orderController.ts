@@ -816,6 +816,9 @@ export const claimPrintJob = async (req: AuthRequest, res: Response): Promise<vo
         $or: [
           { kotPrintStatus: 'PENDING' },
           { kotPrintStatus: 'FAILED' },
+          { kotPrintStatus: { $exists: false } },
+          { kotPrintStatus: null },
+          { kotPrintStatus: '' },
           { kotPrintStatus: 'PRINTING', printingStartedAt: { $lt: sixtySecondsAgo } },
         ],
       },
