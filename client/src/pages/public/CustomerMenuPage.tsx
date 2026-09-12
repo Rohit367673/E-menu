@@ -863,14 +863,19 @@ export default function CustomerMenuPage() {
   /* Fetch data with Instant SWR Cache for lightning-fast loading */
   useEffect(() => {
     let isMounted = true;
-    const cacheKey = `emenu_cache_${slug || 'default'}`;
+    const cacheKey = `emenu_cache_v2_${slug || 'default'}`;
 
-    // 1. Instant Cache Retrieval for 0ms initial render
+    // 1. Instant Cache Retrieval for 0ms initial render (purging legacy stale cache)
     try {
+      // Clean legacy v1 cache keys
+      localStorage.removeItem(`emenu_cache_${slug || 'default'}`);
+      sessionStorage.removeItem(`emenu_cache_${slug || 'default'}`);
+
       const cachedStr = sessionStorage.getItem(cacheKey) || localStorage.getItem(cacheKey);
       if (cachedStr) {
         const cached: PublicMenuData = JSON.parse(cachedStr);
-        if (cached?.restaurant && cached?.categories && cached?.items) {
+        // Only accept cache if it has the full authentic menu (> 30 items)
+        if (cached?.restaurant && cached?.categories && cached?.items && cached.items.length > 30) {
           setData(cached);
           setLoading(false);
           const sorted = [...cached.categories]
