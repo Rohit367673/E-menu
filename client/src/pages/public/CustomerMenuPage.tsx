@@ -8,7 +8,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'motion/react';
-import { UtensilsCrossed, AtSign, Download, MapPin, Phone, Star, Plus, Minus } from 'lucide-react';
+import { UtensilsCrossed, MapPin, Phone, Star, Plus, Minus } from 'lucide-react';
 import type { Restaurant, MenuItem, Category, TemplateConfig } from '../../types/menu';
 import ItemModal from '../../components/customer/ItemModal';
 import ReviewModal from '../../components/customer/ReviewModal';
@@ -60,63 +60,14 @@ function VegDot({ type, size = 14 }: { type?: 'veg' | 'nonveg'; size?: number })
   );
 }
 
-/* ── Showcase Image — crossfades when user hovers an item (Desktop only) ── */
-function ShowcaseImage({ item, primary }: { item: MenuItem | undefined; primary: string }) {
-  const [imgErr, setImgErr] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-  useEffect(() => { setImgErr(false); }, [item?._id]);
-
+/* ── Instagram SVG Icon ── */
+function InstagramIcon({ className = 'w-3.5 h-3.5' }: { className?: string }) {
   return (
-    <div
-      className="relative overflow-hidden w-full"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      style={{
-        aspectRatio: '4/3',
-        borderRadius: '1rem',
-        boxShadow: isHovered
-          ? '0 20px 45px -10px rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.06)'
-          : '0 12px 35px -10px rgba(0,0,0,0.14), 0 0 0 1px rgba(0,0,0,0.04)',
-      }}
-    >
-      <AnimatePresence mode="wait">
-        {item?.image && !imgErr ? (
-          <motion.img
-            key={item._id}
-            src={getImageUrl(item.image)}
-            alt={item.name}
-            loading="lazy"
-            onError={() => setImgErr(true)}
-            initial={{ opacity: 0, scale: 1.08 }}
-            animate={{ opacity: 1, scale: isHovered ? 1.03 : 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-            className="w-full h-full object-cover absolute inset-0"
-            style={{ transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)' }}
-          />
-        ) : (
-          <motion.div
-            key="ph"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="w-full h-full flex flex-col items-center justify-center absolute inset-0"
-            style={{ background: `linear-gradient(135deg, ${primary}15, ${primary}05)` }}
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.4 }}
-            >
-              <UtensilsCrossed className="w-14 h-14" style={{ color: primary, opacity: 0.15 }} />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
-      {/* Subtle gradient overlay for depth */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent pointer-events-none" />
-    </div>
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+    </svg>
   );
 }
 
@@ -234,80 +185,97 @@ function MobileItemCard({
   );
 }
 
-/* ── Desktop Item Row — name ··········· ₹price ── */
-function ItemRow({
-  item, primary, headingFont, isActive, onHover, onClick, index,
+/* ── Desktop Item Card — photo + name + desc + price + add button (grid layout) ── */
+function DesktopItemCard({
+  item,
+  primary,
+  headingFont,
+  onClick,
+  index,
 }: {
-  item: MenuItem; primary: string; headingFont: string; isActive: boolean;
-  onHover: () => void; onClick: () => void; index: number;
+  item: MenuItem;
+  primary: string;
+  headingFont: string;
+  onClick: () => void;
+  index: number;
 }) {
+  const [imgErr, setImgErr] = useState(false);
   const isAvail = item.isAvailable !== false && item.available !== false;
   const { addItem, removeItem, getItemQuantity } = useCart();
   const qty = getItemQuantity(item._id);
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: -10 }}
-      whileInView={{ opacity: 1, x: 0 }}
-      viewport={{ once: true, amount: 0.3 }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
-      onMouseEnter={onHover}
-      onFocus={onHover}
+      initial={{ opacity: 0, y: 10 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.15 }}
+      transition={{ duration: 0.25, delay: Math.min(index * 0.025, 0.2) }}
       onClick={onClick}
-      className="w-full text-left group cursor-pointer flex items-center justify-between select-none"
-      style={{
-        padding: '8px 12px',
-        borderLeft: `3px solid ${isActive ? primary : 'transparent'}`,
-        background: isActive ? `${primary}08` : 'transparent',
-        borderRadius: 8,
-        transition: 'all 0.25s ease',
-        opacity: isAvail ? 1 : 0.4,
-      }}
+      className={`group relative flex items-center justify-between p-3 sm:p-3.5 rounded-2xl border transition-all duration-200 cursor-pointer select-none ${
+        isAvail
+          ? 'bg-white hover:bg-stone-50/80 border-stone-200/90 hover:border-amber-400/50 shadow-2xs hover:shadow-md'
+          : 'bg-stone-50/60 border-stone-200/60 opacity-55'
+      }`}
     >
-      <div className="flex-1 min-w-0 mr-3">
-        {/* Name ··· Price */}
-        <div className="flex items-baseline gap-2">
-          <VegDot type={item.vegType} />
-          <span
-            className="font-bold text-[16px] md:text-[17px] whitespace-nowrap"
-            style={{ fontFamily: headingFont, color: isActive ? primary : '#1f2937', transition: 'color 0.2s' }}
+      {/* Food Thumbnail */}
+      {item.image && !imgErr ? (
+        <div className="w-[84px] h-[84px] sm:w-[92px] sm:h-[92px] rounded-xl overflow-hidden flex-shrink-0 bg-stone-100 border border-stone-200/60 relative mr-3.5 shadow-2xs">
+          <img
+            src={getImageUrl(item.image)}
+            alt={item.name}
+            loading="lazy"
+            onError={() => setImgErr(true)}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        </div>
+      ) : (
+        <div
+          className="w-[84px] h-[84px] sm:w-[92px] sm:h-[92px] rounded-xl flex items-center justify-center flex-shrink-0 mr-3.5 border border-amber-900/10"
+          style={{ background: `linear-gradient(135deg, ${primary}12, ${primary}05)` }}
+        >
+          <UtensilsCrossed className="w-7 h-7" style={{ color: primary, opacity: 0.3 }} />
+        </div>
+      )}
+
+      {/* Details */}
+      <div className="flex-1 min-w-0 pr-3">
+        <div className="flex items-center gap-1.5 mb-1">
+          <VegDot type={item.vegType} size={13} />
+          <h3
+            className="font-bold text-[15px] sm:text-[16px] text-stone-900 truncate group-hover:text-amber-900 transition-colors"
+            style={{ fontFamily: headingFont }}
           >
             {item.name}
-          </span>
-          {/* Dotted leader */}
-          <span
-            className="flex-1"
-            style={{
-              minWidth: 16,
-              borderBottom: '1.5px dotted #d1d5db',
-              alignSelf: 'flex-end',
-              margin: '0 4px',
-              marginBottom: 4,
-            }}
-          />
-          <span className="font-bold text-[15px] md:text-[16px] flex-shrink-0" style={{ fontFamily: headingFont, color: primary }}>
-            ₹{item.price}
-          </span>
+          </h3>
         </div>
 
-        {/* Description */}
-        {item.description && (
-          <p className="text-[12px] mt-0.5 line-clamp-1" style={{ color: '#9ca3af', paddingLeft: 22 }}>
+        {item.description ? (
+          <p className="text-[12px] text-stone-500 line-clamp-2 leading-relaxed mb-1.5 font-normal">
             {item.description}
           </p>
+        ) : (
+          <div className="h-2" />
         )}
 
-        {!isAvail && (
-          <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider mt-0.5" style={{ paddingLeft: 22 }}>
-            Sold out
+        <div className="flex items-center gap-2">
+          <span
+            className="font-bold text-[15px] sm:text-[16px] text-stone-900"
+            style={{ fontFamily: headingFont, color: primary }}
+          >
+            ₹{item.price}
           </span>
-        )}
+          {!isAvail && (
+            <span className="text-[10px] font-bold text-red-500 uppercase tracking-wider bg-red-50 px-1.5 py-0.5 rounded border border-red-200/60">
+              Sold out
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Quick Add Button */}
+      {/* Action: Quick Add Button / Stepper */}
       {isAvail && (
         <div
-          className="flex-shrink-0 opacity-85 group-hover:opacity-100 transition-opacity"
+          className="flex-shrink-0"
           onClick={(e) => e.stopPropagation()}
         >
           {qty > 0 ? (
@@ -315,28 +283,30 @@ function ItemRow({
               <button
                 type="button"
                 onClick={() => removeItem(item._id)}
-                className="w-7 h-7 flex items-center justify-center text-amber-900 hover:bg-amber-100 active:bg-amber-200 transition-colors cursor-pointer"
+                className="w-8 h-8 flex items-center justify-center text-amber-950 hover:bg-amber-100 active:bg-amber-200 transition-colors cursor-pointer"
+                title="Decrease"
               >
-                <Minus className="w-3 h-3" />
+                <Minus className="w-3.5 h-3.5" />
               </button>
-              <span className="w-6 text-center text-xs font-black text-amber-950">
+              <span className="w-7 text-center text-xs font-black text-amber-950">
                 {qty}
               </span>
               <button
                 type="button"
                 onClick={() => addItem(item)}
-                className="w-7 h-7 flex items-center justify-center text-amber-900 hover:bg-amber-100 active:bg-amber-200 transition-colors cursor-pointer"
+                className="w-8 h-8 flex items-center justify-center text-amber-950 hover:bg-amber-100 active:bg-amber-200 transition-colors cursor-pointer"
+                title="Increase"
               >
-                <Plus className="w-3 h-3" />
+                <Plus className="w-3.5 h-3.5" />
               </button>
             </div>
           ) : (
             <button
               type="button"
               onClick={() => addItem(item)}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-bold uppercase tracking-wider text-amber-950 bg-amber-100 hover:bg-amber-200 active:scale-95 border border-amber-300/80 transition-all cursor-pointer shadow-2xs"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider text-amber-950 bg-amber-100 hover:bg-amber-200 active:scale-95 border border-amber-300/80 transition-all cursor-pointer shadow-2xs group-hover:shadow-xs"
             >
-              <Plus className="w-3 h-3 text-amber-800" />
+              <Plus className="w-3.5 h-3.5 text-amber-800" />
               <span>Add</span>
             </button>
           )}
@@ -346,42 +316,51 @@ function ItemRow({
   );
 }
 
-/* ── Category Section — responsive layout ── */
+/* ── Category Section — Desktop 2-column grid layout ── */
 function CategorySection({
-  category, items, isReversed, primary, headingFont, onSelectItem,
+  category,
+  items,
+  primary,
+  headingFont,
+  onSelectItem,
 }: {
-  category: Category; items: MenuItem[]; isReversed: boolean;
-  primary: string; headingFont: string; onSelectItem: (item: MenuItem) => void;
+  category: Category;
+  items: MenuItem[];
+  isReversed?: boolean;
+  primary: string;
+  headingFont: string;
+  onSelectItem: (item: MenuItem) => void;
 }) {
-  const [activeIdx, setActiveIdx] = useState(0);
-  const displayItem = items[activeIdx] || items[0];
-
   return (
     <motion.section
       id={`cat-${category._id}`}
-      className="scroll-mt-16 md:scroll-mt-20"
-      initial={{ opacity: 0, y: 20 }}
+      className="scroll-mt-24"
+      initial={{ opacity: 0, y: 15 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.08 }}
-      transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+      viewport={{ once: true, amount: 0.05 }}
+      transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
     >
-      {/* ── Category Label ── */}
-      <div className="flex items-center gap-3 md:gap-4 mb-2 md:mb-3">
-        <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg, transparent, ${primary}30, transparent)` }} />
-        <h2
-          className="text-[13px] md:text-[16px] font-bold uppercase tracking-[0.18em] md:tracking-[0.22em] flex-shrink-0"
-          style={{ fontFamily: headingFont, color: primary }}
-        >
-          {category.icon && <span className="mr-1.5">{category.icon}</span>}
-          {category.name}
-        </h2>
-        <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg, transparent, ${primary}30, transparent)` }} />
+      {/* ── Category Header ── */}
+      <div className="flex items-center justify-between gap-3 mb-4 pb-2.5 border-b border-stone-200/80">
+        <div className="flex items-center gap-2.5">
+          <h2
+            className="text-lg md:text-xl font-bold uppercase tracking-[0.14em] text-stone-900 flex items-center gap-2"
+            style={{ fontFamily: headingFont }}
+          >
+            {category.icon && <span className="text-xl">{category.icon}</span>}
+            <span style={{ color: primary }}>{category.name}</span>
+          </h2>
+          <span className="text-[11px] font-bold text-stone-500 bg-stone-100 border border-stone-200/60 px-2.5 py-0.5 rounded-full">
+            {items.length} {items.length === 1 ? 'item' : 'items'}
+          </span>
+        </div>
+        <div className="flex-1 h-px bg-gradient-to-r from-stone-200 via-stone-200/50 to-transparent ml-3" />
       </div>
 
-      {/* ── Mobile: Card list (no border box, no showcase image) ── */}
-      <div className="md:hidden">
+      {/* ── Desktop Grid: 2 columns ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
         {items.map((item, i) => (
-          <MobileItemCard
+          <DesktopItemCard
             key={item._id}
             item={item}
             primary={primary}
@@ -390,64 +369,6 @@ function CategorySection({
             index={i}
           />
         ))}
-      </div>
-
-      {/* ── Desktop: Bordered box with alternating showcase layout ── */}
-      <div
-        className="hidden md:block relative"
-        style={{
-          border: `1.5px solid ${primary}20`,
-          borderRadius: 16,
-          padding: '16px 18px',
-          background: '#ffffff',
-        }}
-      >
-        <div
-          className="hidden lg:flex gap-6 items-center"
-          style={{ flexDirection: isReversed ? 'row-reverse' : 'row' }}
-        >
-          {/* Items list */}
-          <div className="flex-1 min-w-0">
-            {items.map((item, i) => (
-              <ItemRow
-                key={item._id}
-                item={item}
-                primary={primary}
-                headingFont={headingFont}
-                isActive={i === activeIdx}
-                onHover={() => setActiveIdx(i)}
-                onClick={() => onSelectItem(item)}
-                index={i}
-              />
-            ))}
-          </div>
-
-          {/* Showcase image */}
-          <div className="flex-shrink-0" style={{ width: 240 }}>
-            <ShowcaseImage item={displayItem} primary={primary} />
-          </div>
-        </div>
-
-        {/* Tablet: stacked (image on top) — between md and lg */}
-        <div className="lg:hidden">
-          <div className="mb-3 mx-auto" style={{ maxWidth: 220 }}>
-            <ShowcaseImage item={displayItem} primary={primary} />
-          </div>
-          <div>
-            {items.map((item, i) => (
-              <ItemRow
-                key={item._id}
-                item={item}
-                primary={primary}
-                headingFont={headingFont}
-                isActive={i === activeIdx}
-                onHover={() => setActiveIdx(i)}
-                onClick={() => onSelectItem(item)}
-                index={i}
-              />
-            ))}
-          </div>
-        </div>
       </div>
     </motion.section>
   );
@@ -688,17 +609,15 @@ function PrintMenu({
 /* ── Animated Café Footer Component ── */
 function AnimatedCafeFooter({
   primary,
-  secondary,
+  secondary: _secondary,
   headingFont,
   socialHandle,
-  onDownloadPdf,
   onOpenReviewModal,
 }: {
   primary: string;
   secondary?: string;
   headingFont: string;
   socialHandle: string;
-  onDownloadPdf: () => void;
   onOpenReviewModal: () => void;
 }) {
   return (
@@ -775,26 +694,8 @@ function AnimatedCafeFooter({
           </div>
         </motion.div>
 
-        {/* Action CTAs: Download Menu PDF & Rate & Review Us */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-3.5 w-full max-w-md mx-auto mb-2.5">
-          <motion.button
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onDownloadPdf}
-            className="download-menu-btn w-full sm:w-auto"
-            style={{
-              background: `linear-gradient(135deg, ${primary}, ${secondary || primary})`,
-              boxShadow: `0 4px 14px -2px ${primary}40`,
-              fontFamily: headingFont,
-            }}
-          >
-            <Download className="w-4 h-4 flex-shrink-0" />
-            <span>Download Menu PDF</span>
-          </motion.button>
-
+        {/* Action CTA: Rate & Review Us */}
+        <div className="flex items-center justify-center w-full max-w-xs mx-auto mb-2.5">
           <motion.button
             type="button"
             onClick={onOpenReviewModal}
@@ -803,7 +704,7 @@ function AnimatedCafeFooter({
             viewport={{ once: true }}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="review-menu-btn w-full sm:w-auto"
+            className="review-menu-btn w-full flex items-center justify-center gap-2"
             style={{ fontFamily: headingFont }}
           >
             <Star className="w-4 h-4 text-amber-500 fill-amber-400 flex-shrink-0" />
@@ -812,7 +713,7 @@ function AnimatedCafeFooter({
         </div>
 
         <p className="text-[11px] sm:text-xs text-[#786b5f] font-medium max-w-sm mx-auto leading-tight mb-2.5 text-center">
-          Download a print-ready copy or tap above to share your dining rating & feedback
+          Tap above to share your dining rating & feedback
         </p>
 
         {/* Delicate Divider */}
@@ -823,17 +724,20 @@ function AnimatedCafeFooter({
         </div>
 
         {/* Footer Bottom Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 text-center w-full">
-          {/* Social Badge */}
-          <motion.div
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 text-center w-full">
+          {/* Instagram Link Badge */}
+          <motion.a
+            href="https://www.instagram.com/sukooncafeandbar/"
+            target="_blank"
+            rel="noopener noreferrer"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-1.5 bg-white/90 hover:bg-white px-3 py-1 rounded-full text-[11px] font-semibold text-[#4a3f35] border border-amber-900/15 shadow-2xs transition-colors cursor-default"
+            className="inline-flex items-center gap-2 bg-white/95 hover:bg-white px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#4a3f35] border border-amber-900/15 shadow-2xs hover:shadow-xs hover:border-pink-500/40 transition-all cursor-pointer group"
           >
-            <AtSign className="w-3 h-3" style={{ color: primary }} />
-            <span>Follow us <strong style={{ color: primary }}>@{socialHandle}</strong></span>
-          </motion.div>
+            <InstagramIcon className="w-3.5 h-3.5 text-pink-600 group-hover:scale-110 transition-transform flex-shrink-0" />
+            <span>Follow us on Instagram <strong className="text-pink-700 group-hover:underline">@{socialHandle}</strong></span>
+          </motion.a>
 
           <span className="hidden sm:inline text-amber-900/30 text-xs">·</span>
 
@@ -1073,7 +977,7 @@ export default function CustomerMenuPage() {
   const primary = tc.colors.primary || '#6366f1';
   const headingFont = 'Cormorant Garamond, serif';
   const bodyFont = 'Outfit, sans-serif';
-  const socialHandle = rest.slug || rest.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const socialHandle = 'sukooncafeandbar';
 
   const getItems = (catId: string) =>
     allItems
@@ -1427,7 +1331,6 @@ export default function CustomerMenuPage() {
         secondary={tc.colors.secondary}
         headingFont={headingFont}
         socialHandle={socialHandle}
-        onDownloadPdf={() => window.print()}
         onOpenReviewModal={() => setShowReviewModal(true)}
       />
 
