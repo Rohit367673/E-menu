@@ -9,6 +9,7 @@ import {
   Receipt,
   BellRing,
   Printer,
+  X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import apiClient from '../../api/client';
@@ -40,7 +41,7 @@ export default function OrdersPage() {
   const [searchParams] = useSearchParams();
 
   const [orders, setOrders] = useState<Order[]>([]);
-  const [stats, setStats] = useState<OrderDashboardStats>({
+  const [, setStats] = useState<OrderDashboardStats>({
     pendingCount: 0,
     preparingCount: 0,
     servedCount: 0,
@@ -51,38 +52,37 @@ export default function OrdersPage() {
   });
   const [loading, setLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<'preparing' | 'completed' | 'all'>(
-    (searchParams.get('status') as any) || 'preparing'
-  );
+  const [statusFilter, setStatusFilter] = useState<'all' | 'bill'>('all');
   const [tableFilter, setTableFilter] = useState<string>(searchParams.get('table') || 'all');
   const [viewMode, setViewMode] = useState<'grouped' | 'feed'>('grouped');
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isBridgeOnline, setIsBridgeOnline] = useState(false);
 
   // Live order counts directly from local state for instant responsiveness
-  const livePreparingCount = useMemo(() => {
-    return orders.filter((o) => ['pending', 'preparing', 'served'].includes(o.status)).length;
-  }, [orders]);
-
-  const liveCompletedCount = useMemo(() => {
-    return orders.filter((o) => o.status === 'completed').length;
-  }, [orders]);
+  const todayTotalOrdersCount = orders.length;
 
   const liveActiveTablesCount = useMemo(() => {
-    return new Set(
-      orders
-        .filter((o) => ['pending', 'preparing', 'served'].includes(o.status))
-        .map((o) => cleanTableNumber(o.tableNumber))
-    ).size;
+    return new Set(orders.map((o) => cleanTableNumber(o.tableNumber))).size;
+  }, [orders]);
+
+  const liveKOTPrintedCount = useMemo(() => {
+    return orders.filter((o) => o.kotNumber).length;
+  }, [orders]);
+
+  const todayTotalRevenue = useMemo(() => {
+    return orders.reduce((sum, o) => {
+      const orderTotal = (o.totalAmount && o.totalAmount > 0)
+        ? o.totalAmount
+        : o.items.reduce((s, it) => s + (it.price * it.quantity), 0);
+      return sum + orderTotal;
+    }, 0);
   }, [orders]);
 
   const pendingPrintCount = useMemo(() => {
     return orders.filter(
       (o) =>
         o.kotNumber &&
-        (o.kotPrintStatus === 'PENDING' || o.kotPrintStatus === 'FAILED' || !o.kotPrintStatus) &&
-        (o.status === 'pending' || o.status === 'preparing')
+        (o.kotPrintStatus === 'PENDING' || o.kotPrintStatus === 'FAILED' || !o.kotPrintStatus)
     ).length;
   }, [orders]);
 
@@ -329,8 +329,16 @@ export default function OrdersPage() {
         const fetchedOrders = res.data.data.orders;
         const fetchedStats = res.data.data.stats;
 
+        // Daily Guard: Auto-reset for new day (keep only today's orders on live dashboard)
+        const now = new Date();
+        const startOfTodayMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const todayOrders = fetchedOrders.filter((o) => {
+          if (!o.createdAt) return true;
+          return new Date(o.createdAt).getTime() >= startOfTodayMs;
+        });
+
         // Play chime if new order arrived for kitchen OR if guest requested bill receipt
-        const currentKitchenCount = (fetchedStats.preparingCount || 0) + (fetchedStats.pendingCount || 0);
+        const currentKitchenCount = todayOrders.length;
         const currentBillReqCount = fetchedStats.billRequestedCount || 0;
 
         if (
@@ -355,7 +363,7 @@ export default function OrdersPage() {
 
         // On initial page load, record already-printed or finished orders to seen set
         if (!isInitializedRef.current) {
-          fetchedOrders.forEach((o) => {
+          todayOrders.forEach((o) => {
             if (o.kotPrintStatus === 'PRINTED' || ['served', 'completed', 'cancelled'].includes(o.status)) {
               seenKOTsRef.current.add(o._id);
             }
@@ -363,11 +371,11 @@ export default function OrdersPage() {
           isInitializedRef.current = true;
         }
 
-        setOrders(fetchedOrders);
+        setOrders(todayOrders);
         setStats(fetchedStats);
 
         // Automatically process FIFO print queue for any unprinted KOTs
-        processPendingKOTQueue(fetchedOrders);
+        processPendingKOTQueue(todayOrders);
       }
     } catch (err) {
       console.error('Failed to fetch orders:', err);
@@ -399,7 +407,6 @@ export default function OrdersPage() {
   }, [fetchOrders]);
 
   const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {
-    setUpdatingId(orderId);
     try {
       const res = await apiClient.patch<{ success: boolean; data: { order: Order } }>(
         `/orders/admin/${orderId}/status`,
@@ -420,55 +427,6 @@ export default function OrdersPage() {
     } catch (err) {
       console.error('Failed to update status:', err);
       toast.error('Failed to update order status');
-    } finally {
-      setUpdatingId(null);
-    }
-  };
-
-  const handleCompleteTable = async (tableNum: string) => {
-    try {
-      // Optimistically update orders in local state so card vanishes immediately from Live Orders
-      setOrders((prev) =>
-        prev.map((o) => (o.tableNumber === tableNum ? { ...o, status: 'completed', billRequested: false } : o))
-      );
-      toast.success(`Table ${cleanTableNumber(tableNum)} completed & cleared for next round! ✓`);
-
-      const res = await apiClient.patch<{ success: boolean; message: string }>(
-        `/orders/admin/table/${encodeURIComponent(tableNum)}/settle`
-      );
-
-      if (res.data.success) {
-        fetchOrders();
-      }
-    } catch (err) {
-      console.error('Failed to complete table:', err);
-      toast.error('Failed to complete table orders');
-      fetchOrders();
-    }
-  };
-
-  const handleCompleteOrder = async (orderId: string, tableNum: string) => {
-    setUpdatingId(orderId);
-    try {
-      setOrders((prev) =>
-        prev.map((o) => (o._id === orderId ? { ...o, status: 'completed', billRequested: false } : o))
-      );
-      toast.success(`Order completed & Table ${cleanTableNumber(tableNum)} cleared! ✓`);
-
-      const res = await apiClient.patch<{ success: boolean; data: { order: Order } }>(
-        `/orders/admin/${orderId}/status`,
-        { status: 'completed' }
-      );
-
-      if (res.data.success) {
-        fetchOrders();
-      }
-    } catch (err) {
-      console.error('Failed to complete order:', err);
-      toast.error('Failed to complete order');
-      fetchOrders();
-    } finally {
-      setUpdatingId(null);
     }
   };
 
@@ -495,18 +453,14 @@ export default function OrdersPage() {
   const tablesWithBillRequest = Array.from(
     new Set(
       orders
-        .filter((o) => o.billRequested && ['pending', 'preparing', 'served'].includes(o.status))
+        .filter((o) => o.billRequested)
         .map((o) => o.tableNumber)
     )
   ).sort();
 
   // Filter orders
   const filteredOrders = orders.filter((o) => {
-    if (statusFilter === 'preparing') {
-      if (!['pending', 'preparing', 'served'].includes(o.status)) return false;
-    } else if (statusFilter === 'completed') {
-      if (o.status !== 'completed') return false;
-    }
+    if (statusFilter === 'bill' && !o.billRequested) return false;
     if (tableFilter !== 'all' && o.tableNumber !== tableFilter) return false;
     return true;
   });
@@ -514,16 +468,11 @@ export default function OrdersPage() {
   // Group orders by table for Flow Ordering
   const tableGroups = uniqueTables.map((tableNum) => {
     const tableOrders = orders.filter((o) => o.tableNumber === tableNum);
-    const activeOrders = tableOrders.filter((o) => ['pending', 'preparing', 'served'].includes(o.status));
-    const completedOrders = tableOrders.filter((o) => o.status === 'completed');
+    const hasBillRequested = tableOrders.some((o) => o.billRequested === true);
 
-    let displayOrders: Order[] = activeOrders;
-    if (statusFilter === 'completed') {
-      displayOrders = completedOrders;
-    } else if (statusFilter === 'preparing') {
-      displayOrders = activeOrders;
-    } else if (statusFilter === 'all') {
-      displayOrders = tableOrders;
+    let displayOrders = tableOrders;
+    if (statusFilter === 'bill') {
+      displayOrders = tableOrders.filter((o) => o.billRequested);
     }
 
     const totalBill = displayOrders.reduce((sum, o) => {
@@ -533,25 +482,18 @@ export default function OrdersPage() {
       return sum + orderTotal;
     }, 0);
 
-    const hasBillRequested = activeOrders.some((o) => o.billRequested === true);
-
     return {
       tableNumber: tableNum,
-      activeOrders,
       displayOrders,
       allOrders: tableOrders,
       totalBill,
-      hasPending: activeOrders.some((o) => o.status === 'pending'),
-      hasPreparing: activeOrders.some((o) => o.status === 'preparing'),
+      hasPending: tableOrders.some((o) => o.status === 'pending'),
+      hasPreparing: tableOrders.some((o) => o.status === 'preparing'),
       hasBillRequested,
-      isCompleted: activeOrders.length === 0 && completedOrders.length > 0,
-      customerName: activeOrders[0]?.customerName || completedOrders[0]?.customerName || tableOrders[0]?.customerName || 'Guest',
+      customerName: tableOrders[0]?.customerName || 'Guest',
     };
   }).filter((grp) => {
     if (tableFilter !== 'all' && grp.tableNumber !== tableFilter) return false;
-    if (statusFilter === 'all') {
-      return grp.allOrders.length > 0;
-    }
     return grp.displayOrders.length > 0;
   });
 
@@ -573,9 +515,9 @@ export default function OrdersPage() {
             <h1 className="text-2xl font-black text-stone-900 tracking-tight">
               Live Tableside Orders
             </h1>
-            {livePreparingCount > 0 && (
+            {todayTotalOrdersCount > 0 && (
               <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-amber-500 text-white animate-pulse shadow-xs">
-                {livePreparingCount} In Kitchen
+                {todayTotalOrdersCount} Live Orders Today
               </span>
             )}
           </div>
@@ -724,7 +666,7 @@ export default function OrdersPage() {
                 onClick={() => {
                   const grp = tableGroups.find(g => g.tableNumber === t);
                   if (grp) {
-                    handleOpenReceipt(grp.tableNumber, grp.customerName, grp.displayOrders, grp.totalBill, grp.isCompleted);
+                    handleOpenReceipt(grp.tableNumber, grp.customerName, grp.displayOrders, grp.totalBill, true);
                   }
                 }}
                 className="px-3 py-1.5 rounded-xl bg-white text-stone-900 hover:bg-stone-100 font-extrabold text-xs shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
@@ -737,7 +679,7 @@ export default function OrdersPage() {
         </div>
       )}
 
-      {/* Metrics Row: 2 Primary States (Preparing & Served) + Table Count */}
+      {/* Metrics Row: Clean Daily Live Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
         <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-2xs">
           <div className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
@@ -747,52 +689,50 @@ export default function OrdersPage() {
             {liveActiveTablesCount}
           </div>
           <div className="text-[11px] text-amber-600 font-semibold mt-0.5">
-            Tables dining now
+            Tables dining today
           </div>
         </div>
 
-        {/* State 1: Preparing Order */}
         <div className="bg-white p-4 rounded-2xl border border-amber-300 shadow-2xs bg-amber-50/20">
           <div className="text-[11px] font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1">
             <ChefHat className="w-3.5 h-3.5 text-amber-600" />
-            <span>Preparing Order</span>
+            <span>Today's Orders</span>
           </div>
           <div className="text-2xl font-black text-amber-700 mt-1">
-            {livePreparingCount}
+            {todayTotalOrdersCount}
           </div>
           <div className="text-[11px] text-amber-600 font-semibold mt-0.5">
-            Cooking in kitchen
+            Live orders placed today
           </div>
         </div>
 
-        {/* State 2: Completed Today */}
         <div className="bg-white p-4 rounded-2xl border border-emerald-200 shadow-2xs bg-emerald-50/10">
           <div className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Completed Today</span>
+            <Printer className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Kitchen KOTs</span>
           </div>
           <div className="text-2xl font-black text-emerald-700 mt-1">
-            {liveCompletedCount}
+            {liveKOTPrintedCount}
           </div>
           <div className="text-[11px] text-emerald-600 font-semibold mt-0.5">
-            Delivered & cleared
+            Tickets auto-printed
           </div>
         </div>
 
         <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-2xs">
           <div className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
-            Total Orders Today
+            Today's Total
           </div>
           <div className="text-2xl font-black text-stone-900 mt-1">
-            {stats.todayOrdersCount > 0 ? stats.todayOrdersCount : orders.length}
+            ₹{todayTotalRevenue}
           </div>
           <div className="text-[11px] text-stone-500 font-semibold mt-0.5 flex items-center justify-between flex-wrap gap-1">
-            <span>Orders placed today</span>
+            <span>Orders revenue today</span>
             {isAdmin && (
               <Link
                 to="/admin/earnings"
                 className="text-[11px] font-bold text-amber-700 hover:text-amber-900 underline transition-colors"
-                title="Only Owner can view Today's & Monthly Earnings"
+                title="Only Owner can view Detailed Monthly & Daily Earnings"
               >
                 Owner: Earnings →
               </Link>
@@ -804,33 +744,43 @@ export default function OrdersPage() {
       {/* Filter Tabs & Table selector */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-stone-200">
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none touch-pan-x">
-          {[
-            { id: 'preparing', label: '1. Live Kitchen Orders', count: livePreparingCount, icon: ChefHat },
-            { id: 'completed', label: '2. Completed Today', count: liveCompletedCount, icon: CheckCircle2 },
-            { id: 'all', label: 'All Tables', count: liveActiveTablesCount, icon: null },
-          ].map((tab) => (
+          <button
+            type="button"
+            onClick={() => setStatusFilter('all')}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+              statusFilter === 'all'
+                ? 'bg-stone-900 text-white shadow-2xs'
+                : 'text-stone-500 hover:bg-stone-100'
+            }`}
+          >
+            <ChefHat className="w-3.5 h-3.5" />
+            <span>Today's Live Orders</span>
+            {todayTotalOrdersCount > 0 && (
+              <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
+                statusFilter === 'all' ? 'bg-amber-500 text-white' : 'bg-stone-200 text-stone-700'
+              }`}>
+                {todayTotalOrdersCount}
+              </span>
+            )}
+          </button>
+
+          {tablesWithBillRequest.length > 0 && (
             <button
-              key={tab.id}
-              onClick={() => setStatusFilter(tab.id as any)}
+              type="button"
+              onClick={() => setStatusFilter('bill')}
               className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
-                statusFilter === tab.id
-                  ? 'bg-stone-900 text-white shadow-2xs'
-                  : 'text-stone-500 hover:bg-stone-100'
+                statusFilter === 'bill'
+                  ? 'bg-red-600 text-white shadow-2xs'
+                  : 'text-red-600 hover:bg-red-50'
               }`}
             >
-              {tab.icon && <tab.icon className="w-3.5 h-3.5" />}
-              <span>{tab.label}</span>
-              {tab.count > 0 && (
-                <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
-                  statusFilter === tab.id
-                    ? tab.id === 'preparing' ? 'bg-amber-500 text-white' : 'bg-emerald-600 text-white'
-                    : 'bg-stone-200 text-stone-700'
-                }`}>
-                  {tab.count}
-                </span>
-              )}
+              <BellRing className="w-3.5 h-3.5 animate-bounce" />
+              <span>Bill Requests</span>
+              <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-white text-red-600">
+                {tablesWithBillRequest.length}
+              </span>
             </button>
-          ))}
+          )}
         </div>
 
         {/* Table filter dropdown */}
@@ -874,32 +824,17 @@ export default function OrdersPage() {
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <h3 className="text-base font-bold text-stone-900">
-                {statusFilter === 'preparing'
-                  ? 'All Orders Complete & Served! 🎉'
-                  : statusFilter === 'completed'
-                  ? 'No Completed Orders Today'
-                  : 'No Tables Matching Filter'}
+                {statusFilter === 'bill' ? 'No Pending Bill Requests' : "Ready for Today's Orders ☕"}
               </h3>
               <p className="text-xs text-stone-400 max-w-sm mx-auto">
-                {statusFilter === 'preparing'
-                  ? 'All food has been prepared and handed to tables. When new customer orders arrive, they will appear here.'
-                  : 'Orders will appear here as they are processed.'}
+                {statusFilter === 'bill'
+                  ? 'All bill requests have been acknowledged and cleared.'
+                  : "Incoming customer orders from tables will automatically stream here with sound alerts and instant KOT thermal printing."}
               </p>
-              {statusFilter === 'preparing' && liveCompletedCount > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter('completed')}
-                  className="mt-2 px-4 py-2 rounded-xl text-xs font-bold bg-stone-900 text-white hover:bg-stone-800 transition-colors cursor-pointer inline-flex items-center gap-1.5"
-                >
-                  <span>View {liveCompletedCount} Completed Order{liveCompletedCount > 1 ? 's' : ''} Today</span>
-                  <span>→</span>
-                </button>
-              )}
             </div>
           ) : (
             tableGroups.map((grp) => {
               const firstOrder = grp.displayOrders[0] || grp.allOrders[0];
-              const isCompletedTab = statusFilter === 'completed' || grp.isCompleted;
 
               return (
                 <div
@@ -922,7 +857,7 @@ export default function OrdersPage() {
                       <div className="flex items-center gap-1.5 flex-shrink-0">
                         <button
                           type="button"
-                          onClick={() => handleOpenReceipt(grp.tableNumber, grp.customerName, grp.displayOrders, grp.totalBill, grp.isCompleted)}
+                          onClick={() => handleOpenReceipt(grp.tableNumber, grp.customerName, grp.displayOrders, grp.totalBill, true)}
                           className="px-2.5 py-1 rounded-lg bg-white text-stone-900 hover:bg-stone-100 text-[10px] uppercase font-black transition-colors cursor-pointer flex items-center gap-1"
                         >
                           <Receipt className="w-3 h-3 text-amber-600" />
@@ -961,9 +896,9 @@ export default function OrdersPage() {
                     <div className="flex items-center gap-2">
                       <div className="text-right">
                         <div className="text-[10px] text-stone-400 uppercase font-bold tracking-wider">
-                          {isCompletedTab ? 'Paid' : 'Total'}
+                          Total
                         </div>
-                        <div className={`text-base font-black ${isCompletedTab ? 'text-emerald-700' : 'text-amber-800'}`}>
+                        <div className="text-base font-black text-amber-800">
                           ₹{grp.totalBill}
                         </div>
                       </div>
@@ -977,6 +912,22 @@ export default function OrdersPage() {
                           title={`Reprint KOT for Table ${cleanTableNumber(grp.tableNumber)}`}
                         >
                           <Printer className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+
+                      {/* Subtle Emergency Cancel Icon */}
+                      {firstOrder && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(`Are you sure you want to cancel order for Table ${cleanTableNumber(grp.tableNumber)}?`)) {
+                              handleUpdateStatus(firstOrder._id, 'cancelled');
+                            }
+                          }}
+                          className="p-2 rounded-xl text-stone-300 hover:text-red-500 hover:bg-red-50 border border-transparent hover:border-red-200 transition-colors cursor-pointer"
+                          title="Cancel order (Emergency)"
+                        >
+                          <X className="w-3.5 h-3.5" />
                         </button>
                       )}
                     </div>
@@ -1014,46 +965,23 @@ export default function OrdersPage() {
                     ))}
                   </div>
 
-                  {/* Bottom Action */}
-                  {!isCompletedTab ? (
-                    <div className="p-3.5 bg-stone-50/80 border-t border-stone-100 flex items-center gap-2">
-                      <button
-                        type="button"
-                        disabled={updatingId !== null}
-                        onClick={() => handleCompleteTable(grp.tableNumber)}
-                        className="flex-1 py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-black text-xs uppercase tracking-wider shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
-                      >
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>Mark as Complete</span>
-                      </button>
+                  {/* Card Footer: Clean Information & Receipt Action */}
+                  <div className="p-3.5 bg-stone-50/80 border-t border-stone-100 flex items-center justify-between text-xs">
+                    <span className="font-bold text-stone-700 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>Order Confirmed · Kitchen Dispatched</span>
+                    </span>
 
-                      {firstOrder && (
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateStatus(firstOrder._id, 'cancelled')}
-                          className="px-3 py-3 rounded-2xl text-stone-400 hover:text-red-500 hover:bg-red-50 text-xs font-semibold transition-colors cursor-pointer"
-                          title="Cancel order"
-                        >
-                          Cancel
-                        </button>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="p-3.5 bg-emerald-50/40 border-t border-emerald-100 flex items-center justify-between text-xs">
-                      <span className="font-bold text-emerald-800 flex items-center gap-1.5">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                        <span>Order Completed & Settled ✓</span>
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenReceipt(grp.tableNumber, grp.customerName, grp.displayOrders, grp.totalBill, true)}
-                        className="px-3 py-1.5 rounded-xl bg-white border border-stone-200 text-stone-700 hover:bg-stone-50 font-bold text-xs shadow-2xs flex items-center gap-1 cursor-pointer"
-                      >
-                        <Receipt className="w-3.5 h-3.5 text-amber-600" />
-                        <span>Receipt</span>
-                      </button>
-                    </div>
-                  )}
+                    <button
+                      type="button"
+                      onClick={() => handleOpenReceipt(grp.tableNumber, grp.customerName, grp.displayOrders, grp.totalBill, true)}
+                      className="px-3.5 py-1.5 rounded-xl bg-white border border-stone-200 text-stone-700 hover:bg-stone-100 hover:text-stone-900 font-bold text-xs shadow-2xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                      title={`View / Print Bill Receipt for Table ${cleanTableNumber(grp.tableNumber)}`}
+                    >
+                      <Receipt className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Receipt</span>
+                    </button>
+                  </div>
                 </div>
               );
             })
@@ -1149,23 +1077,10 @@ export default function OrdersPage() {
                     <span className="hidden sm:inline">Receipt</span>
                   </button>
 
-                  {(order.status === 'preparing' || order.status === 'pending' || order.status === 'served') && (
-                    <button
-                      type="button"
-                      disabled={updatingId === order._id}
-                      onClick={() => handleCompleteOrder(order._id, order.tableNumber)}
-                      className="py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold text-xs uppercase tracking-wider shadow-sm transition-all cursor-pointer flex items-center gap-1.5"
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>Mark as Complete</span>
-                    </button>
-                  )}
-                  {order.status === 'completed' && (
-                    <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Completed ✓</span>
-                    </span>
-                  )}
+                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Kitchen Confirmed</span>
+                  </span>
                 </div>
               </div>
             </div>

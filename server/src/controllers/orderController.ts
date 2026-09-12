@@ -272,11 +272,28 @@ export const getActiveTableOrders = async (req: Request, res: Response): Promise
 export const getAdminOrders = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const restaurant = await getOrCreateRestaurant();
-    const { status, table } = req.query;
+    const { status, table, allHistory } = req.query;
+
+    // Calculate live summary stats (IST timezone UTC+5:30)
+    const now = new Date();
+    const istOffsetMs = 5.5 * 60 * 60 * 1000;
+    const istDate = new Date(now.getTime() + istOffsetMs);
+    istDate.setUTCHours(0, 0, 0, 0);
+    const startOfToday = new Date(istDate.getTime() - istOffsetMs);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     const query: any = { restaurantId: restaurant._id };
 
-    if (status && status !== 'all') {
+    // Auto-reset for new day: Live kitchen orders dashboard strictly shows TODAY's orders
+    // (or any currently active cooking orders), unless full historical archive is explicitly requested
+    if (allHistory !== 'true') {
+      query.createdAt = { $gte: startOfToday };
+      if (status && status !== 'all') {
+        query.status = status;
+      } else {
+        query.status = { $ne: 'cancelled' };
+      }
+    } else if (status && status !== 'all') {
       query.status = status;
     }
 
@@ -286,22 +303,22 @@ export const getAdminOrders = async (req: AuthRequest, res: Response): Promise<v
 
     const orders = await Order.find(query).sort({ createdAt: -1 }).limit(100).lean();
 
-    // Calculate live summary stats (IST timezone UTC+5:30)
-    const now = new Date();
-    const istOffsetMs = 5.5 * 60 * 60 * 1000;
-    const istDate = new Date(now.getTime() + istOffsetMs);
-    istDate.setUTCHours(0, 0, 0, 0);
-    const startOfToday = new Date(istDate.getTime() - istOffsetMs);
-
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
     const isManager = req.user?.role === 'manager';
 
     const [pendingCount, preparingCount, servedCount, todayOrdersCount, activeTables, billRequestedCount] = await Promise.all([
-      Order.countDocuments({ restaurantId: restaurant._id, status: 'pending' }),
-      Order.countDocuments({ restaurantId: restaurant._id, status: 'preparing' }),
       Order.countDocuments({
         restaurantId: restaurant._id,
+        createdAt: { $gte: startOfToday },
+        status: 'pending',
+      }),
+      Order.countDocuments({
+        restaurantId: restaurant._id,
+        createdAt: { $gte: startOfToday },
+        status: 'preparing',
+      }),
+      Order.countDocuments({
+        restaurantId: restaurant._id,
+        createdAt: { $gte: startOfToday },
         status: 'served',
       }),
       Order.countDocuments({
@@ -311,10 +328,12 @@ export const getAdminOrders = async (req: AuthRequest, res: Response): Promise<v
       }),
       Order.find({
         restaurantId: restaurant._id,
+        createdAt: { $gte: startOfToday },
         status: { $in: ['pending', 'preparing', 'served'] },
       }).select('tableNumber').lean(),
       TableSession.countDocuments({
         restaurantId: restaurant._id,
+        createdAt: { $gte: startOfToday },
         status: 'active',
         billRequested: true,
       }),
