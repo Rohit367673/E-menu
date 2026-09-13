@@ -76,59 +76,75 @@ export default function DashboardHome() {
     });
   };
 
-  const fetchDashboardData = useCallback(async () => {
+  const fetchOrders = useCallback(async () => {
     try {
-      const [reviewsRes, ordersRes] = await Promise.allSettled([
-        apiClient.get<{
-          success: boolean;
-          data: { reviews: Review[]; total: number; averageRating: number };
-        }>('/reviews/admin'),
-        apiClient.get<{
-          success: boolean;
-          data: { orders: Order[]; stats: OrderDashboardStats };
-        }>('/orders/admin'),
-      ]);
+      const res = await apiClient.get<{
+        success: boolean;
+        data: { orders: Order[]; stats: OrderDashboardStats };
+      }>('/orders/admin');
 
-      if (reviewsRes.status === 'fulfilled' && reviewsRes.value.data.success) {
-        setReviews(reviewsRes.value.data.data.reviews || []);
-        setAvgRating(reviewsRes.value.data.data.averageRating || 4.9);
-        setTotalReviews(reviewsRes.value.data.data.total || 0);
-      }
-
-      if (ordersRes.status === 'fulfilled' && ordersRes.value.data.success) {
-        if (ordersRes.value.data.data.orders) {
-          setOrders(ordersRes.value.data.data.orders);
+      if (res.data.success && res.data.data) {
+        if (res.data.data.orders) {
+          setOrders(res.data.data.orders);
         }
-        if (ordersRes.value.data.data.stats) {
-          setOrderStats(ordersRes.value.data.data.stats);
+        if (res.data.data.stats) {
+          setOrderStats(res.data.data.stats);
         }
       }
     } catch (err) {
-      console.error('Failed to load dashboard data:', err);
+      console.error('Failed to load orders for dashboard floor map:', err);
+    }
+  }, []);
+
+  const fetchReviews = useCallback(async () => {
+    try {
+      const res = await apiClient.get<{
+        success: boolean;
+        data: { reviews: Review[]; total: number; averageRating: number };
+      }>('/reviews/admin');
+
+      if (res.data.success && res.data.data) {
+        setReviews(res.data.data.reviews || []);
+        setAvgRating(res.data.data.averageRating || 4.9);
+        setTotalReviews(res.data.data.total || 0);
+      }
+    } catch (err) {
+      console.error('Failed to load reviews:', err);
     } finally {
       setIsLoadingReviews(false);
     }
   }, []);
 
+  // Poll orders every 5s and listen to visibility changes for instant table occupancy sync
   useEffect(() => {
-    fetchDashboardData();
+    fetchOrders();
+    fetchReviews();
 
-    const interval = setInterval(() => {
+    const ordersInterval = setInterval(() => {
       if (document.hidden) return;
-      fetchDashboardData();
-    }, 7000);
+      fetchOrders();
+    }, 5000);
+
+    const reviewsInterval = setInterval(() => {
+      if (document.hidden) return;
+      fetchReviews();
+    }, 30000);
 
     const handleVisibilityChange = () => {
-      if (!document.hidden) fetchDashboardData();
+      if (!document.hidden) {
+        fetchOrders();
+        fetchReviews();
+      }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      clearInterval(interval);
+      clearInterval(ordersInterval);
+      clearInterval(reviewsInterval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [fetchDashboardData]);
+  }, [fetchOrders, fetchReviews]);
 
   const handleOpenTakeOrder = (tableName: string, fromFloorMap = true) => {
     setSelectedTableForOrder(tableName);
@@ -137,7 +153,7 @@ export default function DashboardHome() {
   };
 
   const handleOrderCreated = () => {
-    fetchDashboardData();
+    fetchOrders();
   };
 
   const handleDeleteReview = async (id: string) => {

@@ -32,7 +32,7 @@ import {
 
 const cleanTableNumber = (raw: string): string => {
   if (!raw) return '';
-  return raw.replace(/^table\s*/i, '').trim() || raw;
+  return raw.replace(/^(?:table[-_\s]*|t[-_\s]*)?0*(\d+)$/i, '$1').trim() || raw;
 };
 
 export default function OrdersPage() {
@@ -52,18 +52,28 @@ export default function OrdersPage() {
   });
   const [loading, setLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'bill'>('all');
+  const [statusFilter, setStatusFilter] = useState<'live' | 'completed' | 'bill'>('live');
   const [tableFilter, setTableFilter] = useState<string>(searchParams.get('table') || 'all');
   const [viewMode, setViewMode] = useState<'grouped' | 'feed'>('grouped');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isBridgeOnline, setIsBridgeOnline] = useState(false);
 
-  // Live order counts directly from local state for instant responsiveness
+  // Live and completed order counts directly from local state for instant responsiveness
+  const liveOrders = useMemo(() => {
+    return orders.filter((o) => ['pending', 'preparing', 'served'].includes(o.status));
+  }, [orders]);
+
+  const completedOrders = useMemo(() => {
+    return orders.filter((o) => o.status === 'completed');
+  }, [orders]);
+
+  const liveOrdersCount = liveOrders.length;
+  const completedOrdersCount = completedOrders.length;
   const todayTotalOrdersCount = orders.length;
 
   const liveActiveTablesCount = useMemo(() => {
-    return new Set(orders.map((o) => cleanTableNumber(o.tableNumber))).size;
-  }, [orders]);
+    return new Set(liveOrders.map((o) => cleanTableNumber(o.tableNumber))).size;
+  }, [liveOrders]);
 
   const liveKOTPrintedCount = useMemo(() => {
     return orders.filter((o) => o.kotNumber).length;
@@ -430,6 +440,31 @@ export default function OrdersPage() {
     }
   };
 
+  const handleCompleteTable = async (tableNum: string) => {
+    try {
+      // Optimistically update orders in local state so card moves immediately to Completed tab
+      setOrders((prev) =>
+        prev.map((o) => {
+          const rawMatch = cleanTableNumber(o.tableNumber) === cleanTableNumber(tableNum);
+          return rawMatch ? { ...o, status: 'completed', billRequested: false } : o;
+        })
+      );
+      toast.success(`Table ${cleanTableNumber(tableNum)} completed & cleared for next round! ✓`);
+
+      const res = await apiClient.patch<{ success: boolean; message: string }>(
+        `/orders/admin/table/${encodeURIComponent(tableNum)}/settle`
+      );
+
+      if (res.data.success) {
+        fetchOrders(true);
+      }
+    } catch (err) {
+      console.error('Failed to complete table:', err);
+      toast.error('Failed to complete table orders');
+      fetchOrders(true);
+    }
+  };
+
   const handleDismissBillRequest = async (tableNum: string) => {
     try {
       const res = await apiClient.patch<{ success: boolean; message: string }>(
@@ -460,6 +495,8 @@ export default function OrdersPage() {
 
   // Filter orders
   const filteredOrders = orders.filter((o) => {
+    if (statusFilter === 'live' && !['pending', 'preparing', 'served'].includes(o.status)) return false;
+    if (statusFilter === 'completed' && o.status !== 'completed') return false;
     if (statusFilter === 'bill' && !o.billRequested) return false;
     if (tableFilter !== 'all' && o.tableNumber !== tableFilter) return false;
     return true;
@@ -471,7 +508,11 @@ export default function OrdersPage() {
     const hasBillRequested = tableOrders.some((o) => o.billRequested === true);
 
     let displayOrders = tableOrders;
-    if (statusFilter === 'bill') {
+    if (statusFilter === 'live') {
+      displayOrders = tableOrders.filter((o) => ['pending', 'preparing', 'served'].includes(o.status));
+    } else if (statusFilter === 'completed') {
+      displayOrders = tableOrders.filter((o) => o.status === 'completed');
+    } else if (statusFilter === 'bill') {
       displayOrders = tableOrders.filter((o) => o.billRequested);
     }
 
@@ -482,6 +523,8 @@ export default function OrdersPage() {
       return sum + orderTotal;
     }, 0);
 
+    const isCompleted = displayOrders.length > 0 && displayOrders.every((o) => o.status === 'completed');
+
     return {
       tableNumber: tableNum,
       displayOrders,
@@ -490,6 +533,7 @@ export default function OrdersPage() {
       hasPending: tableOrders.some((o) => o.status === 'pending'),
       hasPreparing: tableOrders.some((o) => o.status === 'preparing'),
       hasBillRequested,
+      isCompleted,
       customerName: tableOrders[0]?.customerName || 'Guest',
     };
   }).filter((grp) => {
@@ -515,11 +559,15 @@ export default function OrdersPage() {
             <h1 className="text-2xl font-black text-stone-900 tracking-tight">
               Live Tableside Orders
             </h1>
-            {todayTotalOrdersCount > 0 && (
+            {liveOrdersCount > 0 ? (
               <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-amber-500 text-white animate-pulse shadow-xs">
-                {todayTotalOrdersCount} Live Orders Today
+                {liveOrdersCount} In Kitchen
               </span>
-            )}
+            ) : completedOrdersCount > 0 ? (
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs">
+                {completedOrdersCount} Completed Today ✓
+              </span>
+            ) : null}
           </div>
           <p className="text-xs text-stone-500 mt-1">
             Kitchen & Service Stream · Sukoon Cafe & Bar
@@ -744,26 +792,49 @@ export default function OrdersPage() {
       {/* Filter Tabs & Table selector */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-stone-200">
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none touch-pan-x">
+          {/* Tab 1: Live Orders */}
           <button
             type="button"
-            onClick={() => setStatusFilter('all')}
+            onClick={() => setStatusFilter('live')}
             className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
-              statusFilter === 'all'
+              statusFilter === 'live'
                 ? 'bg-stone-900 text-white shadow-2xs'
                 : 'text-stone-500 hover:bg-stone-100'
             }`}
           >
             <ChefHat className="w-3.5 h-3.5" />
-            <span>Today's Live Orders</span>
-            {todayTotalOrdersCount > 0 && (
+            <span>Live Kitchen Orders</span>
+            {liveOrdersCount > 0 && (
               <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
-                statusFilter === 'all' ? 'bg-amber-500 text-white' : 'bg-stone-200 text-stone-700'
+                statusFilter === 'live' ? 'bg-amber-500 text-white' : 'bg-stone-200 text-stone-700'
               }`}>
-                {todayTotalOrdersCount}
+                {liveOrdersCount}
               </span>
             )}
           </button>
 
+          {/* Tab 2: Completed Orders */}
+          <button
+            type="button"
+            onClick={() => setStatusFilter('completed')}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+              statusFilter === 'completed'
+                ? 'bg-emerald-700 text-white shadow-2xs'
+                : 'text-stone-500 hover:bg-stone-100'
+            }`}
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>Completed Orders</span>
+            {completedOrdersCount > 0 && (
+              <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
+                statusFilter === 'completed' ? 'bg-white text-emerald-800' : 'bg-stone-200 text-stone-700'
+              }`}>
+                {completedOrdersCount}
+              </span>
+            )}
+          </button>
+
+          {/* Tab 3: Bill Requests */}
           {tablesWithBillRequest.length > 0 && (
             <button
               type="button"
@@ -824,12 +895,18 @@ export default function OrdersPage() {
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <h3 className="text-base font-bold text-stone-900">
-                {statusFilter === 'bill' ? 'No Pending Bill Requests' : "Ready for Today's Orders ☕"}
+                {statusFilter === 'bill'
+                  ? 'No Pending Bill Requests'
+                  : statusFilter === 'completed'
+                  ? 'No Completed Orders Yet'
+                  : "All Live Orders Cleared ☕"}
               </h3>
               <p className="text-xs text-stone-400 max-w-sm mx-auto">
                 {statusFilter === 'bill'
                   ? 'All bill requests have been acknowledged and cleared.'
-                  : "Incoming customer orders from tables will automatically stream here with sound alerts and instant KOT thermal printing."}
+                  : statusFilter === 'completed'
+                  ? 'Completed orders will appear here once staff clicks Complete Order on a table card.'
+                  : 'Incoming customer orders from tables will automatically stream here with sound alerts and instant KOT thermal printing.'}
               </p>
             </div>
           ) : (
@@ -965,22 +1042,45 @@ export default function OrdersPage() {
                     ))}
                   </div>
 
-                  {/* Card Footer: Clean Information & Receipt Action */}
-                  <div className="p-3.5 bg-stone-50/80 border-t border-stone-100 flex items-center justify-between text-xs">
-                    <span className="font-bold text-stone-700 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      <span>Order Confirmed · Kitchen Dispatched</span>
-                    </span>
+                  {/* Card Footer: Clean Information, Receipt Action & Complete Order Button */}
+                  <div className="p-3.5 bg-stone-50/80 border-t border-stone-100 flex items-center justify-between gap-2 text-xs flex-wrap">
+                    <div className="flex items-center gap-1.5">
+                      {statusFilter === 'completed' || grp.isCompleted ? (
+                        <span className="font-bold text-emerald-700 flex items-center gap-1.5">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                          <span>Completed & Settled ✓</span>
+                        </span>
+                      ) : (
+                        <span className="font-bold text-stone-700 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                          <span>Kitchen Dispatched</span>
+                        </span>
+                      )}
+                    </div>
 
-                    <button
-                      type="button"
-                      onClick={() => handleOpenReceipt(grp.tableNumber, grp.customerName, grp.displayOrders, grp.totalBill, true)}
-                      className="px-3.5 py-1.5 rounded-xl bg-white border border-stone-200 text-stone-700 hover:bg-stone-100 hover:text-stone-900 font-bold text-xs shadow-2xs flex items-center gap-1.5 transition-colors cursor-pointer"
-                      title={`View / Print Bill Receipt for Table ${cleanTableNumber(grp.tableNumber)}`}
-                    >
-                      <Receipt className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Receipt</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenReceipt(grp.tableNumber, grp.customerName, grp.displayOrders, grp.totalBill, true)}
+                        className="px-3 py-1.5 rounded-xl bg-white border border-stone-200 text-stone-700 hover:bg-stone-100 hover:text-stone-900 font-bold text-xs shadow-2xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                        title={`View / Print Bill Receipt for Table ${cleanTableNumber(grp.tableNumber)}`}
+                      >
+                        <Receipt className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Receipt</span>
+                      </button>
+
+                      {statusFilter !== 'completed' && !grp.isCompleted && (
+                        <button
+                          type="button"
+                          onClick={() => handleCompleteTable(grp.tableNumber)}
+                          className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-extrabold text-xs shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                          title={`Complete order & clear Table ${cleanTableNumber(grp.tableNumber)} for next guests`}
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Complete Order</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -1077,10 +1177,22 @@ export default function OrdersPage() {
                     <span className="hidden sm:inline">Receipt</span>
                   </button>
 
-                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>Kitchen Confirmed</span>
-                  </span>
+                  {order.status === 'completed' ? (
+                    <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Completed ✓</span>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleCompleteTable(order.tableNumber)}
+                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-extrabold text-xs shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                      title={`Complete order & clear Table ${cleanTableNumber(order.tableNumber)}`}
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Complete</span>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

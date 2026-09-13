@@ -41,10 +41,7 @@ const DEFAULT_TABLES = [
 export const normalizeTableName = (raw: string | undefined | null): string => {
   if (!raw) return 'Table 1';
   const trimmed = String(raw).trim();
-  if (/^\d+$/.test(trimmed)) {
-    return `Table ${parseInt(trimmed, 10)}`;
-  }
-  const match = trimmed.match(/^table\s*(\d+)$/i);
+  const match = trimmed.match(/^(?:table[-_\s]*|t[-_\s]*)?0*(\d+)$/i);
   if (match) {
     return `Table ${parseInt(match[1], 10)}`;
   }

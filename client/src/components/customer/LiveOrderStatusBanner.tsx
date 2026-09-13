@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChefHat, CheckCircle2, ChevronRight, Sparkles, X, Receipt, BellRing, Clock } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { ChefHat, CheckCircle2, ChevronRight, Sparkles, X, Receipt, BellRing } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
 import BillReceiptModal from '../common/BillReceiptModal';
 
@@ -30,8 +29,6 @@ export default function LiveOrderStatusBanner({
     resetTableSession,
     setIsDrawerOpen,
     billRequested,
-    requestBill,
-    isRequestingBill,
   } = useCart();
 
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
@@ -252,38 +249,6 @@ const cleanTableNumber = (tbl?: string) => {
           {/* Action Row: Mobile Bottom Strip / Desktop Right Side */}
           <div className="flex items-center gap-2 pt-2 sm:pt-0 border-t border-black/5 sm:border-t-0 flex-shrink-0 justify-between sm:justify-end">
             <div className="flex items-center gap-2 flex-1 sm:flex-initial">
-              {/* Request Bill Button (Prominent after dishes served) */}
-              {status === 'served' && (
-                !isBillReq ? (
-                  <button
-                    type="button"
-                    disabled={isRequestingBill}
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      const res = await requestBill();
-                      if (res.success) {
-                        toast.success(res.message);
-                      } else {
-                        toast.error(res.message);
-                      }
-                    }}
-                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all shadow-xs hover:shadow-md cursor-pointer active:scale-95 animate-pulse"
-                    title="Request bill receipt from waiter"
-                  >
-                    <BellRing className="w-3.5 h-3.5" />
-                    <span>{isRequestingBill ? 'Requesting...' : 'Request Bill'}</span>
-                  </button>
-                ) : (
-                  <div
-                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold shadow-2xs"
-                    title="Waiter has been notified to bring your bill receipt"
-                  >
-                    <Clock className="w-3.5 h-3.5 text-amber-700 animate-spin" />
-                    <span>Bill Requested</span>
-                  </div>
-                )
-              )}
-
               {/* View Bill Button */}
               <button
                 type="button"
@@ -295,7 +260,7 @@ const cleanTableNumber = (tbl?: string) => {
                 title="View & Print Itemized Bill Receipt"
               >
                 <Receipt className="w-3.5 h-3.5 text-amber-600" />
-                <span>Bill</span>
+                <span>Bill Receipt</span>
               </button>
             </div>
 

@@ -6,16 +6,13 @@ import {
   Minus,
   Trash2,
   ChefHat,
-  Clock,
   CheckCircle2,
   ShoppingBag,
   Send,
   Coffee,
   AlertCircle,
   Receipt,
-  BellRing,
 } from 'lucide-react';
-import toast from 'react-hot-toast';
 import { useCart } from '../../contexts/CartContext';
 import { playOrderNotificationSound } from '../../utils/sound';
 import BillReceiptModal from '../common/BillReceiptModal';
@@ -57,9 +54,6 @@ export default function OrderDrawer({
     lastPlacedOrder,
     placeOrder,
     isSubmittingOrder,
-    billRequested,
-    requestBill,
-    isRequestingBill,
   } = useCart();
 
   const cleanTableNumber = (tbl?: string) => {
@@ -169,14 +163,8 @@ export default function OrderDrawer({
                 <div className="space-y-1">
                   <div className="flex items-center justify-center gap-2 flex-wrap">
                     <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300/60">
-                      Order {lastPlacedOrder.orderNumber} Confirmed
+                      Order Confirmed
                     </span>
-                    {lastPlacedOrder.kotNumber && (
-                      <span className="inline-block px-2.5 py-1 rounded-full text-xs font-black bg-stone-900 text-white shadow-xs flex items-center gap-1">
-                        <span>🍳</span>
-                        <span>{lastPlacedOrder.kotNumber}</span>
-                      </span>
-                    )}
                   </div>
                   <h4 className="text-xl font-bold text-[#2C1810]" style={{ fontFamily: headingFont }}>
                     Sent to Kitchen & Receptionist!
@@ -193,7 +181,7 @@ export default function OrderDrawer({
                     <span className="text-[#786b5f] font-medium">Status:</span>
                     <span className="font-bold text-amber-700 flex items-center gap-1">
                       <ChefHat className="w-3.5 h-3.5 text-amber-600" />
-                      <span>{lastPlacedOrder.kotNumber ? `${lastPlacedOrder.kotNumber} · Preparing in Kitchen` : 'Preparing in Kitchen'}</span>
+                      <span>Preparing in Kitchen</span>
                     </span>
                   </div>
 
@@ -212,27 +200,6 @@ export default function OrderDrawer({
 
                 {/* CTA to keep ordering or close */}
                 <div className="w-full space-y-2 pt-2">
-                  {!billRequested ? (
-                    <button
-                      type="button"
-                      disabled={isRequestingBill}
-                      onClick={async () => {
-                        const res = await requestBill();
-                        if (res.success) toast.success(res.message);
-                        else toast.error(res.message);
-                      }}
-                      className="w-full py-2.5 px-3 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs flex items-center justify-center gap-2 shadow-2xs transition-colors cursor-pointer"
-                    >
-                      <BellRing className="w-4 h-4 text-amber-600" />
-                      <span>{isRequestingBill ? 'Requesting...' : 'Request Bill Receipt from Waiter'}</span>
-                    </button>
-                  ) : (
-                    <div className="w-full py-2 px-3 rounded-xl bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs">
-                      <Clock className="w-3.5 h-3.5 text-amber-700 animate-spin" />
-                      <span>Bill Receipt Requested · Waiter Notified 🕒</span>
-                    </div>
-                  )}
-
                   <button
                     type="button"
                     onClick={() => setIsReceiptOpen(true)}
@@ -272,26 +239,6 @@ export default function OrderDrawer({
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
-                      {!billRequested ? (
-                        <button
-                          type="button"
-                          disabled={isRequestingBill}
-                          onClick={async () => {
-                            const res = await requestBill();
-                            if (res.success) toast.success(res.message);
-                            else toast.error(res.message);
-                          }}
-                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-2xs transition-colors cursor-pointer"
-                          title="Ask waiter for bill receipt"
-                        >
-                          <BellRing className="w-3.5 h-3.5" />
-                          <span>Bill</span>
-                        </button>
-                      ) : (
-                        <span className="text-[10px] font-extrabold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-1 rounded-lg">
-                          Bill Req 🕒
-                        </span>
-                      )}
                       <button
                         type="button"
                         onClick={() => setIsReceiptOpen(true)}

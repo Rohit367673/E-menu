@@ -455,11 +455,24 @@ export const settleTableOrders = async (req: AuthRequest, res: Response): Promis
       return;
     }
 
+    const cleanTable = tableNumber.toString().trim();
+    const numMatch = cleanTable.match(/\d+/);
+    const tableVariants = [cleanTable];
+    if (numMatch) {
+      const num = numMatch[0];
+      tableVariants.push(num);
+      tableVariants.push(`Table ${num}`);
+      tableVariants.push(`table ${num}`);
+      tableVariants.push(`T-${num}`);
+      tableVariants.push(`t-${num}`);
+    }
+    const uniqueVariants = Array.from(new Set(tableVariants));
+
     // Find and update the active session
     const session = await TableSession.findOneAndUpdate(
       {
         restaurantId: restaurant._id,
-        tableNumber: tableNumber.toString().trim(),
+        tableNumber: { $in: uniqueVariants },
         status: 'active',
       },
       {
@@ -475,7 +488,7 @@ export const settleTableOrders = async (req: AuthRequest, res: Response): Promis
     const result = await Order.updateMany(
       {
         restaurantId: restaurant._id,
-        tableNumber: tableNumber.toString().trim(),
+        tableNumber: { $in: uniqueVariants },
         status: { $in: ['pending', 'preparing', 'served'] },
       },
       { $set: { status: 'completed', billRequested: false } }
@@ -483,8 +496,8 @@ export const settleTableOrders = async (req: AuthRequest, res: Response): Promis
 
     res.json({
       success: true,
-      message: `Table ${tableNumber} bill settled! (${result.modifiedCount} active orders completed)`,
-      data: { settledCount: result.modifiedCount },
+      message: `Table ${cleanTable} completed & settled! (${result.modifiedCount} active orders completed)`,
+      data: { settledCount: result.modifiedCount, session },
     });
   } catch (error) {
     console.error('Settle table orders error:', error);
@@ -576,10 +589,23 @@ export const dismissBillRequest = async (req: AuthRequest, res: Response): Promi
       return;
     }
 
+    const cleanTable = tableNumber.toString().trim();
+    const numMatch = cleanTable.match(/\d+/);
+    const tableVariants = [cleanTable];
+    if (numMatch) {
+      const num = numMatch[0];
+      tableVariants.push(num);
+      tableVariants.push(`Table ${num}`);
+      tableVariants.push(`table ${num}`);
+      tableVariants.push(`T-${num}`);
+      tableVariants.push(`t-${num}`);
+    }
+    const uniqueVariants = Array.from(new Set(tableVariants));
+
     await Order.updateMany(
       {
         restaurantId: restaurant._id,
-        tableNumber: tableNumber.toString().trim(),
+        tableNumber: { $in: uniqueVariants },
         status: { $in: ['pending', 'preparing', 'served'] },
       },
       {
@@ -592,7 +618,7 @@ export const dismissBillRequest = async (req: AuthRequest, res: Response): Promi
     await TableSession.findOneAndUpdate(
       {
         restaurantId: restaurant._id,
-        tableNumber: tableNumber.toString().trim(),
+        tableNumber: { $in: uniqueVariants },
         status: 'active',
       },
       {
@@ -602,7 +628,7 @@ export const dismissBillRequest = async (req: AuthRequest, res: Response): Promi
 
     res.json({
       success: true,
-      message: `Bill request alert dismissed for Table ${tableNumber}`,
+      message: `Bill request alert dismissed for Table ${cleanTable}`,
     });
   } catch (error) {
     console.error('Dismiss bill request error:', error);
@@ -632,17 +658,29 @@ export const resetTableSession = async (req: AuthRequest, res: Response): Promis
     }
 
     const cleanTable = tableNumber.toString().trim();
+    const numMatch = cleanTable.match(/\d+/);
+    const tableVariants = [cleanTable];
+    if (numMatch) {
+      const num = numMatch[0];
+      tableVariants.push(num);
+      tableVariants.push(`Table ${num}`);
+      tableVariants.push(`table ${num}`);
+      tableVariants.push(`T-${num}`);
+      tableVariants.push(`t-${num}`);
+    }
+    const uniqueVariants = Array.from(new Set(tableVariants));
+
     // Delete all orders for this table so the table is completely cleared from the dashboard
     const result = await Order.deleteMany({
       restaurantId: restaurant._id,
-      tableNumber: cleanTable,
+      tableNumber: { $in: uniqueVariants },
     });
 
     // Mark session as cleared
     await TableSession.findOneAndUpdate(
       {
         restaurantId: restaurant._id,
-        tableNumber: cleanTable,
+        tableNumber: { $in: uniqueVariants },
         status: { $in: ['active', 'settled'] },
       },
       {
