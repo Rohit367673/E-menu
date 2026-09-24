@@ -148,8 +148,7 @@ export default function OrdersPage() {
 
   const tabClientIdRef = useRef('pos-' + Math.random().toString(36).substring(2, 9));
   const isProcessingQueueRef = useRef(false);
-  const seenKOTsRef = useRef<Set<string>>(new Set());
-  const isInitializedRef = useRef(false);
+  const activePoppingKOTIdRef = useRef<string | null>(null);
 
   const [isSerialConnected, setIsSerialConnected] = useState(isWebSerialConnected());
 
@@ -175,14 +174,12 @@ export default function OrdersPage() {
 
     const isPrinterReady = isWebSerialConnected() || isBridgeOnline;
     if (!isPrinterReady) {
-      // If modal is currently open, wait until user finishes current ticket
+      // If modal is currently open, wait until cashier finishes current ticket
       if (kotModal.isOpen) return;
 
-      // DUAL PIPELINE: If Web Serial is not active (e.g. printer driver is in use via OS/Chrome print),
-      // automatically pop the KOT print modal for the newest pending order!
-      const nextPending = pendingOrders.find((o) => !seenKOTsRef.current.has(o._id));
+      const nextPending = pendingOrders.find((o) => o._id !== activePoppingKOTIdRef.current);
       if (nextPending) {
-        seenKOTsRef.current.add(nextPending._id);
+        activePoppingKOTIdRef.current = nextPending._id;
         handleOpenKOT(nextPending, true, false);
       }
       return;
@@ -259,13 +256,37 @@ export default function OrdersPage() {
   }, [orders, isBridgeOnline, kotModal.isOpen]);
 
   useEffect(() => {
-    // Auto-reconnect previously paired TVS USB printer in Chrome without popups
+    // 1. Auto-reconnect previously paired TVS USB printer in Chrome without popups
     autoReconnectWebSerial().then((connected) => {
       setIsSerialConnected(connected);
       if (connected) {
         processPendingKOTQueue();
       }
     });
+
+    // 2. Attach USB connect/disconnect native listeners
+    const handleSerialConnect = async () => {
+      console.log('USB Thermal Printer attached/powered ON');
+      const connected = await autoReconnectWebSerial();
+      setIsSerialConnected(connected);
+      if (connected) {
+        toast.success('🔌 TVS Thermal Printer connected automatically!');
+        fetchOrders(true);
+      }
+    };
+
+    const handleSerialDisconnect = () => {
+      console.log('USB Thermal Printer detached/powered OFF');
+      setIsSerialConnected(false);
+      toast.error('🔌 TVS Thermal Printer disconnected');
+    };
+
+    if (typeof navigator !== 'undefined' && 'serial' in navigator) {
+      try {
+        (navigator as any).serial.addEventListener('connect', handleSerialConnect);
+        (navigator as any).serial.addEventListener('disconnect', handleSerialDisconnect);
+      } catch {}
+    }
 
     requestScreenWakeLock();
 
@@ -283,6 +304,12 @@ export default function OrdersPage() {
     return () => {
       clearInterval(interval);
       releaseScreenWakeLock();
+      if (typeof navigator !== 'undefined' && 'serial' in navigator) {
+        try {
+          (navigator as any).serial.removeEventListener('connect', handleSerialConnect);
+          (navigator as any).serial.removeEventListener('disconnect', handleSerialDisconnect);
+        } catch {}
+      }
     };
   }, [processPendingKOTQueue]);
 
@@ -371,16 +398,6 @@ export default function OrdersPage() {
         prevPendingCountRef.current = currentKitchenCount;
         prevBillReqCountRef.current = currentBillReqCount;
 
-        // On initial page load, record already-printed or finished orders to seen set
-        if (!isInitializedRef.current) {
-          todayOrders.forEach((o) => {
-            if (o.kotPrintStatus === 'PRINTED' || ['served', 'completed', 'cancelled'].includes(o.status)) {
-              seenKOTsRef.current.add(o._id);
-            }
-          });
-          isInitializedRef.current = true;
-        }
-
         setOrders(todayOrders);
         setStats(fetchedStats);
 
@@ -395,17 +412,27 @@ export default function OrdersPage() {
     }
   }, [soundEnabled, processPendingKOTQueue]);
 
-  // Initial fetch and auto-polling every 6 seconds with Page Visibility guard (rush hour optimization)
+  // Initial fetch and auto-polling every 3 seconds with Page Visibility guard (rush hour optimization)
   useEffect(() => {
     fetchOrders();
 
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
       if (document.hidden) return;
+      if (!isWebSerialConnected()) {
+        const reconnected = await autoReconnectWebSerial();
+        if (reconnected) setIsSerialConnected(true);
+      }
       fetchOrders();
-    }, 6000);
+    }, 3000);
 
-    const handleVisibilityChange = () => {
-      if (!document.hidden) fetchOrders();
+    const handleVisibilityChange = async () => {
+      if (!document.hidden) {
+        if (!isWebSerialConnected()) {
+          const reconnected = await autoReconnectWebSerial();
+          if (reconnected) setIsSerialConnected(true);
+        }
+        fetchOrders();
+      }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -872,6 +899,35 @@ export default function OrdersPage() {
         </div>
       </div>
 
+      {/* Pending KOTs High-Visibility Alert Banner */}
+      {pendingPrintCount > 0 && statusFilter === 'live' && (
+        <div className="bg-gradient-to-r from-amber-500 to-amber-600 text-white p-3.5 sm:p-4 rounded-2xl shadow-md flex items-center justify-between gap-3 animate-pulse">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center font-black flex-shrink-0">
+              <Printer className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <div className="font-extrabold text-sm flex items-center gap-1.5">
+                <span>{pendingPrintCount} New KOT Ticket{pendingPrintCount > 1 ? 's' : ''} Ready for Kitchen</span>
+              </div>
+              <p className="text-xs text-amber-100">
+                {isWebSerialConnected() || isBridgeOnline
+                  ? 'Auto-transmitting to TVS Champ RP Star thermal printer...'
+                  : 'Click below to punch kitchen order tickets'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => processPendingKOTQueue()}
+            className="px-4 py-2 bg-white text-stone-900 hover:bg-stone-100 font-extrabold text-xs rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1.5 flex-shrink-0"
+          >
+            <Printer className="w-3.5 h-3.5 text-amber-600" />
+            <span>Punch {pendingPrintCount} Ticket{pendingPrintCount > 1 ? 's' : ''}</span>
+          </button>
+        </div>
+      )}
+
       {/* Main Order Content */}
       {loading ? (
         <div className="py-20 flex flex-col items-center justify-center text-stone-400 gap-3">
@@ -980,16 +1036,35 @@ export default function OrdersPage() {
                         </div>
                       </div>
 
-                      {/* Subtle KOT Reprint Icon */}
+                      {/* KOT Status & Action Button */}
                       {firstOrder?.kotNumber && (
-                        <button
-                          type="button"
-                          onClick={() => handleOpenKOT(firstOrder, false, true)}
-                          className="p-2 rounded-xl text-stone-500 hover:text-stone-900 hover:bg-stone-200/70 border border-stone-200 transition-colors cursor-pointer"
-                          title={`Reprint KOT for Table ${cleanTableNumber(grp.tableNumber)}`}
-                        >
-                          <Printer className="w-3.5 h-3.5" />
-                        </button>
+                        firstOrder.kotPrintStatus === 'PRINTED' ? (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenKOT(firstOrder, false, true)}
+                            className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-stone-600 hover:text-stone-900 hover:bg-stone-200/70 border border-stone-200 transition-colors cursor-pointer flex items-center gap-1.5"
+                            title={`Reprint KOT for Table ${cleanTableNumber(grp.tableNumber)}`}
+                          >
+                            <Printer className="w-3.5 h-3.5 text-stone-500" />
+                            <span className="hidden sm:inline">Reprint</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (isWebSerialConnected() || isBridgeOnline) {
+                                processPendingKOTQueue([firstOrder]);
+                              } else {
+                                handleOpenKOT(firstOrder, true, false);
+                              }
+                            }}
+                            className="px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500 hover:bg-amber-600 text-white shadow-xs transition-all cursor-pointer flex items-center gap-1.5 animate-pulse"
+                            title={`Punch KOT ticket now for Table ${cleanTableNumber(grp.tableNumber)}`}
+                          >
+                            <Printer className="w-3.5 h-3.5 text-white" />
+                            <span>Punch KOT</span>
+                          </button>
+                        )
                       )}
 
                       {/* Subtle Emergency Cancel Icon */}
@@ -1155,15 +1230,33 @@ export default function OrdersPage() {
                 <div className="flex items-center gap-2">
                   {/* KOT Print for single order */}
                   {order.kotNumber && (
-                    <button
-                      type="button"
-                      onClick={() => handleOpenKOT(order, false, true)}
-                      className="p-2.5 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
-                      title={`Reprint KOT for Table ${cleanTableNumber(order.tableNumber)}`}
-                    >
-                      <Printer className="w-4 h-4 text-stone-700" />
-                      <span className="hidden sm:inline">KOT</span>
-                    </button>
+                    order.kotPrintStatus === 'PRINTED' ? (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenKOT(order, false, true)}
+                        className="px-2.5 py-1.5 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                        title={`Reprint KOT for Table ${cleanTableNumber(order.tableNumber)}`}
+                      >
+                        <Printer className="w-3.5 h-3.5 text-stone-500" />
+                        <span className="hidden sm:inline">Reprint</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (isWebSerialConnected() || isBridgeOnline) {
+                            processPendingKOTQueue([order]);
+                          } else {
+                            handleOpenKOT(order, true, false);
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500 hover:bg-amber-600 text-white shadow-xs transition-all cursor-pointer flex items-center gap-1.5 animate-pulse"
+                        title={`Print KOT for Table ${cleanTableNumber(order.tableNumber)}`}
+                      >
+                        <Printer className="w-3.5 h-3.5 text-white" />
+                        <span>Punch KOT</span>
+                      </button>
+                    )
                   )}
 
                   {/* Bill Receipt for single order */}
@@ -1206,10 +1299,38 @@ export default function OrdersPage() {
         onClose={() => setIsPosOpen(false)}
         defaultTable={posTable}
         isTableFixed={false}
-        onOrderCreated={(newOrder) => {
+        onOrderCreated={async (newOrder) => {
           fetchOrders(true);
           if (newOrder) {
-            handleOpenKOT(newOrder, true, false);
+            if (isWebSerialConnected() || isBridgeOnline) {
+              const time = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+              const printJob: PrintJob = {
+                printJobId: newOrder.kotPrintJobId || `PJ-${newOrder.orderNumber}`,
+                orderId: newOrder._id,
+                kotNumber: newOrder.kotNumber || `KOT-${newOrder.orderNumber}`,
+                tableNumber: newOrder.tableNumber,
+                round: newOrder.round,
+                customerName: newOrder.customerName,
+                time,
+                items: newOrder.items.map((it) => ({ name: it.name, quantity: it.quantity, notes: it.notes })),
+                specialInstructions: newOrder.specialInstructions || '',
+                isReprint: false,
+              };
+              const res = await queueKOTPrint(printJob);
+              if (res.success) {
+                await apiClient.patch(`/orders/admin/kot/${newOrder._id}/printed`);
+                fetchOrders(true);
+                toast.custom((_t) => (
+                  <div className="bg-stone-900 text-white px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 text-xs font-black">
+                    🖨️ {printJob.kotNumber} printed to TVS Champ RP Star!
+                  </div>
+                ));
+              } else {
+                handleOpenKOT(newOrder, true, false);
+              }
+            } else {
+              handleOpenKOT(newOrder, true, false);
+            }
           }
         }}
       />
@@ -1230,6 +1351,7 @@ export default function OrdersPage() {
         isOpen={kotModal.isOpen}
         onClose={() => {
           setKotModal((prev) => ({ ...prev, isOpen: false }));
+          activePoppingKOTIdRef.current = null;
           setTimeout(() => {
             processPendingKOTQueue();
           }, 600);

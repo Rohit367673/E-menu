@@ -202,8 +202,6 @@ function buildKOTBuffer(data) {
     
     bufs.push(CMD.NEWLINE);
     bufs.push(CMD.NEWLINE);
-    bufs.push(CMD.NEWLINE);
-    bufs.push(CMD.NEWLINE);
     bufs.push(CMD.CUT);
     
     return Buffer.concat(bufs);
@@ -221,8 +219,6 @@ function buildTestBuffer() {
     bufs.push(Buffer.from(`Time: ${new Date().toLocaleString()}\n`));
     bufs.push(CMD.NEWLINE);
     bufs.push(Buffer.from("Successfully connected to bridge!\n"));
-    bufs.push(CMD.NEWLINE);
-    bufs.push(CMD.NEWLINE);
     bufs.push(CMD.NEWLINE);
     bufs.push(CMD.NEWLINE);
     bufs.push(CMD.CUT);

@@ -50,14 +50,40 @@ export default function PrinterSettingsPage() {
       setIsSerialConnected(connected);
     });
 
+    const handleSerialConnect = async () => {
+      const connected = await autoReconnectWebSerial();
+      setIsSerialConnected(connected);
+      if (connected) toast.success('🔌 TVS Thermal Printer connected automatically!');
+    };
+
+    const handleSerialDisconnect = () => {
+      setIsSerialConnected(false);
+      toast.error('🔌 TVS Thermal Printer disconnected');
+    };
+
+    if (typeof navigator !== 'undefined' && 'serial' in navigator) {
+      try {
+        (navigator as any).serial.addEventListener('connect', handleSerialConnect);
+        (navigator as any).serial.addEventListener('disconnect', handleSerialDisconnect);
+      } catch {}
+    }
+
     const checkBridge = async () => {
       const health = await checkBridgeHealth();
       setBridgeOnline(health.online);
       setIsSerialConnected(isWebSerialConnected());
     };
     checkBridge();
-    const interval = setInterval(checkBridge, 6000);
-    return () => clearInterval(interval);
+    const interval = setInterval(checkBridge, 5000);
+    return () => {
+      clearInterval(interval);
+      if (typeof navigator !== 'undefined' && 'serial' in navigator) {
+        try {
+          (navigator as any).serial.removeEventListener('connect', handleSerialConnect);
+          (navigator as any).serial.removeEventListener('disconnect', handleSerialDisconnect);
+        } catch {}
+      }
+    };
   }, []);
 
   const handleConnectSerial = async () => {

@@ -19,6 +19,22 @@ export function isWebSerialConnected(): boolean {
   return activeSerialPort !== null;
 }
 
+// Listen for native USB connect/disconnect events
+if (typeof navigator !== 'undefined' && 'serial' in navigator) {
+  try {
+    (navigator as any).serial.addEventListener('connect', async () => {
+      console.log('USB Thermal Printer attached/powered ON — auto-reconnecting...');
+      await autoReconnectWebSerial();
+    });
+    (navigator as any).serial.addEventListener('disconnect', () => {
+      console.log('USB Thermal Printer detached/powered OFF');
+      activeSerialPort = null;
+    });
+  } catch (err) {
+    console.warn('Web Serial event listeners not attached:', err);
+  }
+}
+
 /**
  * 1-Click Browser Pairing with TVS USB Printer.
  * Prompts Chrome's native USB/Serial picker dialog once.
@@ -34,7 +50,13 @@ export async function connectWebSerialPrinter(): Promise<{ success: boolean; mes
 
   try {
     const port = await (navigator as any).serial.requestPort();
-    await port.open({ baudRate: 9600 }); // TVS Champ RP Star standard baud
+    try {
+      await port.open({ baudRate: 9600 }); // TVS Champ RP Star standard baud
+    } catch (openErr: any) {
+      if (!openErr.message?.includes('already open')) {
+        throw openErr;
+      }
+    }
     activeSerialPort = port;
     localStorage.setItem('sukoon_web_serial_paired', 'true');
     return { success: true, message: 'TVS USB Printer connected directly in Chrome!' };
@@ -47,17 +69,20 @@ export async function autoReconnectWebSerial(): Promise<boolean> {
   if (!isWebSerialSupported()) return false;
   if (activeSerialPort && activeSerialPort.writable) return true;
 
-  const wasPaired = localStorage.getItem('sukoon_web_serial_paired') === 'true';
-  if (!wasPaired) return false;
-
   try {
     const ports = await (navigator as any).serial.getPorts();
     if (ports.length > 0) {
       const port = ports[0];
-      if (!port.readable) {
+      try {
         await port.open({ baudRate: 9600 });
+      } catch (openErr: any) {
+        // If already open, we can safely proceed
+        if (!openErr.message?.includes('already open')) {
+          console.warn('Port open warning:', openErr);
+        }
       }
       activeSerialPort = port;
+      localStorage.setItem('sukoon_web_serial_paired', 'true');
       return true;
     }
   } catch (err) {
@@ -171,11 +196,11 @@ export function buildKOTEscPosBytes(kotData: any): Uint8Array {
   // 7. Footer
   add(0x1b, 0x61, 0x01); // Center
   addSafeAscii('*** END OF KOT ***\n');
-  addSafeAscii('KITCHEN USE ONLY - NO PRICES\n\n');
+  addSafeAscii('KITCHEN USE ONLY - NO PRICES\n');
 
-  // 8. Feed 4 lines & Auto-Cut
-  add(0x1b, 0x64, 0x04);
-  add(0x1d, 0x56, 0x42, 0x00); // GS V 'B' 0 (Feed and full/partial cut for TVS)
+  // 8. Feed 2 lines (just enough to clear the cutter blade, no waste) & Auto-Cut
+  add(0x1b, 0x64, 0x02);
+  add(0x1d, 0x56, 0x42, 0x00); // GS V 'B' 0 (Feed to cut line and partial/full cut for TVS Champ RP Star)
 
   // Merge bytes
   const totalLength = parts.reduce((sum, p) => sum + p.length, 0);
@@ -192,18 +217,40 @@ export function buildKOTEscPosBytes(kotData: any): Uint8Array {
  * Direct low-level transmission to the Web Serial port
  */
 export async function printKOTViaWebSerial(kotData: any): Promise<{ success: boolean; message: string }> {
-  if (!activeSerialPort || !activeSerialPort.writable) {
-    return { success: false, message: 'USB printer not connected in browser' };
+  if (!activeSerialPort) {
+    // Attempt auto-reconnect if port reference was lost
+    const reconnected = await autoReconnectWebSerial();
+    if (!reconnected || !activeSerialPort) {
+      return { success: false, message: 'USB printer not connected in browser' };
+    }
   }
 
+  if (!activeSerialPort.writable) {
+    try {
+      await activeSerialPort.open({ baudRate: 9600 });
+    } catch {}
+  }
+
+  if (!activeSerialPort.writable) {
+    return { success: false, message: 'USB printer port is not writable' };
+  }
+
+  let writer: any = null;
   try {
     const bytes = buildKOTEscPosBytes(kotData);
-    const writer = activeSerialPort.writable.getWriter();
+    writer = activeSerialPort.writable.getWriter();
     await writer.write(bytes);
-    writer.releaseLock();
     return { success: true, message: 'Printed directly via Chrome USB Serial!' };
   } catch (err: any) {
     return { success: false, message: err.message || 'Direct USB print failed' };
+  } finally {
+    if (writer) {
+      try {
+        writer.releaseLock();
+      } catch (lockErr) {
+        console.warn('Writer releaseLock warning:', lockErr);
+      }
+    }
   }
 }
 
