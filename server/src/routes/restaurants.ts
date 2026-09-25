@@ -4,6 +4,8 @@ import {
   updateRestaurant,
   updateTemplate,
   getPublicMenu,
+  addTable,
+  deleteTable,
 } from '../controllers/restaurantController.js';
 import auth from '../middleware/auth.js';
 
@@ -13,6 +15,8 @@ const router = Router();
 router.get('/me', auth, getRestaurant);
 router.put('/me', auth, updateRestaurant);
 router.put('/me/template', auth, updateTemplate);
+router.post('/me/tables', auth, addTable);
+router.delete('/me/tables/:tableName', auth, deleteTable);
 
 // Public digital menu endpoints
 router.get('/public', getPublicMenu);

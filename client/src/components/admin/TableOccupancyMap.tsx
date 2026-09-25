@@ -10,8 +10,12 @@ import {
   LayoutGrid,
   Columns,
   BellRing,
+  Trash2,
+  X,
+  Loader2,
 } from 'lucide-react';
 import type { Order } from '../../types/menu';
+import { useRestaurant } from '../../contexts/RestaurantContext';
 
 interface TableOccupancyMapProps {
   orders: Order[];
@@ -129,6 +133,52 @@ export default function TableOccupancyMap({
 }: TableOccupancyMapProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [viewMode, setViewMode] = useState<'track' | 'grid'>('track');
+  const { tables: contextTables, addTable, removeTable } = useRestaurant();
+  const configuredTables = contextTables && contextTables.length > 0 ? contextTables : DEFAULT_TABLES;
+
+  const [isAddingTable, setIsAddingTable] = useState(false);
+  const [newTableNameInput, setNewTableNameInput] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const getNextSuggestedTableName = () => {
+    let maxNum = 0;
+    for (const t of configuredTables) {
+      const match = t.match(/Table\s*(\d+)/i);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNum) maxNum = num;
+      }
+    }
+    return `Table ${maxNum + 1}`;
+  };
+
+  const handleOpenAddTable = () => {
+    setNewTableNameInput(getNextSuggestedTableName());
+    setIsAddingTable(true);
+  };
+
+  const handleCreateNewTable = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!newTableNameInput.trim()) return;
+    try {
+      setIsSubmitting(true);
+      await addTable(newTableNameInput.trim());
+      setIsAddingTable(false);
+      setNewTableNameInput('');
+    } catch {
+      // toast shown in context
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRemoveTable = async (tableName: string) => {
+    try {
+      await removeTable(tableName);
+    } catch {
+      // toast shown in context
+    }
+  };
 
   // Collect active orders (pending, preparing, served)
   const activeOrders = useMemo(() => {
@@ -153,7 +203,7 @@ export default function TableOccupancyMap({
 
     const allTableNames = Array.from(
       new Set([
-        ...DEFAULT_TABLES,
+        ...configuredTables,
         ...Array.from(activeTableMap.keys()),
       ])
     ).filter((t) => !t.toLowerCase().includes('bar'));
@@ -250,6 +300,17 @@ export default function TableOccupancyMap({
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
             <span>{availableCount} Available</span>
           </span>
+
+          {/* Add Table Button */}
+          <button
+            type="button"
+            onClick={handleOpenAddTable}
+            className="px-3 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-black text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer hover:scale-102"
+            title="Add a new dining table"
+          >
+            <Plus className="w-3.5 h-3.5 stroke-[3]" />
+            <span>Add Table</span>
+          </button>
 
           {/* View Mode Switcher (Track vs Grid) */}
           <div className="flex items-center bg-stone-100 p-1 rounded-xl border border-stone-200 text-xs font-bold ml-auto sm:ml-0">
@@ -408,7 +469,23 @@ export default function TableOccupancyMap({
                     {table.tableNumber}
                   </span>
                 </div>
-                <span className="w-2.5" />
+                {totalCount > 1 ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm(`Are you sure you want to remove ${table.tableNumber}?`)) {
+                        handleRemoveTable(table.tableNumber);
+                      }
+                    }}
+                    className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-stone-400 hover:text-rose-600 hover:bg-stone-200/60 transition-all cursor-pointer"
+                    title={`Remove ${table.tableNumber}`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                ) : (
+                  <span className="w-2.5" />
+                )}
               </div>
 
               {/* Center: Large Cafe Table SVG Illustration & Available label */}
@@ -430,6 +507,69 @@ export default function TableOccupancyMap({
           );
         })}
       </div>
+
+      {/* Add Table Modal */}
+      {isAddingTable && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm border border-stone-200 shadow-2xl relative">
+            <button
+              type="button"
+              onClick={() => setIsAddingTable(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <h3 className="text-lg font-black text-stone-900">Add Dining Table</h3>
+            <p className="text-xs text-stone-500 mt-1">
+              Add a new table to your floor plan. Its QR code scanner will automatically appear in the QR Menu section.
+            </p>
+
+            <form onSubmit={handleCreateNewTable} className="mt-4 flex flex-col gap-3">
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">
+                  Table Name or Number
+                </label>
+                <input
+                  type="text"
+                  autoFocus
+                  value={newTableNameInput}
+                  onChange={(e) => setNewTableNameInput(e.target.value)}
+                  placeholder="e.g. Table 11, Patio 1"
+                  className="w-full h-11 px-3.5 rounded-xl border border-stone-300 text-sm font-bold text-stone-900 focus:outline-none focus:border-stone-900 focus:ring-2 focus:ring-stone-900/10"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddingTable(false)}
+                  disabled={isSubmitting}
+                  className="flex-1 py-2.5 rounded-xl border border-stone-200 text-stone-700 font-bold text-xs hover:bg-stone-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !newTableNameInput.trim()}
+                  className="flex-1 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 disabled:opacity-50 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Adding...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                      <span>Save Table</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

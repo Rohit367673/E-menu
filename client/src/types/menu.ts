@@ -70,6 +70,7 @@ export interface Restaurant {
   address?: string;
   googleReviewUrl?: string;
   googleRating?: number;
+  tables?: string[];
   owner: string;
   templateConfig: TemplateConfig;
   createdAt: string;

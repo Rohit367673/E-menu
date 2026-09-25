@@ -23,6 +23,9 @@ interface RestaurantContextType {
   editMenuItem: (id: string, data: Partial<MenuItem>) => Promise<void>;
   removeMenuItem: (id: string) => Promise<void>;
   reorderMenuItems: (items: { id: string; order: number }[]) => Promise<void>;
+  tables: string[];
+  addTable: (name?: string) => Promise<string>;
+  removeTable: (name: string) => Promise<void>;
   toggleItemAvailability: (id: string) => Promise<void>;
 }
 
@@ -222,6 +225,35 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const tables = restaurant?.tables && restaurant.tables.length > 0
+    ? restaurant.tables
+    : Array.from({ length: 10 }, (_, i) => `Table ${i + 1}`);
+
+  const addTable = async (name?: string): Promise<string> => {
+    try {
+      const { data: res } = await restaurantsApi.addTable(name);
+      setRestaurant(res.data.restaurant);
+      toast.success(`${res.data.table} added`);
+      return res.data.table;
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Failed to add table';
+      toast.error(msg);
+      throw new Error(msg);
+    }
+  };
+
+  const removeTable = async (name: string): Promise<void> => {
+    try {
+      const { data: res } = await restaurantsApi.deleteTable(name);
+      setRestaurant(res.data.restaurant);
+      toast.success(`${name} removed`);
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Failed to remove table';
+      toast.error(msg);
+      throw new Error(msg);
+    }
+  };
+
   return (
     <RestaurantContext.Provider
       value={{
@@ -229,6 +261,7 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
         categories,
         menuItems,
         isLoading,
+        tables,
         fetchRestaurant,
         updateRestaurant: updateRestaurantData,
         updateTemplate,
@@ -243,6 +276,8 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
         removeMenuItem,
         reorderMenuItems: reorderItems,
         toggleItemAvailability,
+        addTable,
+        removeTable,
       }}
     >
       {children}

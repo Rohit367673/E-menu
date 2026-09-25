@@ -47,6 +47,7 @@ export default function App() {
             <ToastProvider />
             <Routes>
               <Route path="/" element={<CustomerMenuPage />} />
+              <Route path="/menu" element={<CustomerMenuPage />} />
               <Route path="/menu/:slug" element={<CustomerMenuPage />} />
               <Route path="/admin/login" element={<LoginPage />} />
               <Route

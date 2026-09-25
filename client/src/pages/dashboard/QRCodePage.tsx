@@ -15,16 +15,27 @@ import {
   Image as ImageIcon,
   ExternalLink,
   FileOutput,
+  Printer,
+  Plus,
+  X,
 } from 'lucide-react';
 import apiClient from '../../api/client';
 import { downloadQR } from '../../api/qr';
 import Button from '../../components/ui/Button';
 import type { Restaurant } from '../../types/menu';
+import { useRestaurant } from '../../contexts/RestaurantContext';
 
 const APP_URL = import.meta.env.VITE_APP_URL || window.location.origin;
 
+export const cleanTableValue = (tbl: string) => {
+  const match = String(tbl || '').trim().match(/^Table\s*(\d+)$/i);
+  if (match) return match[1];
+  return String(tbl || '').trim();
+};
+
 export default function QRCodePage() {
   const navigate = useNavigate();
+  const { addTable: contextAddTable } = useRestaurant();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [loading, setLoading] = useState(true);
   const [fgColor, setFgColor] = useState('#1f2937');
@@ -34,6 +45,9 @@ export default function QRCodePage() {
   const [copied, setCopied] = useState(false);
   const [selectedTable, setSelectedTable] = useState<string>('all');
   const [customTable, setCustomTable] = useState<string>('');
+  const [addingScanner, setAddingScanner] = useState(false);
+  const [showBatchModal, setShowBatchModal] = useState(false);
+
   const qrCanvasRef = useRef<HTMLDivElement>(null);
   const qrSvgRef = useRef<HTMLDivElement>(null);
 
@@ -56,17 +70,44 @@ export default function QRCodePage() {
     fetchRestaurant();
   }, []);
 
-  const activeTableLabel = selectedTable === 'all'
-    ? ''
-    : selectedTable === 'custom'
-      ? (customTable.trim() || 'Custom')
-      : selectedTable;
+  const tables = useMemo(() => {
+    const list = restaurant?.tables && restaurant.tables.length > 0
+      ? [...restaurant.tables]
+      : Array.from({ length: 10 }, (_, i) => `Table ${i + 1}`);
+
+    return list.sort((a, b) => {
+      const numA = parseInt(a.replace(/\D/g, ''), 10) || 999;
+      const numB = parseInt(b.replace(/\D/g, ''), 10) || 999;
+      if (a.startsWith('Table') && b.startsWith('Table')) return numA - numB;
+      if (a.startsWith('Table')) return -1;
+      if (b.startsWith('Table')) return 1;
+      return a.localeCompare(b);
+    });
+  }, [restaurant?.tables]);
+
+  const activeTableLabel = useMemo(() => {
+    if (selectedTable === 'all') return '';
+    if (selectedTable === 'custom') return customTable.trim() || 'Custom';
+    return cleanTableValue(selectedTable);
+  }, [selectedTable, customTable]);
+
+  const displayBannerTitle = useMemo(() => {
+    if (selectedTable === 'all') return 'Scan to view our menu';
+    if (selectedTable === 'custom') {
+      const c = customTable.trim();
+      if (!c) return 'Custom Table — Scan to Order';
+      return /^table\s+/i.test(c) ? `${c} — Scan to Order` : `Table ${c} — Scan to Order`;
+    }
+    if (/^table\s+/i.test(selectedTable)) return `${selectedTable} — Scan to Order`;
+    return `Table ${selectedTable} — Scan to Order`;
+  }, [selectedTable, customTable]);
 
   const menuUrl = useMemo(() => {
-    const base = `${APP_URL}/menu/${restaurant?.slug || 'menu'}`;
+    const slug = restaurant?.slug;
+    const base = (!slug || slug === 'menu') ? `${APP_URL}/menu` : `${APP_URL}/menu/${slug}`;
     if (selectedTable === 'all') return base;
-    const tbl = selectedTable === 'custom' ? (customTable.trim() || '1') : selectedTable;
-    return `${base}?table=${encodeURIComponent(tbl)}`;
+    const tblVal = selectedTable === 'custom' ? (customTable.trim() || '1') : cleanTableValue(selectedTable);
+    return `${base}?table=${encodeURIComponent(tblVal)}`;
   }, [restaurant?.slug, selectedTable, customTable]);
 
   const handleCopyLink = useCallback(async () => {
@@ -86,10 +127,29 @@ export default function QRCodePage() {
     }
   }, [menuUrl]);
 
+  const handleQuickAddScanner = async () => {
+    try {
+      setAddingScanner(true);
+      const newTable = await contextAddTable();
+      if (restaurant) {
+        setRestaurant({
+          ...restaurant,
+          tables: [...(restaurant.tables || []), newTable],
+        });
+      }
+      setSelectedTable(newTable);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setAddingScanner(false);
+    }
+  };
+
   const handleDownloadPNG = useCallback(async () => {
+    const cleanLabel = activeTableLabel || 'menu';
     const filePrefix = selectedTable !== 'all'
-      ? `${restaurant?.slug || 'menu'}-table-${activeTableLabel.toLowerCase().replace(/\s+/g, '-')}`
-      : `${restaurant?.slug || 'menu'}`;
+      ? `${restaurant?.slug || 'sukoon'}-table-${cleanLabel.toLowerCase().replace(/\s+/g, '-')}`
+      : `${restaurant?.slug || 'sukoon'}-menu`;
 
     try {
       const res = await downloadQR({ format: 'png', size: 1024, fgColor, bgColor });
@@ -113,9 +173,10 @@ export default function QRCodePage() {
   }, [restaurant, fgColor, bgColor, selectedTable, activeTableLabel]);
 
   const handleDownloadSVG = useCallback(async () => {
+    const cleanLabel = activeTableLabel || 'menu';
     const filePrefix = selectedTable !== 'all'
-      ? `${restaurant?.slug || 'menu'}-table-${activeTableLabel.toLowerCase().replace(/\s+/g, '-')}`
-      : `${restaurant?.slug || 'menu'}`;
+      ? `${restaurant?.slug || 'sukoon'}-table-${cleanLabel.toLowerCase().replace(/\s+/g, '-')}`
+      : `${restaurant?.slug || 'sukoon'}-menu`;
 
     try {
       const res = await downloadQR({ format: 'svg', size: 1024, fgColor, bgColor });
@@ -176,14 +237,25 @@ export default function QRCodePage() {
         <div>
           <span className="admin-breadcrumb">QR Menu</span>
           <h1 className="text-2xl font-bold text-text mt-0.5 leading-tight">QR Code Generator</h1>
-          <p className="text-sm text-text-secondary mt-1 leading-relaxed">Generate and customize your restaurant tableside QR code</p>
+          <p className="text-sm text-text-secondary mt-1 leading-relaxed">
+            Generate and customize your restaurant tableside QR codes synchronized with your {tables.length} floor tables
+          </p>
         </div>
         {/* Quick action buttons */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => window.open(`/menu/${restaurant.slug || 'menu'}`, '_blank')}
+            onClick={() => setShowBatchModal(true)}
+            icon={<Printer className="w-4 h-4" />}
+            className="border border-border/80 hover:bg-stone-50 font-bold"
+          >
+            Print All Table QRs
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => window.open(menuUrl, '_blank')}
             icon={<ExternalLink className="w-4 h-4" />}
           >
             Preview Menu
@@ -224,8 +296,8 @@ export default function QRCodePage() {
                 />
               )}
               <h2 className="text-xl font-bold text-white">{restaurant.name}</h2>
-              <p className="text-white/85 text-sm mt-1 font-medium">
-                {selectedTable === 'all' ? 'Scan to view our menu' : `Table ${activeTableLabel} — Scan to Order`}
+              <p className="text-white/90 text-sm mt-1 font-semibold tracking-wide">
+                {displayBannerTitle}
               </p>
             </div>
 
@@ -332,57 +404,87 @@ export default function QRCodePage() {
 
             {/* Table Specific QR Assignment */}
             <div className="border-b border-border/60 pb-5">
-              <label className="block text-sm font-semibold text-text mb-2">Table Assignment</label>
-              <p className="text-xs text-text-secondary mb-2.5">
-                Generate QR codes for specific tables so customer orders are automatically tagged.
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-sm font-bold text-text">Table Scanners ({tables.length})</label>
+                <span className="text-[11px] font-semibold text-text-secondary">Sync with Floor</span>
+              </div>
+              <p className="text-xs text-text-secondary mb-3 leading-relaxed">
+                Generate 1-to-1 matching QR codes for each table so customer orders automatically route to that table number.
               </p>
-              <div className="grid grid-cols-4 gap-1.5 mb-2.5">
+
+              {/* Table Chips Grid */}
+              <div className="flex flex-wrap gap-1.5 mb-3 max-h-48 overflow-y-auto pr-1">
                 <button
                   type="button"
                   onClick={() => setSelectedTable('all')}
-                  className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  className={`py-1.5 px-2.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
                     selectedTable === 'all'
-                      ? 'bg-primary text-white shadow-xs'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-stone-900 text-white shadow-xs'
+                      : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
                   }`}
                 >
                   General
                 </button>
-                {['1', '2', '3', '4', '5', '6', '7'].map((tbl) => (
-                  <button
-                    key={tbl}
-                    type="button"
-                    onClick={() => setSelectedTable(tbl)}
-                    className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      selectedTable === tbl
-                        ? 'bg-primary text-white shadow-xs'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    T-{tbl}
-                  </button>
-                ))}
+
+                {tables.map((tbl) => {
+                  const cleanNum = cleanTableValue(tbl);
+                  const isSelected = selectedTable === tbl || (selectedTable === cleanNum && !tbl.includes(' '));
+                  const chipLabel = /^\d+$/.test(cleanNum) ? `T-${cleanNum}` : cleanNum;
+
+                  return (
+                    <button
+                      key={tbl}
+                      type="button"
+                      onClick={() => setSelectedTable(tbl)}
+                      className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-stone-900 text-white shadow-xs'
+                          : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                      }`}
+                      title={tbl}
+                    >
+                      {chipLabel}
+                    </button>
+                  );
+                })}
+
+                {/* + Add Table Scanner Button */}
+                <button
+                  type="button"
+                  onClick={handleQuickAddScanner}
+                  disabled={addingScanner}
+                  className="py-1.5 px-2.5 rounded-lg text-xs font-black transition-all cursor-pointer border border-dashed border-stone-400 text-stone-700 hover:border-stone-900 hover:text-stone-900 hover:bg-stone-50 flex items-center gap-1 shadow-2xs"
+                  title="Add next table scanner"
+                >
+                  {addingScanner ? (
+                    <Loader2 className="w-3 h-3 animate-spin text-stone-600" />
+                  ) : (
+                    <Plus className="w-3 h-3 stroke-[3]" />
+                  )}
+                  <span>+ Add Scanner</span>
+                </button>
               </div>
 
-              <div className="flex items-center gap-2">
+              {/* Custom Table Input Option */}
+              <div className="flex items-center gap-2 pt-1 border-t border-border/40">
                 <button
                   type="button"
                   onClick={() => setSelectedTable('custom')}
-                  className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex-shrink-0 cursor-pointer ${
+                  className={`py-1 px-2.5 rounded-lg text-xs font-bold transition-all flex-shrink-0 cursor-pointer ${
                     selectedTable === 'custom'
-                      ? 'bg-primary text-white shadow-xs'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-stone-900 text-white shadow-xs'
+                      : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
                   }`}
                 >
-                  Custom Table
+                  Custom
                 </button>
                 {selectedTable === 'custom' && (
                   <input
                     type="text"
-                    placeholder="e.g. Table 8, Patio 2"
+                    placeholder="e.g. Patio 2, Bar 1"
                     value={customTable}
                     onChange={(e) => setCustomTable(e.target.value)}
-                    className="flex-1 h-8 px-2.5 text-xs border border-border rounded-lg outline-none focus:border-primary"
+                    className="flex-1 h-8 px-2.5 text-xs border border-border rounded-lg outline-none focus:border-stone-900 font-semibold"
                   />
                 )}
               </div>
@@ -508,6 +610,112 @@ export default function QRCodePage() {
           </div>
         </motion.div>
       </div>
+
+      {/* Batch Printable Sheet Modal for All Table QRs */}
+      {showBatchModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-stone-900/70 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-3xl w-full max-w-4xl border border-stone-200 shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-6 bg-stone-900 text-white flex items-center justify-between flex-shrink-0">
+              <div>
+                <h3 className="text-lg font-black tracking-tight">Print All Table QR Cards</h3>
+                <p className="text-xs text-stone-300 mt-0.5">
+                  {tables.length} table cards ready for tabletop stands or tent cards.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-3.5 py-2 rounded-xl bg-white text-stone-900 font-bold text-xs flex items-center gap-1.5 hover:bg-stone-100 transition-colors shadow-xs cursor-pointer"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print All Cards</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowBatchModal(false)}
+                  className="p-2 rounded-xl text-stone-400 hover:text-white hover:bg-stone-800 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body / Printable Grid */}
+            <div className="p-6 overflow-y-auto flex-1 bg-stone-50">
+              <div
+                id="printable-qr-grid"
+                className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"
+              >
+                {tables.map((tbl) => {
+                  const cleanNum = cleanTableValue(tbl);
+                  const slug = restaurant?.slug;
+                  const cardUrl = (!slug || slug === 'menu')
+                    ? `${APP_URL}/menu?table=${encodeURIComponent(cleanNum)}`
+                    : `${APP_URL}/menu/${slug}?table=${encodeURIComponent(cleanNum)}`;
+
+                  return (
+                    <div
+                      key={tbl}
+                      className="bg-white rounded-2xl border-2 border-stone-300 p-5 flex flex-col items-center text-center shadow-xs page-break-inside-avoid"
+                    >
+                      {/* Brand Header */}
+                      <div className="flex items-center gap-2 mb-3">
+                        {restaurant.logo && (
+                          <img
+                            src={restaurant.logo}
+                            alt=""
+                            className="w-7 h-7 rounded-lg object-cover"
+                          />
+                        )}
+                        <span className="font-black text-sm text-stone-900 tracking-tight">
+                          {restaurant.name}
+                        </span>
+                      </div>
+
+                      {/* Large Table Number */}
+                      <div className="py-1 px-4 mb-3 rounded-full bg-stone-900 text-white font-black text-sm tracking-wider uppercase">
+                        {tbl}
+                      </div>
+
+                      {/* QR Code */}
+                      <div className="p-3 bg-white rounded-xl border border-stone-200 shadow-2xs mb-3">
+                        <QRCodeSVG
+                          value={cardUrl}
+                          size={150}
+                          fgColor="#1c1917"
+                          bgColor="#ffffff"
+                          level="H"
+                          includeMargin={false}
+                          imageSettings={
+                            includeLogo && restaurant.logo
+                              ? {
+                                  src: restaurant.logo,
+                                  height: 28,
+                                  width: 28,
+                                  excavate: true,
+                                }
+                              : undefined
+                          }
+                        />
+                      </div>
+
+                      {/* Instructions */}
+                      <p className="text-[12px] font-extrabold text-stone-800">
+                        Scan to View Menu & Order
+                      </p>
+                      <p className="text-[10px] text-stone-500 mt-0.5">
+                        Table {cleanNum} will be tagged automatically
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

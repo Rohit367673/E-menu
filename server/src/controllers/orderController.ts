@@ -36,13 +36,23 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
       restaurant = await getOrCreateRestaurant();
     }
 
-    const cleanTable = tableNumber.toString().trim();
+    const rawTable = tableNumber.toString().trim();
+    const tableNumMatch = rawTable.match(/^(?:table[-_\s]*|t[-_\s]*)?0*(\d+)$/i);
+    const cleanTable = tableNumMatch ? `Table ${parseInt(tableNumMatch[1], 10)}` : rawTable;
+
+    const tableVariants = [cleanTable, rawTable];
+    if (tableNumMatch) {
+      const num = tableNumMatch[1];
+      tableVariants.push(num, `Table ${num}`, `table ${num}`, `T-${num}`, `t-${num}`);
+    }
+    const uniqueVariants = Array.from(new Set(tableVariants));
+
     const cleanCustomerName = customerName.toString().trim();
 
     // Check existing active orders for this table to calculate Flow Ordering round
     const existingActive = await Order.find({
       restaurantId: restaurant._id,
-      tableNumber: cleanTable,
+      tableNumber: { $in: uniqueVariants },
       status: { $in: ['pending', 'preparing', 'served'] },
     });
 
@@ -74,7 +84,7 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
 
     let session = await TableSession.findOne({
       restaurantId: restaurant._id,
-      tableNumber: cleanTable,
+      tableNumber: { $in: uniqueVariants },
       status: 'active',
     });
 

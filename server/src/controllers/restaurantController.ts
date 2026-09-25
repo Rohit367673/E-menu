@@ -109,7 +109,7 @@ export const getRestaurant = async (req: AuthRequest, res: Response): Promise<vo
 
 export const updateRestaurant = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { name, description, logo, coverImage, slug, googleReviewUrl, googleRating } = req.body;
+    const { name, description, logo, coverImage, slug, googleReviewUrl, googleRating, tables } = req.body;
     const restaurant = await getOrCreateRestaurant();
 
     if (name !== undefined) restaurant.name = name;
@@ -119,6 +119,9 @@ export const updateRestaurant = async (req: AuthRequest, res: Response): Promise
     if (slug !== undefined) restaurant.slug = slug.toLowerCase().trim().replace(/\s+/g, '-');
     if (googleReviewUrl !== undefined) restaurant.googleReviewUrl = googleReviewUrl;
     if (googleRating !== undefined) restaurant.googleRating = Number(googleRating);
+    if (tables !== undefined && Array.isArray(tables)) {
+      restaurant.tables = tables.map((t: string) => t.trim()).filter(Boolean);
+    }
 
     await restaurant.save();
 
@@ -130,6 +133,103 @@ export const updateRestaurant = async (req: AuthRequest, res: Response): Promise
   } catch (error) {
     console.error('UpdateRestaurant error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+export const addTable = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const restaurant = await getOrCreateRestaurant();
+    const currentTables = restaurant.tables && restaurant.tables.length > 0
+      ? [...restaurant.tables]
+      : Array.from({ length: 10 }, (_, i) => `Table ${i + 1}`);
+
+    let newTableName = (req.body?.name || '').toString().trim();
+
+    if (!newTableName) {
+      // Find highest table number among Table X
+      let maxNum = 0;
+      for (const t of currentTables) {
+        const match = t.match(/Table\s*(\d+)/i);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxNum) maxNum = num;
+        }
+      }
+      newTableName = `Table ${maxNum + 1}`;
+    } else {
+      // If user passed a plain number like "11", prefix with "Table "
+      if (/^\d+$/.test(newTableName)) {
+        newTableName = `Table ${newTableName}`;
+      }
+    }
+
+    // Check if duplicate
+    const exists = currentTables.some(
+      (t) => t.toLowerCase() === newTableName.toLowerCase()
+    );
+
+    if (exists) {
+      res.status(400).json({
+        success: false,
+        message: `${newTableName} already exists`,
+      });
+      return;
+    }
+
+    currentTables.push(newTableName);
+    restaurant.tables = currentTables;
+    await restaurant.save();
+
+    res.status(201).json({
+      success: true,
+      data: {
+        restaurant: formatAsRestaurant(restaurant),
+        table: newTableName,
+      },
+      message: `${newTableName} added successfully`,
+    });
+  } catch (error) {
+    console.error('AddTable error:', error);
+    res.status(500).json({ success: false, message: 'Server error adding table' });
+  }
+};
+
+export const deleteTable = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const rawParam = Array.isArray(req.params.tableName)
+      ? req.params.tableName[0]
+      : req.params.tableName;
+    const tableName = decodeURIComponent(rawParam || '').trim();
+    if (!tableName) {
+      res.status(400).json({ success: false, message: 'Table name is required' });
+      return;
+    }
+
+    const restaurant = await getOrCreateRestaurant();
+    const currentTables = restaurant.tables && restaurant.tables.length > 0
+      ? [...restaurant.tables]
+      : Array.from({ length: 10 }, (_, i) => `Table ${i + 1}`);
+
+    const filtered = currentTables.filter(
+      (t) => t.toLowerCase() !== tableName.toLowerCase()
+    );
+
+    if (filtered.length === currentTables.length) {
+      res.status(404).json({ success: false, message: `Table ${tableName} not found` });
+      return;
+    }
+
+    restaurant.tables = filtered;
+    await restaurant.save();
+
+    res.json({
+      success: true,
+      data: { restaurant: formatAsRestaurant(restaurant) },
+      message: `${tableName} removed successfully`,
+    });
+  } catch (error) {
+    console.error('DeleteTable error:', error);
+    res.status(500).json({ success: false, message: 'Server error removing table' });
   }
 };
 

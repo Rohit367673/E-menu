@@ -13,3 +13,9 @@ export const updateTemplate = (config: TemplateConfig) =>
 export const getPublicMenu = (slug: string) =>
   apiClient.get<ApiResponse<{ restaurant: Restaurant; categories: import('../types/menu').Category[]; menuItems: import('../types/menu').MenuItem[] }>>(`/restaurants/${slug}/menu`);
 
+export const addTable = (name?: string) =>
+  apiClient.post<ApiResponse<{ restaurant: Restaurant; table: string }>>('/restaurants/me/tables', { name });
+
+export const deleteTable = (tableName: string) =>
+  apiClient.delete<ApiResponse<{ restaurant: Restaurant }>>(`/restaurants/me/tables/${encodeURIComponent(tableName)}`);
+
