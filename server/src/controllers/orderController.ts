@@ -458,6 +458,7 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
 export const settleTableOrders = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { tableNumber } = req.params;
+    const { paymentMethod } = req.body || {};
     const restaurant = await getOrCreateRestaurant();
 
     if (!tableNumber) {
@@ -495,19 +496,24 @@ export const settleTableOrders = async (req: AuthRequest, res: Response): Promis
       { new: true }
     );
 
+    const updateFields: any = { status: 'completed', billRequested: false };
+    if (paymentMethod) {
+      updateFields.paymentMethod = paymentMethod;
+    }
+
     const result = await Order.updateMany(
       {
         restaurantId: restaurant._id,
         tableNumber: { $in: uniqueVariants },
         status: { $in: ['pending', 'preparing', 'served'] },
       },
-      { $set: { status: 'completed', billRequested: false } }
+      { $set: updateFields }
     );
 
     res.json({
       success: true,
       message: `Table ${cleanTable} completed & settled! (${result.modifiedCount} active orders completed)`,
-      data: { settledCount: result.modifiedCount, session },
+      data: { settledCount: result.modifiedCount, session, paymentMethod },
     });
   } catch (error) {
     console.error('Settle table orders error:', error);
@@ -890,6 +896,142 @@ export const getKOTData = async (req: AuthRequest, res: Response): Promise<void>
   } catch (error) {
     console.error('Get KOT data error:', error);
     res.status(500).json({ success: false, message: 'Failed to retrieve KOT data' });
+  }
+};
+
+export const addFollowUpItems = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { tableNumber } = req.params;
+    const { items, specialInstructions } = req.body;
+    const restaurant = await getOrCreateRestaurant();
+
+    if (!tableNumber) {
+      res.status(400).json({ success: false, message: 'Table number is required' });
+      return;
+    }
+
+    if (!Array.isArray(items) || items.length === 0) {
+      res.status(400).json({ success: false, message: 'At least one item is required' });
+      return;
+    }
+
+    const cleanTable = tableNumber.toString().trim();
+    const numMatch = cleanTable.match(/\d+/);
+    const tableVariants = [cleanTable];
+    if (numMatch) {
+      const num = numMatch[0];
+      tableVariants.push(num, `Table ${num}`, `table ${num}`, `T-${num}`, `t-${num}`);
+    }
+    const uniqueVariants = Array.from(new Set(tableVariants));
+
+    // Find active session
+    const session = await TableSession.findOne({
+      restaurantId: restaurant._id,
+      tableNumber: { $in: uniqueVariants },
+      status: 'active',
+    });
+
+    if (!session) {
+      res.status(404).json({ success: false, message: `No active order session found for Table ${cleanTable}` });
+      return;
+    }
+
+    // Get existing active orders for round calculation
+    const existingActive = await Order.find({
+      restaurantId: restaurant._id,
+      tableNumber: { $in: uniqueVariants },
+      status: { $in: ['pending', 'preparing', 'served'] },
+    });
+
+    const round = existingActive.length + 1;
+    const customerName = session.customerName || existingActive[0]?.customerName || 'Guest';
+
+    // Validate items
+    let totalAmount = 0;
+    let totalItems = 0;
+    const validatedItems: IOrderItem[] = items.map((it: any) => {
+      const qty = Math.max(1, parseInt(it.quantity, 10) || 1);
+      const price = Math.max(0, parseFloat(it.price) || 0);
+      totalAmount += price * qty;
+      totalItems += qty;
+      return {
+        menuItemId: it.menuItemId || undefined,
+        name: (it.name || 'Menu Item').toString().trim(),
+        price,
+        quantity: qty,
+        vegType: it.vegType === 'nonveg' ? 'nonveg' : 'veg',
+        notes: (it.notes || '').toString().trim(),
+      };
+    });
+
+    // Generate order number
+    const totalOrderCount = await Order.countDocuments({ restaurantId: restaurant._id });
+    const orderNumber = `#${101 + (totalOrderCount % 899)}`;
+
+    // Generate KOT number (daily sequential)
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const todayKOTCount = await Order.countDocuments({
+      restaurantId: restaurant._id,
+      createdAt: { $gte: startOfToday },
+      kotNumber: { $ne: '' },
+    });
+    const kotNumber = `KOT-${String(todayKOTCount + 1).padStart(3, '0')}`;
+
+    const kotPrintJobId = `PJ-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
+    const order = new Order({
+      restaurantId: restaurant._id,
+      sessionId: session._id,
+      orderNumber,
+      tableNumber: session.tableNumber,
+      customerName,
+      items: validatedItems,
+      totalAmount: Math.round(totalAmount * 100) / 100,
+      totalItems,
+      status: 'preparing',
+      specialInstructions: (specialInstructions || '').toString().trim(),
+      round,
+      kotNumber,
+      kotGeneratedAt: new Date(),
+      kotPrintJobId,
+      kotPrintStatus: 'PENDING',
+      kotPrintAttempts: 0,
+    });
+
+    await order.save();
+
+    const kotData = {
+      printJobId: kotPrintJobId,
+      kotNumber,
+      tableNumber: session.tableNumber,
+      round,
+      orderNumber,
+      customerName,
+      time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+      items: validatedItems.map(it => ({
+        name: it.name,
+        quantity: it.quantity,
+        notes: it.notes || '',
+      })),
+      specialInstructions: (specialInstructions || '').toString().trim(),
+    };
+
+    res.status(201).json({
+      success: true,
+      message: `Follow-up items added to Table ${session.tableNumber} (Round ${round})! New KOT generated.`,
+      data: {
+        order,
+        round,
+        tableNumber: session.tableNumber,
+        kotData,
+        sessionId: session._id,
+        isFollowUp: true,
+      },
+    });
+  } catch (error) {
+    console.error('Add follow-up items error:', error);
+    res.status(500).json({ success: false, message: 'Failed to add follow-up items' });
   }
 };
 

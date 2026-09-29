@@ -10,6 +10,7 @@ import {
   BellRing,
   Printer,
   X,
+  Plus,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import apiClient from '../../api/client';
@@ -145,6 +146,13 @@ export default function OrdersPage() {
     autoPrint: false,
     isReprint: false,
   });
+
+  // Follow-up order modal state
+  const [followUpModal, setFollowUpModal] = useState<{
+    isOpen: boolean;
+    tableNumber: string;
+    customerName: string;
+  }>({ isOpen: false, tableNumber: '', customerName: '' });
 
   const tabClientIdRef = useRef('pos-' + Math.random().toString(36).substring(2, 9));
   const isProcessingQueueRef = useRef(false);
@@ -467,19 +475,20 @@ export default function OrdersPage() {
     }
   };
 
-  const handleCompleteTable = async (tableNum: string) => {
+  const handleCompleteTable = async (tableNum: string, paymentMethod?: 'cash' | 'online') => {
     try {
       // Optimistically update orders in local state so card moves immediately to Completed tab
       setOrders((prev) =>
         prev.map((o) => {
           const rawMatch = cleanTableNumber(o.tableNumber) === cleanTableNumber(tableNum);
-          return rawMatch ? { ...o, status: 'completed', billRequested: false } : o;
+          return rawMatch ? { ...o, status: 'completed', billRequested: false, paymentMethod } : o;
         })
       );
       toast.success(`Table ${cleanTableNumber(tableNum)} completed & cleared for next round! ✓`);
 
       const res = await apiClient.patch<{ success: boolean; message: string }>(
-        `/orders/admin/table/${encodeURIComponent(tableNum)}/settle`
+        `/orders/admin/table/${encodeURIComponent(tableNum)}/settle`,
+        { paymentMethod }
       );
 
       if (res.data.success) {
@@ -1036,6 +1045,27 @@ export default function OrdersPage() {
                         </div>
                       </div>
 
+                      {/* Follow-up: Add More Items */}
+                      {statusFilter !== 'completed' && !grp.isCompleted && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFollowUpModal({
+                              isOpen: true,
+                              tableNumber: grp.tableNumber,
+                              customerName: grp.customerName,
+                            });
+                            setPosTable(grp.tableNumber);
+                            setIsPosOpen(true);
+                          }}
+                          className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-300 transition-all cursor-pointer flex items-center gap-1.5"
+                          title={`Add follow-up items to Table ${cleanTableNumber(grp.tableNumber)}`}
+                        >
+                          <Plus className="w-3.5 h-3.5 text-amber-600" />
+                          <span className="hidden sm:inline">Add Items</span>
+                        </button>
+                      )}
+
                       {/* KOT Status & Action Button */}
                       {firstOrder?.kotNumber && (
                         firstOrder.kotPrintStatus === 'PRINTED' ? (
@@ -1124,6 +1154,15 @@ export default function OrdersPage() {
                         <span className="font-bold text-emerald-700 flex items-center gap-1.5">
                           <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                           <span>Completed & Settled ✓</span>
+                          {grp.displayOrders[0]?.paymentMethod && (
+                            <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
+                              grp.displayOrders[0].paymentMethod === 'cash'
+                                ? 'bg-emerald-100 text-emerald-900 border border-emerald-200'
+                                : 'bg-blue-100 text-blue-800 border border-blue-200'
+                            }`}>
+                              {grp.displayOrders[0].paymentMethod === 'cash' ? '💵 Cash' : '📱 Online'}
+                            </span>
+                          )}
                         </span>
                       ) : (
                         <span className="font-bold text-stone-700 flex items-center gap-1.5">
@@ -1145,15 +1184,26 @@ export default function OrdersPage() {
                       </button>
 
                       {statusFilter !== 'completed' && !grp.isCompleted && (
-                        <button
-                          type="button"
-                          onClick={() => handleCompleteTable(grp.tableNumber)}
-                          className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-extrabold text-xs shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
-                          title={`Complete order & clear Table ${cleanTableNumber(grp.tableNumber)} for next guests`}
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Complete Order</span>
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleCompleteTable(grp.tableNumber, 'cash')}
+                            className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-extrabold text-xs shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            title={`Complete with Cash Payment`}
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>💵 Cash</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleCompleteTable(grp.tableNumber, 'online')}
+                            className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-98 text-white font-extrabold text-xs shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            title={`Complete with Online Payment`}
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>📱 Online</span>
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1274,17 +1324,37 @@ export default function OrdersPage() {
                     <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                       <span>Completed ✓</span>
+                      {order.paymentMethod && (
+                        <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
+                          order.paymentMethod === 'cash'
+                            ? 'bg-emerald-200 text-emerald-900'
+                            : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {order.paymentMethod === 'cash' ? '💵 Cash' : '📱 Online'}
+                        </span>
+                      )}
                     </span>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleCompleteTable(order.tableNumber)}
-                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-extrabold text-xs shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
-                      title={`Complete order & clear Table ${cleanTableNumber(order.tableNumber)}`}
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>Complete</span>
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleCompleteTable(order.tableNumber, 'cash')}
+                        className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-extrabold text-xs shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                        title={`Complete with Cash`}
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>💵 Cash</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleCompleteTable(order.tableNumber, 'online')}
+                        className="px-2.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-98 text-white font-extrabold text-xs shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                        title={`Complete with Online Payment`}
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>📱 Online</span>
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -1296,9 +1366,12 @@ export default function OrdersPage() {
       {/* Manual Walk-in POS Order Modal */}
       <ManualOrderModal
         isOpen={isPosOpen}
-        onClose={() => setIsPosOpen(false)}
+        onClose={() => {
+          setIsPosOpen(false);
+          setFollowUpModal({ isOpen: false, tableNumber: '', customerName: '' });
+        }}
         defaultTable={posTable}
-        isTableFixed={false}
+        isTableFixed={followUpModal.isOpen}
         onOrderCreated={async (newOrder) => {
           fetchOrders(true);
           if (newOrder) {

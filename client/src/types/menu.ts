@@ -141,6 +141,7 @@ export interface Order {
   kotPrintedAt?: string;
   printingStartedAt?: string;
   printingBy?: string;
+  paymentMethod?: 'cash' | 'online' | '';
 }
 
 export interface OrderDashboardStats {

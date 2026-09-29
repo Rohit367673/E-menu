@@ -14,6 +14,7 @@ import {
   claimPrintJob,
   markKOTPrinted,
   markKOTFailed,
+  addFollowUpItems,
 } from '../controllers/orderController.js';
 import auth from '../middleware/auth.js';
 
@@ -34,6 +35,7 @@ router.get('/admin/earnings/monthly', auth, getMonthlyEarningsReport);
 router.patch('/admin/:id/status', auth, updateOrderStatus);
 router.patch('/admin/table/:tableNumber/settle', auth, settleTableOrders);
 router.patch('/admin/table/:tableNumber/dismiss-bill-request', auth, dismissBillRequest);
+router.post('/admin/table/:tableNumber/add-items', auth, addFollowUpItems);
 router.post('/admin/table/:tableNumber/reset', auth, resetTableSession);
 router.delete('/admin/:id', auth, deleteOrder);
 

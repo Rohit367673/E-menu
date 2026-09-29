@@ -34,6 +34,7 @@ export interface IOrder extends Document {
   printingBy?: string;
   billRequested?: boolean;
   billRequestedAt?: Date;
+  paymentMethod?: 'cash' | 'online' | '';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -153,6 +154,11 @@ const orderSchema = new Schema<IOrder>(
     },
     billRequestedAt: {
       type: Date,
+    },
+    paymentMethod: {
+      type: String,
+      enum: ['cash', 'online', ''],
+      default: '',
     },
   },
   { timestamps: true }
